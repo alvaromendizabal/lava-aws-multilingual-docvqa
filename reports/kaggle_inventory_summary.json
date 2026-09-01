@@ -1,0 +1,60 @@
+{
+  "competition": "lava-challenge-2026",
+  "extensions": {
+    ".csv": 3,
+    ".pdf": 205
+  },
+  "file_count": 208,
+  "inventory_sha256": "7c2fea504d40d607dbf0102f0a01e4c7758a3be2ad7a7ba01f938b4e42dbace0",
+  "largest_files": [
+    {
+      "name": "test_pdfs/test_pdfs/j_0112.pdf",
+      "size_mib": 142.24
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0105.pdf",
+      "size_mib": 49.57
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0115.pdf",
+      "size_mib": 41.29
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0148.pdf",
+      "size_mib": 40.59
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0138.pdf",
+      "size_mib": 31.5
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0146.pdf",
+      "size_mib": 28.78
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0097.pdf",
+      "size_mib": 27.89
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0159.pdf",
+      "size_mib": 25.12
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0053.pdf",
+      "size_mib": 23.53
+    },
+    {
+      "name": "test_pdfs/test_pdfs/j_0092.pdf",
+      "size_mib": 22.88
+    }
+  ],
+  "top_level_counts": {
+    "sample_submission.csv": 1,
+    "test.csv": 1,
+    "test_pdfs": 200,
+    "train.csv": 1,
+    "train_pdfs": 5
+  },
+  "total_bytes": 1045011201,
+  "total_gib": 0.9732
+}

@@ -1,0 +1,10 @@
+{
+  "complete": true,
+  "expected_file_count": 208,
+  "manifest_sha256": "712d66f0d5208f67248651dc80a973ed95610e39cf4aafdf26858162b5d24188",
+  "reused_count": 3,
+  "uploaded_count": 205,
+  "verified_bytes": 1045011201,
+  "verified_file_count": 208,
+  "verified_gib": 0.9732
+}
