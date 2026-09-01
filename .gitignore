@@ -11,10 +11,10 @@ kaggle.json
 *.key
 
 # Competition data and generated artifacts
-data/
-artifacts/
-checkpoints/
-models/
+/data/
+/artifacts/
+/checkpoints/
+/models/
 *.pt
 *.pth
 *.ckpt
