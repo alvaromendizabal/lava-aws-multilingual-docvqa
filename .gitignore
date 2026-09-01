@@ -1,0 +1,37 @@
+
+# Local environments and credentials
+.venv/
+.env
+.env.*
+!.env.example
+kaggle.json
+.kaggle/
+.aws/
+*.pem
+*.key
+
+# Competition data and generated artifacts
+/data/
+/artifacts/
+/checkpoints/
+/models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.faiss
+
+# Python and testing outputs
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Terraform state
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
