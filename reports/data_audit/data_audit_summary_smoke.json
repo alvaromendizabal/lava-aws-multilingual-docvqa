@@ -1,0 +1,362 @@
+{
+  "audit_mode": "smoke",
+  "audit_source_sha256": "68f2712fbedf275fc0c7505542a154af003f89ec5dd5da23d2b155b19810c603",
+  "audited_pdf_count_for_mode": 8,
+  "bucket": "lava-docvqa-<account-id>-us-west-2",
+  "cross_split_exact_duplicate_pdf_group_count": 0,
+  "cross_split_exact_duplicate_pdf_groups": [],
+  "csv_profiles": [
+    {
+      "answer_type_counts": {
+        "number": 204,
+        "short_text": 420
+      },
+      "column_count": 3,
+      "column_profiles": {
+        "answer": {
+          "maximum_character_length": 29,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 3,
+          "value_kind_counts": {
+            "numeric": 204,
+            "string": 420
+          }
+        },
+        "evidence_page_number": {
+          "maximum_character_length": 3,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 1,
+          "value_kind_counts": {
+            "list": 624
+          }
+        },
+        "id": {
+          "maximum_character_length": 6,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 624,
+          "value_kind_counts": {
+            "string": 624
+          }
+        }
+      },
+      "columns": [
+        "id",
+        "answer",
+        "evidence_page_number"
+      ],
+      "duplicate_question_row_count": 0,
+      "evidence_page_cardinality_counts": {
+        "1": 624
+      },
+      "inferred_columns": {
+        "answer": [
+          "answer"
+        ],
+        "document": [],
+        "evidence": [
+          "evidence_page_number"
+        ],
+        "identifier": [
+          "id"
+        ],
+        "question": []
+      },
+      "language_counts": {},
+      "missing_referenced_documents": [],
+      "referenced_document_count": 0,
+      "row_count": 624,
+      "s3_key": "raw/kaggle/sample_submission.csv",
+      "selected_columns": {
+        "answer": "answer",
+        "document": null,
+        "evidence": "evidence_page_number",
+        "question": null
+      }
+    },
+    {
+      "answer_type_counts": {
+        "short_text": 624
+      },
+      "column_count": 5,
+      "column_profiles": {
+        "answer_format": {
+          "maximum_character_length": 14,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 4,
+          "value_kind_counts": {
+            "string": 624
+          }
+        },
+        "file_id": {
+          "maximum_character_length": 6,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 200,
+          "value_kind_counts": {
+            "string": 624
+          }
+        },
+        "id": {
+          "maximum_character_length": 6,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 624,
+          "value_kind_counts": {
+            "string": 624
+          }
+        },
+        "language": {
+          "maximum_character_length": 2,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 2,
+          "value_kind_counts": {
+            "string": 624
+          }
+        },
+        "question": {
+          "maximum_character_length": 436,
+          "missing_count": 0,
+          "nonmissing_count": 624,
+          "unique_count": 624,
+          "value_kind_counts": {
+            "string": 624
+          }
+        }
+      },
+      "columns": [
+        "id",
+        "file_id",
+        "question",
+        "answer_format",
+        "language"
+      ],
+      "duplicate_question_row_count": 0,
+      "evidence_page_cardinality_counts": {},
+      "inferred_columns": {
+        "answer": [
+          "answer_format"
+        ],
+        "document": [
+          "file_id"
+        ],
+        "evidence": [],
+        "identifier": [
+          "id",
+          "file_id"
+        ],
+        "question": [
+          "question"
+        ]
+      },
+      "language_counts": {
+        "ja": 587,
+        "vi": 37
+      },
+      "missing_referenced_documents": [],
+      "referenced_document_count": 200,
+      "row_count": 624,
+      "s3_key": "raw/kaggle/test.csv",
+      "selected_columns": {
+        "answer": "answer_format",
+        "document": "file_id",
+        "evidence": null,
+        "question": "question"
+      }
+    },
+    {
+      "answer_type_counts": {
+        "short_text": 16
+      },
+      "column_count": 7,
+      "column_profiles": {
+        "answer": {
+          "maximum_character_length": 43,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 16,
+          "value_kind_counts": {
+            "list": 1,
+            "numeric": 2,
+            "string": 13
+          }
+        },
+        "answer_format": {
+          "maximum_character_length": 14,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 4,
+          "value_kind_counts": {
+            "string": 16
+          }
+        },
+        "evidence_page_number": {
+          "maximum_character_length": 13,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 14,
+          "value_kind_counts": {
+            "list": 16
+          }
+        },
+        "file_id": {
+          "maximum_character_length": 6,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 5,
+          "value_kind_counts": {
+            "string": 16
+          }
+        },
+        "id": {
+          "maximum_character_length": 6,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 16,
+          "value_kind_counts": {
+            "string": 16
+          }
+        },
+        "language": {
+          "maximum_character_length": 2,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 2,
+          "value_kind_counts": {
+            "string": 16
+          }
+        },
+        "question": {
+          "maximum_character_length": 162,
+          "missing_count": 0,
+          "nonmissing_count": 16,
+          "unique_count": 16,
+          "value_kind_counts": {
+            "string": 16
+          }
+        }
+      },
+      "columns": [
+        "id",
+        "file_id",
+        "question",
+        "answer_format",
+        "answer",
+        "evidence_page_number",
+        "language"
+      ],
+      "duplicate_question_row_count": 0,
+      "evidence_page_cardinality_counts": {
+        "1": 8,
+        "2": 6,
+        "3": 1,
+        "4": 1
+      },
+      "inferred_columns": {
+        "answer": [
+          "answer_format",
+          "answer"
+        ],
+        "document": [
+          "file_id"
+        ],
+        "evidence": [
+          "evidence_page_number"
+        ],
+        "identifier": [
+          "id",
+          "file_id"
+        ],
+        "question": [
+          "question"
+        ]
+      },
+      "language_counts": {
+        "ja": 15,
+        "vi": 1
+      },
+      "missing_referenced_documents": [],
+      "referenced_document_count": 5,
+      "row_count": 16,
+      "s3_key": "raw/kaggle/train.csv",
+      "selected_columns": {
+        "answer": "answer_format",
+        "document": "file_id",
+        "evidence": "evidence_page_number",
+        "question": "question"
+      }
+    }
+  ],
+  "deferred_audits": [
+    "near-duplicate page detection using perceptual or embedding similarity",
+    "layout and table/figure classification",
+    "OCR engine comparison",
+    "page-image quality and orientation analysis"
+  ],
+  "document_content_class_counts": {
+    "native_text_dominant": 8
+  },
+  "embedded_image_page_ratio": 0.535294,
+  "exact_duplicate_pdf_group_count": 0,
+  "exact_duplicate_pdf_groups": [],
+  "expected_pdf_count_for_mode": 8,
+  "generated_at_utc": "2026-09-02T00:13:32.057183+00:00",
+  "git_commit_sha": "465ced56abdb94c07847a146e1f946e9abc4fde5",
+  "native_text_page_ratio": 0.994118,
+  "native_text_page_ratio_by_document": {
+    "count": 8,
+    "max": 1.0,
+    "mean": 0.9976415,
+    "median": 1.0,
+    "min": 0.981132,
+    "p25": 1.0,
+    "p75": 1.0
+  },
+  "page_count": {
+    "count": 8,
+    "max": 53.0,
+    "mean": 21.25,
+    "median": 19.0,
+    "min": 4.0,
+    "p25": 15.75,
+    "p75": 21.5
+  },
+  "pages_with_embedded_images": 91,
+  "pages_with_native_text": 169,
+  "pdf_count": 8,
+  "pdf_counts_by_language": {
+    "ja": 7,
+    "vi": 1
+  },
+  "pdf_counts_by_split": {
+    "test": 3,
+    "train": 5
+  },
+  "pdf_error_count": 0,
+  "pdf_errors": [],
+  "pdf_size_bytes": {
+    "count": 8,
+    "max": 8791792.0,
+    "mean": 2158889.875,
+    "median": 1314648.0,
+    "min": 554546.0,
+    "p25": 1047462.25,
+    "p75": 1676591.0
+  },
+  "pdf_success_count": 8,
+  "processing_seconds": {
+    "count": 8,
+    "max": 4.1397,
+    "mean": 0.835975,
+    "median": 0.37275,
+    "min": 0.2831,
+    "p25": 0.326075,
+    "p75": 0.4348
+  },
+  "raw_prefix": "raw/kaggle/",
+  "total_pages": 170
+}
