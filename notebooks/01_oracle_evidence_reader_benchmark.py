@@ -1,3 +1,20 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     formats: ipynb,py:percent
+#     notebook_metadata_filter: kernelspec,jupytext
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.5
+#   kernelspec:
+#     display_name: Python (lava)
+#     language: python
+#     name: lava
+# ---
+
 # %% [markdown]
 # # 01 — Oracle-evidence multimodal reader benchmark
 #
@@ -24,13 +41,9 @@ os.chdir(ROOT)
 load_dotenv(ROOT / ".env")
 
 # %%
-asset_summary = json.loads(
-    Path("reports/oracle_reader/oracle_assets_summary.json").read_text()
-)
-model_lock = json.loads(
-    Path("configs/oracle_reader_models.lock.json").read_text()
-)
-asset_summary
+asset_summary = json.loads(Path("reports/oracle_reader/oracle_assets_summary.json").read_text())
+model_lock = json.loads(Path("configs/oracle_reader_models.lock.json").read_text())
+print(json.dumps(asset_summary, indent=2, sort_keys=True))
 
 # %%
 models = pd.DataFrame(model_lock["resolved_models"])
@@ -60,7 +73,7 @@ plan = build_job_plan(
     bucket=os.environ["S3_BUCKET"],
     limit=1,
 )
-plan.model_dump(mode="json")
+print(json.dumps(plan.model_dump(mode="json"), indent=2, sort_keys=True))
 
 # %% [markdown]
 # ## Paid execution gate
