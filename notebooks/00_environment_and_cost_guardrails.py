@@ -1,3 +1,20 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     formats: ipynb,py:percent
+#     notebook_metadata_filter: kernelspec,jupytext
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.5
+#   kernelspec:
+#     display_name: Python (lava)
+#     language: python
+#     name: lava
+# ---
+
 # %% [markdown]
 # # 00 — Environment and cost guardrails
 #
@@ -18,7 +35,7 @@ import pandas as pd
 import yaml
 from dotenv import load_dotenv
 
-from lava.readers.sagemaker import build_job_plan, validate_sagemaker_sdk_contract
+from lava.readers.sagemaker import validate_sagemaker_sdk_contract
 
 ROOT = Path.cwd()
 if ROOT.name == "notebooks":
@@ -51,11 +68,11 @@ snapshot = {
     "branch": branch,
     "working_tree_clean": not status,
     "protocol_lock_id": protocol_lock["protocol_lock_id"],
-    "question_count": protocol_lock["question_count"],
-    "document_count": protocol_lock["document_count"],
+    "question_count": protocol_lock["expected_question_count"],
+    "document_count": protocol_lock["expected_document_count"],
     "creates_endpoint": False,
 }
-snapshot
+print(json.dumps(snapshot, indent=2, sort_keys=True))
 
 # %% [markdown]
 # ## Validate the installed SageMaker SDK contract
@@ -66,7 +83,7 @@ validate_sagemaker_sdk_contract(config["training_runtime"]["sdk_version"])
 # %% [markdown]
 # ## Charge-bounded experiment matrix
 #
-# The first paid job is one question, one L40S GPU, one question, one hour maximum, and no endpoint.
+# The first paid job is one question, one L40S GPU, one hour maximum, and no endpoint.
 
 # %%
 rows = []

@@ -35,3 +35,6 @@ htmlcov/
 infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
+
+# Jupyter temporary checkpoints
+**/.ipynb_checkpoints/
