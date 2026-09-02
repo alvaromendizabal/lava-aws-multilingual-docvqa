@@ -1,0 +1,52 @@
+{
+  "competition_constraints": {
+    "docker_required": true,
+    "maximum_end_to_end_inference_seconds": 7200,
+    "maximum_single_gpu_vram_gib": 40,
+    "open_models_and_data_only": true,
+    "random_seed_required": true
+  },
+  "expected_document_count": 5,
+  "expected_question_count": 16,
+  "judge_specification_boundary": {
+    "checkpoint_revision": "resolve-and-pin-before-first-model-score",
+    "decoding_parameters": {
+      "do_sample": false,
+      "temperature": 0.0
+    },
+    "exact_organizer_prompt_publicly_available": false,
+    "model_id": "google/gemma-3-1b-it",
+    "status": "official-structure-compatible-not-server-identical"
+  },
+  "official_metric_spec": {
+    "grounding": "exact_set_f1",
+    "ordered_list": "semantic_lcs_divided_by_max_length",
+    "overall": "mean_question_level_average_of_answer_and_grounding",
+    "scalar": "semantic_equivalence_binary",
+    "unordered_list": "maximum_one_to_one_semantic_matching_f1"
+  },
+  "protocol_name": "lava-nested-document-isolated-evaluation-v1",
+  "random_seed": 20260902,
+  "retrieval_metric_spec": {
+    "budgets": [1, 2, 3, 5, 10],
+    "metrics": [
+      "recall_at_k",
+      "all_evidence_at_k",
+      "reciprocal_rank_at_k",
+      "average_precision_at_k",
+      "ndcg_at_k"
+    ]
+  },
+  "selection_policy": {
+    "architecture_development": "external_public_data_first",
+    "document_macro_required": true,
+    "inner_split_strategy": "leave_one_document_out_within_outer_training",
+    "minimum_outer_documents_improved_for_promotion": 3,
+    "outer_split_strategy": "leave_one_document_out",
+    "primary_local_metric": "question_micro_overall",
+    "prohibit_lava_test_tuning": true,
+    "report_all_outer_document_scores": true,
+    "require_latency_memory_and_cost_reporting": true,
+    "secondary_local_metric": "document_macro_overall"
+  }
+}

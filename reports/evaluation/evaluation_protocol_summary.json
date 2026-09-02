@@ -1,0 +1,155 @@
+{
+  "answer_format_counts": {
+    "number": 4,
+    "ordered_list": 1,
+    "string": 7,
+    "unordered_list": 4
+  },
+  "document_count": 5,
+  "evidence_cardinality_counts": {
+    "1": 8,
+    "2": 6,
+    "3": 1,
+    "4": 1
+  },
+  "folds": [
+    {
+      "fold_id": "outer-01",
+      "inner_fold_count": 4,
+      "training_document_count": 4,
+      "training_question_count": 12,
+      "validation_answer_format_counts": {
+        "string": 4
+      },
+      "validation_document_alias": "doc-01",
+      "validation_evidence_cardinality_counts": {
+        "1": 2,
+        "2": 2
+      },
+      "validation_language_counts": {
+        "ja": 4
+      },
+      "validation_question_count": 4
+    },
+    {
+      "fold_id": "outer-02",
+      "inner_fold_count": 4,
+      "training_document_count": 4,
+      "training_question_count": 12,
+      "validation_answer_format_counts": {
+        "number": 2,
+        "string": 2
+      },
+      "validation_document_alias": "doc-02",
+      "validation_evidence_cardinality_counts": {
+        "1": 2,
+        "2": 1,
+        "3": 1
+      },
+      "validation_language_counts": {
+        "ja": 4
+      },
+      "validation_question_count": 4
+    },
+    {
+      "fold_id": "outer-03",
+      "inner_fold_count": 4,
+      "training_document_count": 4,
+      "training_question_count": 13,
+      "validation_answer_format_counts": {
+        "number": 2,
+        "unordered_list": 1
+      },
+      "validation_document_alias": "doc-03",
+      "validation_evidence_cardinality_counts": {
+        "1": 2,
+        "2": 1
+      },
+      "validation_language_counts": {
+        "ja": 3
+      },
+      "validation_question_count": 3
+    },
+    {
+      "fold_id": "outer-04",
+      "inner_fold_count": 4,
+      "training_document_count": 4,
+      "training_question_count": 12,
+      "validation_answer_format_counts": {
+        "ordered_list": 1,
+        "string": 1,
+        "unordered_list": 2
+      },
+      "validation_document_alias": "doc-04",
+      "validation_evidence_cardinality_counts": {
+        "1": 2,
+        "2": 2
+      },
+      "validation_language_counts": {
+        "ja": 4
+      },
+      "validation_question_count": 4
+    },
+    {
+      "fold_id": "outer-05",
+      "inner_fold_count": 4,
+      "training_document_count": 4,
+      "training_question_count": 15,
+      "validation_answer_format_counts": {
+        "unordered_list": 1
+      },
+      "validation_document_alias": "doc-05",
+      "validation_evidence_cardinality_counts": {
+        "4": 1
+      },
+      "validation_language_counts": {
+        "vi": 1
+      },
+      "validation_question_count": 1
+    }
+  ],
+  "generated_at_utc": "2026-09-02T17:07:17.130088+00:00",
+  "inner_fold_count_total": 20,
+  "judge_specification_boundary": {
+    "checkpoint_revision": "resolve-and-pin-before-first-model-score",
+    "decoding_parameters": {
+      "do_sample": false,
+      "temperature": 0.0
+    },
+    "exact_organizer_prompt_publicly_available": false,
+    "model_id": "google/gemma-3-1b-it",
+    "status": "official-structure-compatible-not-server-identical"
+  },
+  "language_counts": {
+    "ja": 15,
+    "vi": 1
+  },
+  "official_metric_spec": {
+    "grounding": "exact_set_f1",
+    "ordered_list": "semantic_lcs_divided_by_max_length",
+    "overall": "mean_question_level_average_of_answer_and_grounding",
+    "scalar": "semantic_equivalence_binary",
+    "unordered_list": "maximum_one_to_one_semantic_matching_f1"
+  },
+  "outer_fold_count": 5,
+  "privacy_boundary": "Questions, answers, actual document IDs, and per-question fold assignments are stored only under ignored local artifacts and private S3 paths.",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "question_count": 16,
+  "retrieval_metric_spec": {
+    "budgets": [
+      1,
+      2,
+      3,
+      5,
+      10
+    ],
+    "metrics": [
+      "recall_at_k",
+      "all_evidence_at_k",
+      "reciprocal_rank_at_k",
+      "average_precision_at_k",
+      "ndcg_at_k"
+    ]
+  },
+  "source_git_commit_sha": "b053f4c3aba56ddeb8946e2717e606ccc60f72f2"
+}
