@@ -1,0 +1,129 @@
+version: 3
+protocol_lock_id: "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61"
+asset_builder:
+  version: "oracle-assets-v3"
+  active_render_profile: "standard"
+  render_profiles:
+    standard:
+      dpi: 180
+      max_long_edge: 2048
+    high_resolution:
+      dpi: 240
+      max_long_edge: 3072
+  image_format: "png"
+  native_text_max_chars_per_page: 16000
+  include_word_boxes: true
+  include_text_blocks: true
+  s3_prefix: "processed/oracle-reader/v3"
+benchmark:
+  private_manifest_s3_key: "processed/oracle-reader/v3/manifests/latest/oracle_examples.jsonl"
+  results_prefix: "experiments/oracle-reader/v3"
+  public_reports_prefix: "reports/oracle-reader/v3"
+  smoke_limit: 1
+  max_evidence_pages: 4
+  score_boundary: "normalized-exact diagnostic only; pinned semantic judge is a separate gate"
+training_runtime:
+  sdk_version: "3.21.0"
+  image_uri: "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:2.10.0-gpu-py313-cu130-ubuntu22.04-sagemaker-v2.0"
+  image_digest: "sha256:26e979d1e21417c3a58d79478e6db1804d4fad512048a7a8cdf1816ab971e7c0"
+  instance_count: 1
+  volume_size_gb: 100
+  max_runtime_seconds: 3600
+  max_wait_seconds: 3600
+  managed_spot_for_smoke: false
+  no_endpoint: true
+models:
+  qwen35_4b_fused_direct:
+    model_id: "Qwen/Qwen3.5-4B"
+    expected_license: "apache-2.0"
+    expected_pipeline_tag: "image-text-to-text"
+    parameters_billion: 4.0
+    instance_type: "ml.g6e.2xlarge"
+    input_mode: "fused"
+    dtype: "bfloat16"
+    attention_implementation: "sdpa"
+    use_kernels: false
+    processor_min_pixels: 200704
+    processor_max_pixels: 1605632
+    generation:
+      mode: "direct"
+      max_new_tokens: 256
+      do_sample: false
+      repetition_penalty: 1.0
+      seed: 20260902
+  qwen35_4b_image_direct:
+    model_id: "Qwen/Qwen3.5-4B"
+    expected_license: "apache-2.0"
+    expected_pipeline_tag: "image-text-to-text"
+    parameters_billion: 4.0
+    instance_type: "ml.g6e.2xlarge"
+    input_mode: "image_only"
+    dtype: "bfloat16"
+    attention_implementation: "sdpa"
+    use_kernels: false
+    processor_min_pixels: 200704
+    processor_max_pixels: 1605632
+    generation:
+      mode: "direct"
+      max_new_tokens: 256
+      do_sample: false
+      repetition_penalty: 1.0
+      seed: 20260902
+  qwen35_4b_text_direct:
+    model_id: "Qwen/Qwen3.5-4B"
+    expected_license: "apache-2.0"
+    expected_pipeline_tag: "image-text-to-text"
+    parameters_billion: 4.0
+    instance_type: "ml.g6e.2xlarge"
+    input_mode: "text_only"
+    dtype: "bfloat16"
+    attention_implementation: "sdpa"
+    use_kernels: false
+    processor_min_pixels: 200704
+    processor_max_pixels: 1605632
+    generation:
+      mode: "direct"
+      max_new_tokens: 256
+      do_sample: false
+      repetition_penalty: 1.0
+      seed: 20260902
+  qwen35_4b_fused_thinking:
+    model_id: "Qwen/Qwen3.5-4B"
+    expected_license: "apache-2.0"
+    expected_pipeline_tag: "image-text-to-text"
+    parameters_billion: 4.0
+    instance_type: "ml.g6e.2xlarge"
+    input_mode: "fused"
+    dtype: "bfloat16"
+    attention_implementation: "sdpa"
+    use_kernels: false
+    processor_min_pixels: 200704
+    processor_max_pixels: 1605632
+    generation:
+      mode: "thinking"
+      max_new_tokens: 1024
+      do_sample: true
+      temperature: 1.0
+      top_p: 0.95
+      top_k: 20
+      min_p: 0.0
+      repetition_penalty: 1.0
+      seed: 20260902
+  qwen35_9b_fused_direct:
+    model_id: "Qwen/Qwen3.5-9B"
+    expected_license: "apache-2.0"
+    expected_pipeline_tag: "image-text-to-text"
+    parameters_billion: 9.0
+    instance_type: "ml.g6e.2xlarge"
+    input_mode: "fused"
+    dtype: "bfloat16"
+    attention_implementation: "sdpa"
+    use_kernels: false
+    processor_min_pixels: 200704
+    processor_max_pixels: 1605632
+    generation:
+      mode: "direct"
+      max_new_tokens: 256
+      do_sample: false
+      repetition_penalty: 1.0
+      seed: 20260902

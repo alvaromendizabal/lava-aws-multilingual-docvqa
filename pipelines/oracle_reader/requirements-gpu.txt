@@ -1,0 +1,8 @@
+transformers==5.16.1
+accelerate==1.14.0
+pydantic==2.13.5
+PyYAML==6.0.3
+boto3==1.43.62
+PyMuPDF==1.28.2
+Pillow==12.3.0
+requests==2.34.2

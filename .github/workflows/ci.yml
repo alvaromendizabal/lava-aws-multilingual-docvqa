@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Synchronize locked environment
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check src tests scripts pipelines
+
+      - name: Test
+        run: uv run pytest -q
+
+      - name: Compile
+        run: uv run python -m compileall -q src tests scripts pipelines
+
+      - name: Validate notebooks are output-free
+        run: uv run pytest -q tests/unit/test_notebook_hygiene.py

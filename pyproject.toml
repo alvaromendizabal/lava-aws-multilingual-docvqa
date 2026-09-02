@@ -4,14 +4,14 @@ version = "0.1.0"
 authors = [
     { name = "Alvaro Mendizabal", email = "alv.mendizabal@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "boto3>=1.43.86",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "pymupdf>=1.26,<2",
     "pyyaml>=6.0.3",
-    "rich>=15.0.0",
+    "rich>=13.0.0,<15.0.0",
     "typer>=0.27.2",
 ]
 
@@ -28,9 +28,16 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
+    "ipykernel==7.3.0",
+    "jupytext==1.19.5",
     "kaggle==2.2.4",
     "mypy>=2.3.1",
+    "nbclient==0.11.0",
+    "nbqa==1.9.1",
+    "nbstripout==0.9.1",
+    "pandas==2.3.3",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.16.5",
+    "sagemaker[train]==3.21.0",
 ]
