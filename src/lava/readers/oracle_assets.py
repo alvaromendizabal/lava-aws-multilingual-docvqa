@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import boto3
-import fitz
+import pymupdf as fitz
 from botocore.exceptions import ClientError
 from PIL import Image
 
