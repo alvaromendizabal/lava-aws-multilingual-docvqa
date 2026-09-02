@@ -1,0 +1,85 @@
+{
+  "code_hashes": {
+    "src/lava/evaluation/judges.py": "0073d078d316bf3ec8ab3acdfb7bf9d7916b52c23b10529ac2b9de10bc3a81d4",
+    "src/lava/evaluation/matching.py": "72b15abaaa0e0ead2b53748c2a8440aa9c4c7e68cf9dba6a0c460c009b7f22c5",
+    "src/lava/evaluation/metric.py": "030e8250a4fc622d15733e70e38243eb55c3b3a65422f3ee73ccf25a925b17dd",
+    "src/lava/evaluation/normalization.py": "3a510ce9bb32920ef9c724126c1288d78a92751b40b18c6190c197b7781655e5",
+    "src/lava/evaluation/protocol.py": "9bacb8fb412bd9441313657b491a581b15dcf195e4eeaa7d5ab91591b364ae6b",
+    "src/lava/evaluation/retrieval.py": "819234732b5d57dc5f4a9f47799943ebb80f3889e8650e848c7ab05a4d225cdd",
+    "src/lava/evaluation/schemas.py": "89b07ffd137475f92753ad1fc66fd1652c1e2fd57ecaccf29ca219449eb7173a",
+    "src/lava/evaluation/splits.py": "8ac70c71a955867d24d20f7cb8478fb6851f0a9cfed822f35c2653b88f8ac1e1",
+    "src/lava/evaluation/statistics.py": "458df7c4c3b2faaa1a894252d28fe93a7235aa6b0fc4866e84a57a32d2a50d11"
+  },
+  "competition": "lava-challenge-2026",
+  "competition_constraints": {
+    "docker_required": true,
+    "maximum_end_to_end_inference_seconds": 7200,
+    "maximum_single_gpu_vram_gib": 40,
+    "open_models_and_data_only": true,
+    "random_seed_required": true
+  },
+  "config_sha256": "e553ec366975ba4ad3670018100a527433abef1ad3a2e0a1660bfb3f1f67d833",
+  "expected_document_count": 5,
+  "expected_question_count": 16,
+  "inner_fold_count_per_outer_fold": 4,
+  "judge_specification_boundary": {
+    "checkpoint_revision": "resolve-and-pin-before-first-model-score",
+    "decoding_parameters": {
+      "do_sample": false,
+      "temperature": 0.0
+    },
+    "exact_organizer_prompt_publicly_available": false,
+    "model_id": "google/gemma-3-1b-it",
+    "status": "official-structure-compatible-not-server-identical"
+  },
+  "official_metric_spec": {
+    "grounding": "exact_set_f1",
+    "ordered_list": "semantic_lcs_divided_by_max_length",
+    "overall": "mean_question_level_average_of_answer_and_grounding",
+    "scalar": "semantic_equivalence_binary",
+    "unordered_list": "maximum_one_to_one_semantic_matching_f1"
+  },
+  "outer_fold_count": 5,
+  "private_fold_manifest_sha256": "1247d69d40826bc7f4ef8dd9db1ef266ae01a59967c03cd2d5a2a7f17568c5e5",
+  "private_reference_sha256": "d30e3510565f023552e7644959ec1a1da75db25d86d6bbe43eb442abff90c97b",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "protocol_name": "lava-nested-document-isolated-evaluation-v1",
+  "random_seed": 20260902,
+  "retrieval_metric_spec": {
+    "budgets": [
+      1,
+      2,
+      3,
+      5,
+      10
+    ],
+    "metrics": [
+      "recall_at_k",
+      "all_evidence_at_k",
+      "reciprocal_rank_at_k",
+      "average_precision_at_k",
+      "ndcg_at_k"
+    ]
+  },
+  "schema_version": 1,
+  "selection_policy": {
+    "architecture_development": "external_public_data_first",
+    "document_macro_required": true,
+    "inner_split_strategy": "leave_one_document_out_within_outer_training",
+    "minimum_outer_documents_improved_for_promotion": 3,
+    "outer_split_strategy": "leave_one_document_out",
+    "primary_local_metric": "question_micro_overall",
+    "prohibit_lava_test_tuning": true,
+    "report_all_outer_document_scores": true,
+    "require_latency_memory_and_cost_reporting": true,
+    "secondary_local_metric": "document_macro_overall"
+  },
+  "source_git_commit_sha": "b053f4c3aba56ddeb8946e2717e606ccc60f72f2",
+  "source_hashes": {
+    "data_audit_file_sha256": "b1b6ebb094db100cdcfabe26ac6f570933519bec1f444b42331a31773f9896c1",
+    "data_audit_source_sha256": "b1df4e337d28e75bf4acfd00a23851bd9a81e8cd742284351b8d27ed52a48a35",
+    "reports/raw_data_manifest_summary.json": "4bc235bf958eb5c5f15b9aef3f1dcc95c3bb54d87fa2b9a3ae7a9f58d7263827",
+    "train_csv_sha256": "be49a916acba2bb1bd5101095af6518b6c873198d3728a20cc7c5237bd2be52c"
+  },
+  "split_strategy": "nested-leave-one-document-out"
+}
