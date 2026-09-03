@@ -1,0 +1,27 @@
+schema_version: 1
+privacy:
+  redact_aws_account_ids: true
+  redact_bucket_names: true
+  suppress_raw_questions: true
+  suppress_raw_answers: true
+  cloudwatch_mode: structured_events_only
+monitoring:
+  poll_seconds: 15
+  heartbeat_seconds: 30
+  max_monitor_seconds: 3900
+  stop_job_on_monitor_timeout: true
+first_gpu_smoke:
+  model_key: qwen35_4b_fused_direct
+  limit: 1
+  instance_count: 1
+  instance_type: ml.g6e.2xlarge
+  max_runtime_seconds: 3600
+  managed_spot: false
+  creates_endpoint: false
+cost_guard:
+  operator_hourly_usd_ceiling: 10.0
+  contingency_factor: 1.25
+  maximum_total_usd: 12.5
+state:
+  latest_path: artifacts/oracle_reader/runtime/latest.json
+  per_run_directory: artifacts/oracle_reader/runtime

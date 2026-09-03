@@ -19,89 +19,116 @@
 # # 01 — Oracle-evidence multimodal reader benchmark
 #
 # This notebook compares reader architectures while page retrieval is held perfect.
-# Public outputs contain aggregate metadata only. Private questions, answers,
-# document IDs, page images, and extracted text remain in S3.
+# Public displays contain sanitized aggregate metadata only. Private questions,
+# answers, document IDs, page images, extracted text, bucket names, and S3 version
+# identifiers remain outside the committed notebook.
 
 # %%
 from __future__ import annotations
 
 import json
 import os
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
+from IPython.display import display
 
+from lava.notebook_support import find_repo_root, load_project_environment, public_metadata
+from lava.observability import EventLogger
 from lava.readers.sagemaker import build_job_plan
 
-ROOT = Path.cwd()
-if ROOT.name == "notebooks":
-    ROOT = ROOT.parent
+ROOT = find_repo_root()
 os.chdir(ROOT)
-load_dotenv(ROOT / ".env")
+environment = load_project_environment(ROOT)
+RUN_ID = f"notebook-01-{datetime.now(tz=UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:6]}"
+LOGGER = EventLogger.to_stdout(
+    run_id=RUN_ID,
+    component="notebook.01_oracle_reader",
+    jsonl_path=ROOT / "artifacts" / "notebook_runs" / f"{RUN_ID}.jsonl",
+)
+
+# %% [markdown]
+# ## Frozen private assets and immutable model revisions
 
 # %%
-asset_summary = json.loads(Path("reports/oracle_reader/oracle_assets_summary.json").read_text())
-model_lock = json.loads(Path("configs/oracle_reader_models.lock.json").read_text())
-print(json.dumps(asset_summary, indent=2, sort_keys=True))
+with LOGGER.stage("load_locks", heartbeat_seconds=15.0):
+    asset_summary = json.loads(Path("reports/oracle_reader/oracle_assets_summary.json").read_text())
+    model_lock = json.loads(Path("configs/oracle_reader_models.lock.json").read_text())
+    public_asset_summary = public_metadata(asset_summary)
+    LOGGER.emit(
+        "oracle_assets.loaded",
+        question_count=asset_summary["question_count"],
+        document_count=asset_summary["document_count"],
+        unique_evidence_page_count=asset_summary["unique_evidence_page_count"],
+        protocol_lock_id=asset_summary["protocol_lock_id"],
+    )
+    print(json.dumps(public_asset_summary, indent=2, sort_keys=True))
 
 # %%
 models = pd.DataFrame(model_lock["resolved_models"])
-models[
-    [
-        "model_key",
-        "model_id",
-        "revision",
-        "parameters_billion",
-        "instance_type",
-        "input_mode",
-        "attention_implementation",
+display(
+    models[
+        [
+            "model_key",
+            "model_id",
+            "revision",
+            "parameters_billion",
+            "instance_type",
+            "input_mode",
+            "attention_implementation",
+        ]
     ]
-]
+)
 
 # %% [markdown]
-# ## Build the first smoke plan
+# ## Build the first one-question smoke plan
 #
-# This cell is pure planning. It does not construct a trainer or create an AWS job.
+# This cell is pure planning. It does not create a trainer, endpoint, or AWS job.
 
 # %%
-plan = build_job_plan(
-    repo_root=ROOT,
-    config_path=Path("configs/oracle_reader_benchmark.yaml"),
-    model_lock_path=Path("configs/oracle_reader_models.lock.json"),
-    model_key="qwen35_4b_fused_direct",
-    bucket=os.environ["S3_BUCKET"],
-    limit=1,
-)
-print(json.dumps(plan.model_dump(mode="json"), indent=2, sort_keys=True))
+with LOGGER.stage("build_smoke_plan", heartbeat_seconds=15.0):
+    plan = build_job_plan(
+        repo_root=ROOT,
+        config_path=Path("configs/oracle_reader_benchmark.yaml"),
+        model_lock_path=Path("configs/oracle_reader_models.lock.json"),
+        model_key="qwen35_4b_fused_direct",
+        bucket=environment["S3_BUCKET"],
+        limit=1,
+    )
+    public_plan = public_metadata(plan.model_dump(mode="json"))
+    LOGGER.emit("smoke_plan.built", plan=public_plan)
+    print(json.dumps(public_plan, indent=2, sort_keys=True))
 
 # %% [markdown]
 # ## Paid execution gate
 #
-# Commit the code and immutable locks before running this terminal command:
+# Preview the fully validated plan first:
 #
 # ```bash
-# uv run python scripts/launch_oracle_reader.py \
-#   --model-key qwen35_4b_fused_direct \
-#   --limit 1 \
+# uv run python scripts/run_oracle_reader_smoke.py
+# ```
+#
+# Only after the preview and quota checks pass, submit exactly one question:
+#
+# ```bash
+# uv run python scripts/run_oracle_reader_smoke.py \
 #   --submit \
 #   --wait \
 #   --acknowledge-charges YES
 # ```
 #
-# Then synchronize the checksum-verified public result:
-#
-# ```bash
-# uv run python scripts/sync_oracle_reader_results.py
-# ```
+# The wrapper emits UTC timestamps, status changes, 30-second heartbeats, total
+# elapsed time, conservative cost bounds, and a reconnectable local state file.
 
 # %% [markdown]
 # ## Controlled reader ladder
 #
-# 1. Fused page image plus native text, direct deterministic mode.
+# 1. Fused page image plus native text, deterministic direct decoding.
 # 2. Image-only and text-only controls at the same immutable model revision.
-# 3. Thinking-mode reader with bounded seeded sampling.
-# 4. Larger 9B challenger after memory and runtime measurements.
+# 3. Bounded thinking-mode reader.
+# 4. Larger 9B challenger after memory and latency profiling.
 # 5. Render-resolution and answer-blind region-crop ablations.
 # 6. Pinned semantic judge and repeated-run stability.
 #

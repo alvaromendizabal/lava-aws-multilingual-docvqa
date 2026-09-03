@@ -38,3 +38,7 @@ infra/terraform/*.tfstate.*
 
 # Jupyter temporary checkpoints
 **/.ipynb_checkpoints/
+
+.ipynb_checkpoints/
+artifacts/notebook_runs/
+artifacts/oracle_reader/runtime/
