@@ -303,6 +303,7 @@ def main() -> int:
             sagemaker_client=sagemaker_client,
             s3_client=s3_client,
             job_name=job_name,
+            expected_output_s3_prefix=str(plan["output_s3_prefix"]),
         )
         logger.emit("smoke.artifact.verified", artifact_gate=artifact_gate.as_dict())
         logger.emit("smoke.submit.complete", **snapshot.as_dict())
