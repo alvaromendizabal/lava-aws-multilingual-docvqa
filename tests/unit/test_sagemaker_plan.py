@@ -111,6 +111,167 @@ def test_job_plan_is_bounded_endpoint_free_and_preview_is_pure(tmp_path: Path) -
     assert result["charged_resources_created"] is False
 
 
+def test_on_demand_quota_never_selects_spot_quota(monkeypatch) -> None:
+    """Spot appearing first must never satisfy an on-demand plan."""
+    import lava.readers.sagemaker as module
+
+    class QuotaClient:
+        def list_service_quotas(self, **_: object) -> dict[str, object]:
+            return {
+                "Quotas": [
+                    {
+                        "QuotaName": "ml.g5.2xlarge for spot training job usage",
+                        "QuotaCode": "L-CAEE7DB7",
+                        "Value": 0.0,
+                        "Adjustable": True,
+                    },
+                    {
+                        "QuotaName": "ml.g5.2xlarge for training job usage",
+                        "QuotaCode": "L-2D6DEB3C",
+                        "Value": 1.0,
+                        "Adjustable": True,
+                    },
+                ]
+            }
+
+    monkeypatch.setattr(
+        module.boto3,
+        "client",
+        lambda *args, **kwargs: QuotaClient(),
+    )
+
+    result = module.find_training_quota(
+        region="us-west-2",
+        instance_type="ml.g5.2xlarge",
+        spot=False,
+    )
+
+    assert result["found"] is True
+    assert result["status"] == "verified"
+    assert result["spot"] is False
+    assert result["value"] == 1.0
+    assert result["quota_name"] == "ml.g5.2xlarge for training job usage"
+    assert result["quota_code"] == "L-2D6DEB3C"
+
+
+def test_spot_quota_never_selects_on_demand_quota(monkeypatch) -> None:
+    """On-demand appearing first must never satisfy a Spot plan."""
+    import lava.readers.sagemaker as module
+
+    class QuotaClient:
+        def list_service_quotas(self, **_: object) -> dict[str, object]:
+            return {
+                "Quotas": [
+                    {
+                        "QuotaName": "ml.g5.2xlarge for training job usage",
+                        "QuotaCode": "L-2D6DEB3C",
+                        "Value": 1.0,
+                        "Adjustable": True,
+                    },
+                    {
+                        "QuotaName": "ml.g5.2xlarge for spot training job usage",
+                        "QuotaCode": "L-CAEE7DB7",
+                        "Value": 0.0,
+                        "Adjustable": True,
+                    },
+                ]
+            }
+
+    monkeypatch.setattr(
+        module.boto3,
+        "client",
+        lambda *args, **kwargs: QuotaClient(),
+    )
+
+    result = module.find_training_quota(
+        region="us-west-2",
+        instance_type="ml.g5.2xlarge",
+        spot=True,
+    )
+
+    assert result["found"] is True
+    assert result["status"] == "verified"
+    assert result["spot"] is True
+    assert result["value"] == 0.0
+    assert result["quota_name"] == "ml.g5.2xlarge for spot training job usage"
+    assert result["quota_code"] == "L-CAEE7DB7"
+
+
+def test_on_demand_quota_does_not_fallback_to_spot(monkeypatch) -> None:
+    """Missing on-demand quota must fail rather than fall back to Spot."""
+    import lava.readers.sagemaker as module
+
+    class QuotaClient:
+        def list_service_quotas(self, **_: object) -> dict[str, object]:
+            return {
+                "Quotas": [
+                    {
+                        "QuotaName": "ml.g5.2xlarge for spot training job usage",
+                        "QuotaCode": "L-CAEE7DB7",
+                        "Value": 1.0,
+                        "Adjustable": True,
+                    }
+                ]
+            }
+
+    monkeypatch.setattr(
+        module.boto3,
+        "client",
+        lambda *args, **kwargs: QuotaClient(),
+    )
+
+    result = module.find_training_quota(
+        region="us-west-2",
+        instance_type="ml.g5.2xlarge",
+        spot=False,
+    )
+
+    assert result["found"] is False
+    assert result["status"] == "not_found"
+    assert result["quota_code"] is None
+
+
+def test_duplicate_exact_quota_matches_fail_closed(monkeypatch) -> None:
+    """Duplicate exact quota rows must be treated as ambiguous."""
+    import lava.readers.sagemaker as module
+
+    class QuotaClient:
+        def list_service_quotas(self, **_: object) -> dict[str, object]:
+            return {
+                "Quotas": [
+                    {
+                        "QuotaName": "ml.g5.2xlarge for training job usage",
+                        "QuotaCode": "L-2D6DEB3C",
+                        "Value": 1.0,
+                        "Adjustable": True,
+                    },
+                    {
+                        "QuotaName": "ml.g5.2xlarge for training job usage",
+                        "QuotaCode": "DUPLICATE",
+                        "Value": 1.0,
+                        "Adjustable": True,
+                    },
+                ]
+            }
+
+    monkeypatch.setattr(
+        module.boto3,
+        "client",
+        lambda *args, **kwargs: QuotaClient(),
+    )
+
+    result = module.find_training_quota(
+        region="us-west-2",
+        instance_type="ml.g5.2xlarge",
+        spot=False,
+    )
+
+    assert result["found"] is False
+    assert result["status"] == "ambiguous"
+    assert result["match_count"] == 2
+    assert result["quota_code"] is None
+
+
 def test_quota_permission_error_is_reported_without_creating_resources(monkeypatch) -> None:
     from botocore.exceptions import ClientError
 

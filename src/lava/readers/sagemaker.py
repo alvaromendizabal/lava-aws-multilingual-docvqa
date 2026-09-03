@@ -91,36 +91,44 @@ def validate_sagemaker_sdk_contract(expected_version: str) -> dict[str, Any]:
     }
 
 
-def find_training_quota(*, region: str, instance_type: str, spot: bool) -> dict[str, Any]:
-    """Locate the account quota for the selected SageMaker training instance."""
+def find_training_quota(
+    *,
+    region: str,
+    instance_type: str,
+    spot: bool,
+) -> dict[str, Any]:
+    """Locate exactly one quota for the selected SageMaker training billing mode."""
     client = boto3.client("service-quotas", region_name=region)
-    target = instance_type.removeprefix("ml.").casefold()
-    required_words = {target, "training", "job"}
-    if spot:
-        required_words.add("spot")
+
+    suffix = "spot training job usage" if spot else "training job usage"
+    expected_name = f"{instance_type} for {suffix}"
+    expected_normalized = " ".join(re.findall(r"[a-z0-9.]+", expected_name.casefold()))
+
     token: str | None = None
     matches: list[dict[str, Any]] = []
+
     try:
         while True:
-            kwargs: dict[str, Any] = {"ServiceCode": "sagemaker", "MaxResults": 100}
+            kwargs: dict[str, Any] = {
+                "ServiceCode": "sagemaker",
+                "MaxResults": 100,
+            }
             if token:
                 kwargs["NextToken"] = token
+
             response = client.list_service_quotas(**kwargs)
+
             for quota in response.get("Quotas", []):
-                name = str(quota.get("QuotaName", "")).casefold()
-                normalized = set(re.findall(r"[a-z0-9.]+", name))
-                exact_tokens = required_words.issubset(normalized)
-                fuzzy_match = (
-                    target in name
-                    and "training" in name
-                    and "job" in name
-                    and (not spot or "spot" in name)
-                )
-                if exact_tokens or fuzzy_match:
+                quota_name = str(quota.get("QuotaName", ""))
+                normalized_name = " ".join(re.findall(r"[a-z0-9.]+", quota_name.casefold()))
+
+                if normalized_name == expected_normalized:
                     matches.append(quota)
+
             token = response.get("NextToken")
             if not token:
                 break
+
     except ClientError as error:
         return {
             "found": False,
@@ -132,6 +140,7 @@ def find_training_quota(*, region: str, instance_type: str, spot: bool) -> dict[
             "quota_name": None,
             "quota_code": None,
         }
+
     if not matches:
         return {
             "found": False,
@@ -143,13 +152,22 @@ def find_training_quota(*, region: str, instance_type: str, spot: bool) -> dict[
             "quota_name": None,
             "quota_code": None,
         }
-    matches.sort(
-        key=lambda row: (
-            "spot" not in str(row.get("QuotaName", "")).casefold(),
-            str(row.get("QuotaName", "")),
-        )
-    )
+
+    if len(matches) != 1:
+        return {
+            "found": False,
+            "status": "ambiguous",
+            "error_code": None,
+            "instance_type": instance_type,
+            "spot": spot,
+            "value": None,
+            "quota_name": None,
+            "quota_code": None,
+            "match_count": len(matches),
+        }
+
     quota = matches[0]
+
     return {
         "found": True,
         "status": "verified",
