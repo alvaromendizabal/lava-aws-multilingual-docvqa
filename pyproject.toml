@@ -28,6 +28,7 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
+    "boto3-stubs[boto3,s3,sagemaker,service-quotas,sts]==1.43.86",
     "ipykernel==7.3.0",
     "jupytext==1.19.5",
     "kaggle==2.2.4",
@@ -40,4 +41,9 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.16.5",
     "sagemaker[train]==3.21.0",
+    "types-pyyaml==6.0.12.20260815",
 ]
+
+[[tool.mypy.overrides]]
+module = ["transformers", "transformers.*"]
+ignore_missing_imports = true

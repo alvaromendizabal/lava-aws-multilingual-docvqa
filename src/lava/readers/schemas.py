@@ -28,6 +28,21 @@ class ReaderInputMode(StrEnum):
     FUSED = "fused"
 
 
+class ReaderFamily(StrEnum):
+    """Implementation family used to execute one resolved reader."""
+
+    QWEN3_5 = "qwen3_5"
+    QWEN3_VL = "qwen3_vl"
+    INTERNVL = "internvl"
+
+
+class DevicePlacement(StrEnum):
+    """Explicit CUDA placement policy for one SageMaker node."""
+
+    SINGLE = "single"
+    AUTO_SHARDED = "auto_sharded"
+
+
 class DecodingMode(StrEnum):
     """Qwen response mode."""
 
@@ -74,6 +89,10 @@ class ModelCandidate(FrozenModel):
     expected_license: str = Field(min_length=1)
     expected_pipeline_tag: str = Field(min_length=1)
     parameters_billion: float = Field(gt=0.0)
+    reader_family: ReaderFamily = ReaderFamily.QWEN3_5
+    device_placement: DevicePlacement = DevicePlacement.SINGLE
+    min_cuda_devices: int = Field(default=1, ge=1, le=8)
+    trust_remote_code: bool = False
     instance_type: str = Field(pattern=r"^ml\.[a-z0-9.]+$")
     input_mode: ReaderInputMode
     dtype: str = Field(pattern=r"^(bfloat16|float16)$")
@@ -85,9 +104,16 @@ class ModelCandidate(FrozenModel):
 
     @model_validator(mode="after")
     def validate_pixels(self) -> ModelCandidate:
-        """Require a valid visual-token budget."""
+        """Require valid visual and execution-resource contracts."""
         if self.processor_max_pixels < self.processor_min_pixels:
             raise ValueError("processor_max_pixels must be at least processor_min_pixels")
+
+        if self.device_placement is DevicePlacement.SINGLE and self.min_cuda_devices != 1:
+            raise ValueError("Single-device placement requires min_cuda_devices=1")
+
+        if self.device_placement is DevicePlacement.AUTO_SHARDED and self.min_cuda_devices < 2:
+            raise ValueError("Auto-sharded placement requires at least two CUDA devices")
+
         return self
 
 

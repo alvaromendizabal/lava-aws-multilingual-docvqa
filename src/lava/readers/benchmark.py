@@ -20,7 +20,7 @@ from lava.evaluation.metric import score_question, set_f1
 from lava.evaluation.schemas import PredictionRecord, ReferenceRecord
 from lava.readers.oracle_assets import load_oracle_examples
 from lava.readers.prompts import PROMPT_VERSION
-from lava.readers.qwen35 import Qwen35Reader
+from lava.readers.reader_factory import build_reader
 from lava.readers.schemas import BenchmarkRecord, ResolvedModel
 
 
@@ -146,7 +146,7 @@ def run_oracle_benchmark(
         raise ValueError("Oracle manifest contained no examples")
     if any(example.protocol_lock_id != protocol_lock_id for example in examples):
         raise ValueError("Oracle examples do not match the frozen evaluation protocol")
-    reader = Qwen35Reader(model_spec, region=region)
+    reader = build_reader(model_spec, region=region)
     judge = NormalizedExactJudge()
     git_sha = os.environ.get("LAVA_GIT_COMMIT_SHA") or _git_sha()
     records: list[BenchmarkRecord] = []

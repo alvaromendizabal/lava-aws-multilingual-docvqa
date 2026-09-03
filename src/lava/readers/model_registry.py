@@ -14,8 +14,10 @@ import yaml
 
 from lava.readers.schemas import (
     DecodingMode,
+    DevicePlacement,
     GenerationSpec,
     ModelCandidate,
+    ReaderFamily,
     ReaderInputMode,
     ResolvedModel,
 )
@@ -49,6 +51,12 @@ def load_candidates(path: Path) -> tuple[ModelCandidate, ...]:
                 expected_license=values["expected_license"],
                 expected_pipeline_tag=values["expected_pipeline_tag"],
                 parameters_billion=float(values["parameters_billion"]),
+                reader_family=ReaderFamily(values.get("reader_family", ReaderFamily.QWEN3_5.value)),
+                device_placement=DevicePlacement(
+                    values.get("device_placement", DevicePlacement.SINGLE.value)
+                ),
+                min_cuda_devices=int(values.get("min_cuda_devices", 1)),
+                trust_remote_code=bool(values.get("trust_remote_code", False)),
                 instance_type=values["instance_type"],
                 input_mode=ReaderInputMode(values["input_mode"]),
                 dtype=values["dtype"],
