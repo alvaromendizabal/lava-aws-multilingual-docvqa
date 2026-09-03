@@ -22,10 +22,9 @@ from lava.observability import (
     estimate_maximum_cost,
     list_training_job_names,
     validate_first_smoke_plan,
+    verify_training_quota,
 )
 from lava.readers.sagemaker import build_job_plan, validate_sagemaker_sdk_contract
-
-_INSTANCE_QUOTA_FRAGMENT = "ml.g6e.2xlarge"
 
 
 def _load_json(path: Path) -> dict[str, object]:
@@ -34,22 +33,6 @@ def _load_json(path: Path) -> dict[str, object]:
         message = f"Expected a JSON object in {path}."
         raise TypeError(message)
     return payload
-
-
-def _find_training_quota(service_quotas: Any) -> dict[str, object]:
-    paginator = service_quotas.get_paginator("list_service_quotas")
-    for page in paginator.paginate(ServiceCode="sagemaker"):
-        for quota in page.get("Quotas", []):
-            quota_name = quota.get("QuotaName", "")
-            if _INSTANCE_QUOTA_FRAGMENT in quota_name and "training job" in quota_name.lower():
-                return {
-                    "found": True,
-                    "quota_name": quota_name,
-                    "quota_code": quota.get("QuotaCode"),
-                    "value": quota.get("Value"),
-                    "adjustable": quota.get("Adjustable"),
-                }
-    return {"found": False, "quota_name": None, "value": None}
 
 
 def _head_required_s3_objects(*, s3: Any, bucket: str, keys: list[str]) -> None:
@@ -168,13 +151,19 @@ def main() -> int:
             raise RuntimeError(message)
 
         try:
-            quota = _find_training_quota(service_quotas)
+            quota = verify_training_quota(
+                service_quotas=service_quotas,
+                instance_type=str(plan["instance_type"]),
+                instance_count=int(plan["instance_count"]),
+                managed_spot=bool(plan["managed_spot"]),
+            )
         except ClientError as exc:
-            quota = {
-                "found": False,
-                "warning": "Unable to read Service Quotas with the current role.",
-                "error_code": exc.response.get("Error", {}).get("Code"),
-            }
+            error_code = exc.response.get("Error", {}).get("Code")
+            message = (
+                "Unable to verify the exact SageMaker Training quota "
+                f"because Service Quotas returned {error_code!r}."
+            )
+            raise RuntimeError(message) from exc
 
         snapshot: dict[str, object] = {
             **git_snapshot(root),

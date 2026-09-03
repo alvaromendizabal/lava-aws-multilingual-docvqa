@@ -10,7 +10,11 @@ from lava.observability.sagemaker_monitor import (
     discover_new_training_job,
     list_training_job_names,
 )
-from lava.observability.smoke_guard import validate_first_smoke_plan
+from lava.observability.smoke_guard import (
+    required_training_quota_name,
+    validate_first_smoke_plan,
+    verify_training_quota,
+)
 from lava.observability.state import (
     TrainingRunState,
     latest_state_path,
@@ -33,8 +37,10 @@ __all__ = [
     "latest_state_path",
     "list_training_job_names",
     "read_state",
+    "required_training_quota_name",
     "sanitize_value",
     "stable_hash",
     "validate_first_smoke_plan",
+    "verify_training_quota",
     "write_state_atomic",
 ]

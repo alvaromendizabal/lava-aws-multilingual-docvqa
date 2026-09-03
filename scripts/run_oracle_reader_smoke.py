@@ -27,6 +27,7 @@ from lava.observability import (
     latest_state_path,
     list_training_job_names,
     validate_first_smoke_plan,
+    verify_training_quota,
     write_state_atomic,
 )
 from lava.observability.events import format_utc, redact_string
@@ -160,6 +161,16 @@ def main() -> int:
         session = boto3.session.Session(region_name=region)
         sagemaker_client = session.client("sagemaker")
         s3_client = session.client("s3")
+        service_quotas = session.client("service-quotas")
+
+        quota = verify_training_quota(
+            service_quotas=service_quotas,
+            instance_type=str(plan["instance_type"]),
+            instance_count=int(plan["instance_count"]),
+            managed_spot=bool(plan["managed_spot"]),
+        )
+        logger.emit("smoke.quota.verified", quota=quota)
+
         active = sorted(
             name
             for name in list_training_job_names(sagemaker_client=sagemaker_client)
