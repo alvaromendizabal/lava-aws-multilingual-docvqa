@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--poll-seconds", type=float, default=15.0)
     parser.add_argument("--heartbeat-seconds", type=float, default=30.0)
     parser.add_argument("--max-monitor-seconds", type=float, default=3900.0)
+    parser.add_argument("--max-pending-seconds", type=float)
     return parser.parse_args()
 
 
@@ -54,6 +55,7 @@ def main() -> int:
         poll_seconds=args.poll_seconds,
         heartbeat_seconds=args.heartbeat_seconds,
         max_monitor_seconds=args.max_monitor_seconds,
+        max_pending_seconds=args.max_pending_seconds,
     )
     snapshot = monitor.wait(job_name, stop_on_timeout=False)
     logger.emit("monitor.reconnect.complete", **snapshot.as_dict())

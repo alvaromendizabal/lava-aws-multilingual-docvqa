@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from lava.observability.events import EventLogger, sanitize_value
 
@@ -22,6 +22,10 @@ class TrainingJobFailedError(RuntimeError):
 
 class TrainingJobMonitorTimeoutError(TimeoutError):
     """Raised when the local monitor exceeds its bounded wait time."""
+
+
+class TrainingJobPendingTimeoutError(TrainingJobMonitorTimeoutError):
+    """Raised when SageMaker remains Pending beyond the capacity-wait limit."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,6 +149,7 @@ class SageMakerTrainingMonitor:
     poll_seconds: float = 15.0
     heartbeat_seconds: float = 30.0
     max_monitor_seconds: float = 3900.0
+    max_pending_seconds: float | None = None
     sleep: Callable[[float], None] = time.sleep
     monotonic: Callable[[], float] = time.perf_counter
 
@@ -158,6 +163,9 @@ class SageMakerTrainingMonitor:
             if value <= 0:
                 message = f"{name} must be greater than zero."
                 raise ValueError(message)
+        if self.max_pending_seconds is not None and self.max_pending_seconds <= 0:
+            message = "max_pending_seconds must be greater than zero when supplied."
+            raise ValueError(message)
 
     def describe(self, job_name: str) -> TrainingJobSnapshot:
         """Return a sanitized training-job snapshot."""
@@ -169,7 +177,15 @@ class SageMakerTrainingMonitor:
         started = self.monotonic()
         next_heartbeat = started
         last_status: tuple[str, str | None] | None = None
-        self.logger.emit("sagemaker.monitor.started", job_name=job_name)
+        pending_started = started
+        pending_observed = False
+        pending_cleared = False
+        self.logger.emit(
+            "sagemaker.monitor.started",
+            job_name=job_name,
+            max_monitor_seconds=self.max_monitor_seconds,
+            max_pending_seconds=self.max_pending_seconds,
+        )
         while True:
             now = self.monotonic()
             elapsed = max(0.0, now - started)
@@ -187,9 +203,53 @@ class SageMakerTrainingMonitor:
                 raise TrainingJobMonitorTimeoutError(message)
 
             snapshot = self.describe(job_name)
+
+            if not pending_cleared:
+                if snapshot.secondary_status == "Pending":
+                    pending_observed = True
+                    pending_elapsed = max(0.0, now - pending_started)
+                    if (
+                        self.max_pending_seconds is not None
+                        and pending_elapsed > self.max_pending_seconds
+                    ):
+                        if stop_on_timeout:
+                            self._stop_job(job_name)
+                        self.logger.emit(
+                            "sagemaker.pending.timeout",
+                            level="ERROR",
+                            job_name=job_name,
+                            pending_elapsed_seconds=round(pending_elapsed, 3),
+                            max_pending_seconds=self.max_pending_seconds,
+                            stop_requested=stop_on_timeout,
+                        )
+                        message = (
+                            f"Training job {job_name!r} remained Pending beyond "
+                            f"{self.max_pending_seconds:.3f} seconds."
+                        )
+                        raise TrainingJobPendingTimeoutError(message)
+                else:
+                    pending_cleared = True
+                    if pending_observed:
+                        pending_elapsed = max(0.0, now - pending_started)
+                        self.logger.emit(
+                            "sagemaker.pending.cleared",
+                            job_name=job_name,
+                            pending_elapsed_seconds=round(pending_elapsed, 3),
+                            secondary_status=snapshot.secondary_status,
+                        )
+
             state = (snapshot.status, snapshot.secondary_status)
             if state != last_status:
-                self.logger.emit("sagemaker.status.changed", **snapshot.as_dict())
+                self.logger.emit(
+                    "sagemaker.status.changed",
+                    job_name=snapshot.job_name,
+                    status=snapshot.status,
+                    secondary_status=snapshot.secondary_status,
+                    training_time_seconds=snapshot.training_time_seconds,
+                    billable_time_seconds=snapshot.billable_time_seconds,
+                    failure_reason=snapshot.failure_reason,
+                    terminal=snapshot.terminal,
+                )
                 last_status = state
             if now >= next_heartbeat:
                 self.logger.emit(
@@ -202,7 +262,17 @@ class SageMakerTrainingMonitor:
                 next_heartbeat = now + self.heartbeat_seconds
             if snapshot.terminal:
                 level = "INFO" if snapshot.status == "Completed" else "ERROR"
-                self.logger.emit("sagemaker.monitor.finished", level=level, **snapshot.as_dict())
+                self.logger.emit(
+                    "sagemaker.monitor.finished",
+                    level=level,
+                    job_name=snapshot.job_name,
+                    status=snapshot.status,
+                    secondary_status=snapshot.secondary_status,
+                    training_time_seconds=snapshot.training_time_seconds,
+                    billable_time_seconds=snapshot.billable_time_seconds,
+                    failure_reason=snapshot.failure_reason,
+                    terminal=snapshot.terminal,
+                )
                 if snapshot.status != "Completed":
                     message = (
                         f"Training job {job_name!r} ended with status {snapshot.status!r}. "

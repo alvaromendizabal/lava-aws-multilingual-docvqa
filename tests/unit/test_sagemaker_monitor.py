@@ -12,6 +12,7 @@ from lava.observability.sagemaker_monitor import (
     SageMakerTrainingMonitor,
     TrainingJobFailedError,
     TrainingJobMonitorTimeoutError,
+    TrainingJobPendingTimeoutError,
     discover_new_training_job,
     sanitize_cloudwatch_line,
     snapshot_from_description,
@@ -140,6 +141,66 @@ def test_monitor_requests_stop_on_timeout() -> None:
     with pytest.raises(TrainingJobMonitorTimeoutError):
         monitor.wait("job", stop_on_timeout=True)
     assert client.stopped == ["job"]
+
+
+def test_monitor_requests_stop_on_pending_capacity_timeout() -> None:
+    """A prolonged Pending state must stop before wasting an open-ended capacity wait."""
+    client = FakeSageMakerClient(
+        [{"TrainingJobStatus": "InProgress", "SecondaryStatus": "Pending"}]
+    )
+    logger, stream = _logger()
+    ticks = iter([0.0, 0.0, 2.0])
+    monitor = SageMakerTrainingMonitor(
+        sagemaker_client=client,
+        logger=logger,
+        poll_seconds=0.01,
+        heartbeat_seconds=0.01,
+        max_monitor_seconds=10.0,
+        max_pending_seconds=1.0,
+        sleep=lambda _: None,
+        monotonic=lambda: next(ticks),
+    )
+
+    with pytest.raises(TrainingJobPendingTimeoutError, match="remained Pending"):
+        monitor.wait("job", stop_on_timeout=True)
+
+    assert client.stopped == ["job"]
+    assert "sagemaker.pending.timeout" in stream.getvalue()
+
+
+def test_pending_capacity_guard_disarms_when_training_starts() -> None:
+    """Pending timeout must not kill a job after SageMaker advances to Training."""
+    client = FakeSageMakerClient(
+        [
+            {"TrainingJobStatus": "InProgress", "SecondaryStatus": "Pending"},
+            {"TrainingJobStatus": "InProgress", "SecondaryStatus": "Training"},
+            {
+                "TrainingJobStatus": "Completed",
+                "SecondaryStatus": "Completed",
+                "TrainingTimeInSeconds": 10,
+                "BillableTimeInSeconds": 11,
+            },
+        ]
+    )
+    logger, stream = _logger()
+    ticks = iter([0.0, 0.0, 0.5, 2.0])
+    monitor = SageMakerTrainingMonitor(
+        sagemaker_client=client,
+        logger=logger,
+        poll_seconds=0.01,
+        heartbeat_seconds=0.01,
+        max_monitor_seconds=10.0,
+        max_pending_seconds=1.0,
+        sleep=lambda _: None,
+        monotonic=lambda: next(ticks),
+    )
+
+    result = monitor.wait("job", stop_on_timeout=True)
+
+    assert result.status == "Completed"
+    assert client.stopped == []
+    assert "sagemaker.pending.cleared" in stream.getvalue()
+    assert "sagemaker.pending.timeout" not in stream.getvalue()
 
 
 def test_discover_new_training_job_excludes_known_names() -> None:
