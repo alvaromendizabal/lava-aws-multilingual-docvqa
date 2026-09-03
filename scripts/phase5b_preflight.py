@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import os
 import uuid
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import boto3
+import yaml
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
@@ -83,10 +85,34 @@ def main() -> int:
         )
         config_path = root / "configs" / "oracle_reader_benchmark.yaml"
 
+        benchmark_config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        if not isinstance(benchmark_config, Mapping):
+            message = "Oracle-reader benchmark configuration must be a mapping."
+            raise TypeError(message)
+
         protocol_lock_id = protocol_lock.get("protocol_lock_id")
-        if model_lock.get("protocol_lock_id") != protocol_lock_id:
-            message = "Model lock does not match the frozen evaluation protocol."
+        if not isinstance(protocol_lock_id, str) or not protocol_lock_id:
+            message = "Frozen evaluation protocol has no valid protocol_lock_id."
             raise RuntimeError(message)
+
+        if benchmark_config.get("protocol_lock_id") != protocol_lock_id:
+            message = "Benchmark configuration does not match the frozen evaluation protocol."
+            raise RuntimeError(message)
+
+        # Phase 5A model locks pin model revisions. Older lock-schema versions do
+        # not necessarily duplicate protocol_lock_id at the top level. If the
+        # optional field exists, require an exact match; otherwise the binding is
+        # verified through the benchmark config and the constructed job plan.
+        model_protocol_lock_id = model_lock.get("protocol_lock_id")
+        if model_protocol_lock_id is not None and model_protocol_lock_id != protocol_lock_id:
+            message = "Model lock contains a conflicting evaluation protocol."
+            raise RuntimeError(message)
+
+        resolved_models = model_lock.get("resolved_models")
+        if not isinstance(resolved_models, list) or not resolved_models:
+            message = "Model lock contains no resolved model revisions."
+            raise RuntimeError(message)
+
         if asset_summary.get("protocol_lock_id") != protocol_lock_id:
             message = "Oracle asset summary does not match the frozen evaluation protocol."
             raise RuntimeError(message)
@@ -104,6 +130,9 @@ def main() -> int:
             limit=1,
         )
         plan = plan_model.model_dump(mode="json")
+        if plan.get("protocol_lock_id") != protocol_lock_id:
+            message = "Constructed SageMaker plan does not match the frozen evaluation protocol."
+            raise RuntimeError(message)
         validate_first_smoke_plan(plan)
 
         estimate = estimate_maximum_cost(
