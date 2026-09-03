@@ -13,7 +13,9 @@ from typing import Any
 import boto3
 import yaml
 from botocore.exceptions import ClientError
+from mypy_boto3_service_quotas.type_defs import ServiceQuotaTypeDef
 
+from lava.readers.hardware import validate_hardware_fit
 from lava.readers.model_registry import load_resolved_model
 from lava.readers.schemas import SageMakerJobPlan
 
@@ -41,8 +43,8 @@ def _git_clean(repo_root: Path) -> bool:
 
 def validate_sagemaker_sdk_contract(expected_version: str) -> dict[str, Any]:
     """Validate exact SDK interfaces without constructing or submitting a job."""
-    from sagemaker.train import ModelTrainer
-    from sagemaker.train.configs import (
+    from sagemaker.train import ModelTrainer  # type: ignore[import-untyped]
+    from sagemaker.train.configs import (  # type: ignore[import-untyped]
         Compute,
         OutputDataConfig,
         SourceCode,
@@ -105,7 +107,7 @@ def find_training_quota(
     expected_normalized = " ".join(re.findall(r"[a-z0-9.]+", expected_name.casefold()))
 
     token: str | None = None
-    matches: list[dict[str, Any]] = []
+    matches: list[ServiceQuotaTypeDef] = []
 
     try:
         while True:
@@ -166,7 +168,7 @@ def find_training_quota(
             "match_count": len(matches),
         }
 
-    quota = matches[0]
+    selected_quota = matches[0]
 
     return {
         "found": True,
@@ -174,10 +176,10 @@ def find_training_quota(
         "error_code": None,
         "instance_type": instance_type,
         "spot": spot,
-        "value": float(quota.get("Value", 0.0)),
-        "quota_name": quota.get("QuotaName"),
-        "quota_code": quota.get("QuotaCode"),
-        "adjustable": bool(quota.get("Adjustable", False)),
+        "value": float(selected_quota.get("Value", 0.0)),
+        "quota_name": selected_quota.get("QuotaName"),
+        "quota_code": selected_quota.get("QuotaCode"),
+        "adjustable": bool(selected_quota.get("Adjustable", False)),
     }
 
 
@@ -200,7 +202,7 @@ def build_job_plan(
         f"s3://{bucket}/{config['benchmark']['results_prefix']}/"
         f"{config['protocol_lock_id']}/{model_key}/{git_sha}"
     )
-    return SageMakerJobPlan(
+    plan = SageMakerJobPlan(
         sdk_version=runtime["sdk_version"],
         model_key=model_key,
         model_id=model.model_id,
@@ -213,6 +215,11 @@ def build_job_plan(
         training_image=runtime["image_uri"],
         training_image_digest=runtime["image_digest"],
         instance_type=model.instance_type,
+        reader_family=model.reader_family,
+        device_placement=model.device_placement,
+        min_cuda_devices=model.min_cuda_devices,
+        min_cuda_memory_per_device_gib=(model.min_cuda_memory_per_device_gib),
+        min_total_cuda_memory_gib=model.min_total_cuda_memory_gib,
         instance_count=int(runtime["instance_count"]),
         volume_size_gb=int(runtime["volume_size_gb"]),
         max_runtime_seconds=int(runtime["max_runtime_seconds"]),
@@ -224,9 +231,15 @@ def build_job_plan(
         creates_endpoint=False,
     )
 
+    validate_hardware_fit(plan)
+
+    return plan
+
 
 def validate_submission_guardrails(plan: SageMakerJobPlan, *, repo_root: Path) -> None:
     """Refuse mutable, oversized, endpoint-backed, or uncommitted smoke jobs."""
+    validate_hardware_fit(plan)
+
     if not _git_clean(repo_root):
         raise RuntimeError("Commit all code and lock files before submitting a paid job")
     if plan.instance_count != 1:
@@ -246,9 +259,12 @@ def validate_submission_guardrails(plan: SageMakerJobPlan, *, repo_root: Path) -
 
 def create_model_trainer(*, plan: SageMakerJobPlan, repo_root: Path, region: str) -> Any:
     """Construct a SageMaker SDK V3 ModelTrainer after all guardrails pass."""
-    from sagemaker.core.helper.session_helper import Session, get_execution_role
-    from sagemaker.train import ModelTrainer
-    from sagemaker.train.configs import (
+    from sagemaker.core.helper.session_helper import (  # type: ignore[import-untyped]
+        Session,
+        get_execution_role,
+    )
+    from sagemaker.train import ModelTrainer  # type: ignore[import-untyped]
+    from sagemaker.train.configs import (  # type: ignore[import-untyped]
         Compute,
         OutputDataConfig,
         SourceCode,

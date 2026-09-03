@@ -56,6 +56,8 @@ def load_candidates(path: Path) -> tuple[ModelCandidate, ...]:
                     values.get("device_placement", DevicePlacement.SINGLE.value)
                 ),
                 min_cuda_devices=int(values.get("min_cuda_devices", 1)),
+                min_cuda_memory_per_device_gib=int(values.get("min_cuda_memory_per_device_gib", 1)),
+                min_total_cuda_memory_gib=int(values.get("min_total_cuda_memory_gib", 1)),
                 trust_remote_code=bool(values.get("trust_remote_code", False)),
                 instance_type=values["instance_type"],
                 input_mode=ReaderInputMode(values["input_mode"]),

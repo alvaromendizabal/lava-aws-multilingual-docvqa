@@ -92,8 +92,18 @@ class ModelCandidate(FrozenModel):
     reader_family: ReaderFamily = ReaderFamily.QWEN3_5
     device_placement: DevicePlacement = DevicePlacement.SINGLE
     min_cuda_devices: int = Field(default=1, ge=1, le=8)
+    min_cuda_memory_per_device_gib: int = Field(
+        default=1,
+        ge=1,
+        le=4096,
+    )
+    min_total_cuda_memory_gib: int = Field(
+        default=1,
+        ge=1,
+        le=16384,
+    )
     trust_remote_code: bool = False
-    instance_type: str = Field(pattern=r"^ml\.[a-z0-9.]+$")
+    instance_type: str = Field(pattern=r"^ml\.[a-z0-9]+(?:[.-][a-z0-9]+)*$")
     input_mode: ReaderInputMode
     dtype: str = Field(pattern=r"^(bfloat16|float16)$")
     attention_implementation: str = Field(pattern=r"^(sdpa|eager|flash_attention_2)$")
@@ -327,7 +337,20 @@ class SageMakerJobPlan(FrozenModel):
     output_s3_prefix: str = Field(pattern=r"^s3://")
     training_image: str
     training_image_digest: str
-    instance_type: str
+    instance_type: str = Field(pattern=r"^ml\.[a-z0-9]+(?:[.-][a-z0-9]+)*$")
+    reader_family: ReaderFamily = ReaderFamily.QWEN3_5
+    device_placement: DevicePlacement = DevicePlacement.SINGLE
+    min_cuda_devices: int = Field(default=1, ge=1, le=8)
+    min_cuda_memory_per_device_gib: int = Field(
+        default=1,
+        ge=1,
+        le=4096,
+    )
+    min_total_cuda_memory_gib: int = Field(
+        default=1,
+        ge=1,
+        le=16384,
+    )
     instance_count: int = Field(ge=1, le=1)
     volume_size_gb: int = Field(ge=30, le=500)
     max_runtime_seconds: int = Field(ge=60, le=3600)
