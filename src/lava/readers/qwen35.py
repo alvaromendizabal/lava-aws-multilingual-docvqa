@@ -15,6 +15,7 @@ import numpy as np
 from PIL import Image
 
 from lava.readers.parsing import ReaderOutputError, parse_reader_response
+from lava.readers.private_artifacts import persist_raw_response
 from lava.readers.prompts import SYSTEM_INSTRUCTION, build_reader_instruction
 from lava.readers.schemas import (
     OracleExample,
@@ -23,6 +24,7 @@ from lava.readers.schemas import (
     ReaderTelemetry,
     ResolvedModel,
 )
+from lava.readers.structured_output import append_strict_json_instruction
 
 
 def stable_question_seed(base_seed: int, question_id: str) -> int:
@@ -180,18 +182,11 @@ class Qwen35Reader:
             "return_tensors": "pt",
         }
         try:
-            return processor.apply_chat_template(
-                messages,
-                chat_template_kwargs={"enable_thinking": thinking},
-                **common,
-            )
+            messages = append_strict_json_instruction(messages)
+            return processor.apply_chat_template(messages, **common, enable_thinking=thinking)
         except TypeError:
             try:
-                return processor.apply_chat_template(
-                    messages,
-                    enable_thinking=thinking,
-                    **common,
-                )
+                return processor.apply_chat_template(messages, enable_thinking=thinking, **common)
             except TypeError as second_error:
                 raise RuntimeError(
                     "Installed Transformers cannot explicitly control Qwen3.5 thinking mode"
@@ -251,6 +246,7 @@ class Qwen35Reader:
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )[0]
+        persist_raw_response(raw_response)
         try:
             prediction = parse_reader_response(
                 question_id=example.question_id,

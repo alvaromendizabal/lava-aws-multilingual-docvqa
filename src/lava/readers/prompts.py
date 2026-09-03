@@ -6,7 +6,7 @@ from collections.abc import Sequence
 
 from lava.evaluation.schemas import AnswerFormat
 
-PROMPT_VERSION = "oracle-reader-json-v2"
+PROMPT_VERSION = "oracle-reader-json-v3"
 SYSTEM_INSTRUCTION = (
     "You are an evidence-grounded multilingual document reader. Use only the supplied "
     "pages. Never use outside knowledge. Return only the requested JSON object. Do not "

@@ -22,6 +22,7 @@ from pydantic import (
 from lava.evaluation.normalization import parse_evidence_pages
 from lava.evaluation.schemas import AnswerFormat
 from lava.readers.schemas import ReaderPrediction
+from lava.readers.structured_output import extract_json_candidate
 
 _THINK_BLOCK = re.compile(r"<think>.*?</think>", flags=re.DOTALL | re.IGNORECASE)
 _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", flags=re.IGNORECASE)
@@ -99,7 +100,7 @@ def _canonical_answer(value: Any, answer_format: AnswerFormat) -> str:
     if answer_format in {AnswerFormat.ORDERED_LIST, AnswerFormat.UNORDERED_LIST}:
         if isinstance(value, str):
             try:
-                parsed = json.loads(value)
+                parsed = json.loads(extract_json_candidate(value))
             except json.JSONDecodeError:
                 parsed = [value] if value.strip() else []
         else:
@@ -130,7 +131,7 @@ def parse_reader_response(
     digest = hashlib.sha256(raw_response.encode()).hexdigest()
     cleaned = strip_hidden_reasoning(raw_response)
     try:
-        decoded = json.loads(_first_json_object(cleaned))
+        decoded = json.loads(extract_json_candidate(_first_json_object(cleaned)))
     except json.JSONDecodeError as error:
         raise ReaderOutputError(str(error), code="invalid_json") from error
     if not isinstance(decoded, dict):

@@ -9,7 +9,7 @@ def test_prompt_is_answer_blind_and_has_schema() -> None:
         answer_format=AnswerFormat.NUMBER,
         available_pages=(2, 4),
     )
-    assert PROMPT_VERSION == "oracle-reader-json-v2"
+    assert PROMPT_VERSION == "oracle-reader-json-v3"
     assert "質問は何ですか?" in prompt
     assert '"evidence_pages"' in prompt
     assert "[2, 4]" in prompt

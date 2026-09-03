@@ -31,6 +31,7 @@ from lava.observability import (
     write_state_atomic,
 )
 from lava.observability.events import format_utc, redact_string
+from lava.readers.artifact_gate import verify_training_model_artifact
 from lava.readers.sagemaker import build_job_plan
 
 
@@ -293,8 +294,18 @@ def main() -> int:
             status=snapshot.status,
             created_at=created_at,
         )
+        if snapshot.status != "Completed":
+            message = f"SageMaker smoke ended with non-success status {snapshot.status!r}."
+            raise RuntimeError(message)
+        artifact_gate = verify_training_model_artifact(
+            sagemaker_client=sagemaker_client,
+            s3_client=s3_client,
+            job_name=job_name,
+        )
+        logger.emit("smoke.artifact.verified", artifact_gate=artifact_gate.as_dict())
         logger.emit("smoke.submit.complete", **snapshot.as_dict())
         print("ORACLE_READER_ONE_QUESTION_SMOKE_COMPLETED")
+        print("ORACLE_READER_ONE_QUESTION_SMOKE_VERIFIED")
         return 0
 
 
