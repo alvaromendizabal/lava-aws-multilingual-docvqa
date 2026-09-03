@@ -1,8 +1,8 @@
 {
   "candidate_count": 5,
-  "config_sha256": "fa0497d040a9d9d320239617816ea80eee075297ed22caf1729d552ed589023a",
+  "config_sha256": "d814a0c5e140890f8c144df5a555f16f8ab3be09a9ccf1d737ceb100817c27cb",
   "generated_at_utc": "2026-09-02T22:29:13.352145+00:00",
-  "registry_sha256": "fe598151617aef385e31d9610a02afd03fb53980141529f87c6b398b7674ef5b",
+  "registry_sha256": "59064a868e82d52ace9352499d4667d9cab7d57bbb7d528a67c5f0b286a90211",
   "resolved_models": [
     {
       "attention_implementation": "sdpa",
@@ -22,7 +22,7 @@
         "top_p": null
       },
       "input_mode": "fused",
-      "instance_type": "ml.g6e.2xlarge",
+      "instance_type": "ml.g5.2xlarge",
       "last_modified": "2026-03-02T00:52:52.000Z",
       "model_id": "Qwen/Qwen3.5-4B",
       "model_key": "qwen35_4b_fused_direct",

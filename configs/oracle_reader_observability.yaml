@@ -8,13 +8,14 @@ privacy:
 monitoring:
   poll_seconds: 15
   heartbeat_seconds: 30
-  max_monitor_seconds: 3900
+  max_monitor_seconds: 4800
+  max_pending_seconds: 900
   stop_job_on_monitor_timeout: true
 first_gpu_smoke:
   model_key: qwen35_4b_fused_direct
   limit: 1
   instance_count: 1
-  instance_type: ml.g6e.2xlarge
+  instance_type: ml.g5.2xlarge
   max_runtime_seconds: 3600
   managed_spot: false
   creates_endpoint: false

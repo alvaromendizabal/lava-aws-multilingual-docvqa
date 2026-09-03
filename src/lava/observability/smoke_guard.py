@@ -5,10 +5,10 @@ from __future__ import annotations
 import time
 from collections.abc import Mapping
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 _ALLOWED_MODEL_KEY = "qwen35_4b_fused_direct"
-_ALLOWED_INSTANCE_TYPE = "ml.g6e.2xlarge"
+_ALLOWED_INSTANCE_TYPE = "ml.g5.2xlarge"
 
 
 def _require_int(plan: Mapping[str, object], key: str) -> int:
@@ -42,6 +42,8 @@ def validate_first_smoke_plan(plan: Mapping[str, object]) -> None:
 
 
 _EXACT_TRAINING_QUOTA_CODES: dict[tuple[str, bool], str] = {
+    ("ml.g5.2xlarge", False): "L-2D6DEB3C",
+    ("ml.g5.2xlarge", True): "L-CAEE7DB7",
     ("ml.g6e.2xlarge", False): "L-D1AFBF6F",
     ("ml.g6e.2xlarge", True): "L-29512C0F",
 }

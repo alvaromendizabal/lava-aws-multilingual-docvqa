@@ -14,7 +14,7 @@ from lava.observability import verify_training_quota
 def main() -> int:
     """Read one immutable quota code and fail closed if capacity is insufficient."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--instance-type", default="ml.g6e.2xlarge")
+    parser.add_argument("--instance-type", default="ml.g5.2xlarge")
     parser.add_argument("--instance-count", type=int, default=1)
     parser.add_argument("--spot", action="store_true")
     args = parser.parse_args()

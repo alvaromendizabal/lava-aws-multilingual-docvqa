@@ -21,7 +21,13 @@ def main() -> None:
     assert config["training_runtime"]["instance_count"] == 1
     assert config["training_runtime"]["no_endpoint"] is True
     assert config["training_runtime"]["max_runtime_seconds"] <= 3600
-    assert all(model["instance_type"] == "ml.g6e.2xlarge" for model in config["models"].values())
+    models = config["models"]
+    assert models["qwen35_4b_fused_direct"]["instance_type"] == "ml.g5.2xlarge"
+    assert all(
+        model["instance_type"] == "ml.g6e.2xlarge"
+        for model_key, model in models.items()
+        if model_key != "qwen35_4b_fused_direct"
+    )
     for notebook_path in sorted((root / "notebooks").glob("0[01]_*.ipynb")):
         notebook = nbformat.read(notebook_path, as_version=4)
         for cell in notebook.cells:
@@ -31,6 +37,11 @@ def main() -> None:
         model_lock = json.loads((root / "configs/oracle_reader_models.lock.json").read_text())
         assert model_lock["candidate_count"] == 5
         assert model_lock["unique_model_repository_count"] == 2
+        locked_models = {row["model_key"]: row for row in model_lock["resolved_models"]}
+        assert set(locked_models) == set(models)
+        for model_key, model in models.items():
+            assert locked_models[model_key]["model_id"] == model["model_id"]
+            assert locked_models[model_key]["instance_type"] == model["instance_type"]
         summary = json.loads(
             (root / "reports/oracle_reader/oracle_assets_summary.json").read_text()
         )

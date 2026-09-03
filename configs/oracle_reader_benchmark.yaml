@@ -38,7 +38,7 @@ models:
     expected_license: "apache-2.0"
     expected_pipeline_tag: "image-text-to-text"
     parameters_billion: 4.0
-    instance_type: "ml.g6e.2xlarge"
+    instance_type: "ml.g5.2xlarge"
     input_mode: "fused"
     dtype: "bfloat16"
     attention_implementation: "sdpa"

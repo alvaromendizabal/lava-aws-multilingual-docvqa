@@ -10,7 +10,7 @@ from lava.observability.smoke_guard import validate_first_smoke_plan
 def _safe_plan() -> dict[str, object]:
     return {
         "model_key": "qwen35_4b_fused_direct",
-        "instance_type": "ml.g6e.2xlarge",
+        "instance_type": "ml.g5.2xlarge",
         "limit": 1,
         "instance_count": 1,
         "max_runtime_seconds": 3600,
@@ -33,6 +33,7 @@ def test_safe_first_smoke_plan_passes() -> None:
         ("creates_endpoint", True),
         ("managed_spot", True),
         ("model_key", "qwen35_9b_fused_direct"),
+        ("instance_type", "ml.g6e.2xlarge"),
     ],
 )
 def test_unsafe_first_smoke_plan_fails(field: str, value: object) -> None:
@@ -71,14 +72,14 @@ def test_exact_on_demand_quota_is_selected() -> None:
     client = _FakeServiceQuotas(
         [
             {
-                "QuotaName": "ml.g6e.2xlarge for spot training job usage",
-                "QuotaCode": "L-29512C0F",
+                "QuotaName": "ml.g5.2xlarge for spot training job usage",
+                "QuotaCode": "L-CAEE7DB7",
                 "Value": 1.0,
                 "Adjustable": True,
             },
             {
-                "QuotaName": "ml.g6e.2xlarge for training job usage",
-                "QuotaCode": "L-D1AFBF6F",
+                "QuotaName": "ml.g5.2xlarge for training job usage",
+                "QuotaCode": "L-2D6DEB3C",
                 "Value": 1.0,
                 "Adjustable": True,
             },
@@ -87,15 +88,15 @@ def test_exact_on_demand_quota_is_selected() -> None:
 
     quota = verify_training_quota(
         service_quotas=client,
-        instance_type="ml.g6e.2xlarge",
+        instance_type="ml.g5.2xlarge",
         instance_count=1,
         managed_spot=False,
     )
 
-    assert quota["quota_name"] == "ml.g6e.2xlarge for training job usage"
-    assert quota["quota_code"] == "L-D1AFBF6F"
+    assert quota["quota_name"] == "ml.g5.2xlarge for training job usage"
+    assert quota["quota_code"] == "L-2D6DEB3C"
     assert quota["managed_spot"] is False
-    assert client.requested_quota_codes == ["L-D1AFBF6F"]
+    assert client.requested_quota_codes == ["L-2D6DEB3C"]
 
 
 def test_spot_only_quota_cannot_satisfy_on_demand_plan() -> None:
@@ -105,8 +106,8 @@ def test_spot_only_quota_cannot_satisfy_on_demand_plan() -> None:
     client = _FakeServiceQuotas(
         [
             {
-                "QuotaName": "ml.g6e.2xlarge for spot training job usage",
-                "QuotaCode": "L-29512C0F",
+                "QuotaName": "ml.g5.2xlarge for spot training job usage",
+                "QuotaCode": "L-CAEE7DB7",
                 "Value": 1.0,
                 "Adjustable": True,
             }
@@ -116,7 +117,7 @@ def test_spot_only_quota_cannot_satisfy_on_demand_plan() -> None:
     with pytest.raises(RuntimeError, match="Required SageMaker quota"):
         verify_training_quota(
             service_quotas=client,
-            instance_type="ml.g6e.2xlarge",
+            instance_type="ml.g5.2xlarge",
             instance_count=1,
             managed_spot=False,
         )
@@ -129,8 +130,8 @@ def test_insufficient_exact_quota_fails_closed() -> None:
     client = _FakeServiceQuotas(
         [
             {
-                "QuotaName": "ml.g6e.2xlarge for training job usage",
-                "QuotaCode": "L-D1AFBF6F",
+                "QuotaName": "ml.g5.2xlarge for training job usage",
+                "QuotaCode": "L-2D6DEB3C",
                 "Value": 0.0,
                 "Adjustable": True,
             }
@@ -140,7 +141,7 @@ def test_insufficient_exact_quota_fails_closed() -> None:
     with pytest.raises(RuntimeError, match="Insufficient SageMaker quota"):
         verify_training_quota(
             service_quotas=client,
-            instance_type="ml.g6e.2xlarge",
+            instance_type="ml.g5.2xlarge",
             instance_count=1,
             managed_spot=False,
         )

@@ -20,7 +20,7 @@ set +a
 uv run ruff check src tests scripts pipelines
 uv run pytest -q
 uv run python scripts/validate_sagemaker_contract.py
-uv run python scripts/check_sagemaker_quota.py --instance-type ml.g6e.2xlarge
+uv run python scripts/check_sagemaker_quota.py --instance-type ml.g5.2xlarge
 uv run python scripts/resolve_oracle_model_revisions.py
 uv run python scripts/prepare_oracle_assets.py
 uv run python scripts/validate_phase5a.py
