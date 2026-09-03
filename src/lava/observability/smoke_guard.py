@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Mapping
+
+from botocore.exceptions import ClientError
 
 _ALLOWED_MODEL_KEY = "qwen35_4b_fused_direct"
 _ALLOWED_INSTANCE_TYPE = "ml.g6e.2xlarge"
@@ -38,6 +41,23 @@ def validate_first_smoke_plan(plan: Mapping[str, object]) -> None:
         raise RuntimeError(message)
 
 
+_EXACT_TRAINING_QUOTA_CODES: dict[tuple[str, bool], str] = {
+    ("ml.g6e.2xlarge", False): "L-D1AFBF6F",
+    ("ml.g6e.2xlarge", True): "L-29512C0F",
+}
+
+_RETRIABLE_SERVICE_QUOTA_ERRORS = frozenset(
+    {
+        "TooManyRequestsException",
+        "ThrottlingException",
+        "Throttling",
+        "RequestLimitExceeded",
+    }
+)
+
+_MAX_SERVICE_QUOTA_ATTEMPTS = 5
+
+
 def required_training_quota_name(
     instance_type: str,
     *,
@@ -68,48 +88,86 @@ def verify_training_quota(
         managed_spot=managed_spot,
     )
 
-    get_paginator = getattr(service_quotas, "get_paginator", None)
-    if not callable(get_paginator):
-        message = "Service Quotas client does not expose get_paginator()."
+    quota_code = _EXACT_TRAINING_QUOTA_CODES.get((instance_type, managed_spot))
+    if quota_code is None:
+        message = (
+            "No immutable SageMaker quota-code binding exists for "
+            f"instance_type={instance_type!r}, managed_spot={managed_spot!r}. "
+            "Refusing to submit a paid training job."
+        )
+        raise RuntimeError(message)
+
+    get_service_quota = getattr(service_quotas, "get_service_quota", None)
+    if not callable(get_service_quota):
+        message = "Service Quotas client does not expose get_service_quota()."
         raise TypeError(message)
 
-    paginator = get_paginator("list_service_quotas")
-    for page in paginator.paginate(ServiceCode="sagemaker"):
-        quotas = page.get("Quotas", [])
-        if not isinstance(quotas, list):
-            continue
+    response: object | None = None
+    attempts_used = 0
 
-        for quota in quotas:
-            if not isinstance(quota, dict):
-                continue
-            if quota.get("QuotaName") != expected_name:
-                continue
+    for attempt in range(1, _MAX_SERVICE_QUOTA_ATTEMPTS + 1):
+        attempts_used = attempt
+        try:
+            response = get_service_quota(
+                ServiceCode="sagemaker",
+                QuotaCode=quota_code,
+            )
+            break
+        except ClientError as exc:
+            error_code = str(exc.response.get("Error", {}).get("Code", ""))
+            retryable = error_code in _RETRIABLE_SERVICE_QUOTA_ERRORS
 
-            value = quota.get("Value")
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
-                message = f"SageMaker quota {expected_name!r} has no numeric value."
-                raise TypeError(message)
+            if not retryable or attempt >= _MAX_SERVICE_QUOTA_ATTEMPTS:
+                raise
 
-            numeric_value = float(value)
-            if numeric_value < float(instance_count):
-                message = (
-                    f"Insufficient SageMaker quota {expected_name!r}: "
-                    f"required={instance_count}, available={numeric_value}."
-                )
-                raise RuntimeError(message)
+            time.sleep(float(2 ** (attempt - 1)))
 
-            return {
-                "found": True,
-                "quota_name": expected_name,
-                "quota_code": quota.get("QuotaCode"),
-                "value": numeric_value,
-                "adjustable": quota.get("Adjustable"),
-                "managed_spot": managed_spot,
-                "required_instance_count": instance_count,
-            }
+    if not isinstance(response, dict):
+        message = f"SageMaker quota {expected_name!r} returned an invalid response."
+        raise TypeError(message)
 
-    message = (
-        f"Required SageMaker quota {expected_name!r} was not found. "
-        "Refusing to submit a paid training job."
-    )
-    raise RuntimeError(message)
+    quota = response.get("Quota")
+    if quota is None:
+        message = (
+            f"Required SageMaker quota {expected_name!r} was not returned. "
+            "Refusing to submit a paid training job."
+        )
+        raise RuntimeError(message)
+    if not isinstance(quota, dict):
+        message = f"SageMaker quota {expected_name!r} returned malformed quota metadata."
+        raise TypeError(message)
+
+    actual_name = quota.get("QuotaName")
+    if actual_name != expected_name:
+        message = (
+            "SageMaker quota code/name mismatch: "
+            f"quota_code={quota_code!r}, "
+            f"expected_name={expected_name!r}, "
+            f"actual_name={actual_name!r}. "
+            "Refusing to submit a paid training job."
+        )
+        raise RuntimeError(message)
+
+    value = quota.get("Value")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        message = f"SageMaker quota {expected_name!r} has no numeric value."
+        raise TypeError(message)
+
+    numeric_value = float(value)
+    if numeric_value < float(instance_count):
+        message = (
+            f"Insufficient SageMaker quota {expected_name!r}: "
+            f"required={instance_count}, available={numeric_value}."
+        )
+        raise RuntimeError(message)
+
+    return {
+        "found": True,
+        "quota_name": expected_name,
+        "quota_code": quota_code,
+        "value": numeric_value,
+        "adjustable": quota.get("Adjustable"),
+        "managed_spot": managed_spot,
+        "required_instance_count": instance_count,
+        "api_attempts": attempts_used,
+    }

@@ -43,21 +43,25 @@ def test_unsafe_first_smoke_plan_fails(field: str, value: object) -> None:
         validate_first_smoke_plan(plan)
 
 
-class _FakePaginator:
-    def __init__(self, quotas: list[dict[str, object]]) -> None:
-        self.quotas = quotas
-
-    def paginate(self, **_: object) -> list[dict[str, object]]:
-        return [{"Quotas": self.quotas}]
-
-
 class _FakeServiceQuotas:
     def __init__(self, quotas: list[dict[str, object]]) -> None:
         self.quotas = quotas
+        self.requested_quota_codes: list[str] = []
 
-    def get_paginator(self, name: str) -> _FakePaginator:
-        assert name == "list_service_quotas"
-        return _FakePaginator(self.quotas)
+    def get_service_quota(
+        self,
+        *,
+        ServiceCode: str,
+        QuotaCode: str,
+    ) -> dict[str, object]:
+        assert ServiceCode == "sagemaker"
+        self.requested_quota_codes.append(QuotaCode)
+
+        for quota in self.quotas:
+            if quota.get("QuotaCode") == QuotaCode:
+                return {"Quota": quota}
+
+        return {"Quota": None}
 
 
 def test_exact_on_demand_quota_is_selected() -> None:
@@ -91,6 +95,7 @@ def test_exact_on_demand_quota_is_selected() -> None:
     assert quota["quota_name"] == "ml.g6e.2xlarge for training job usage"
     assert quota["quota_code"] == "L-D1AFBF6F"
     assert quota["managed_spot"] is False
+    assert client.requested_quota_codes == ["L-D1AFBF6F"]
 
 
 def test_spot_only_quota_cannot_satisfy_on_demand_plan() -> None:
