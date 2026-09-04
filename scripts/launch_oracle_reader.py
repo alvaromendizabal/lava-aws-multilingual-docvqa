@@ -17,6 +17,7 @@ from lava.readers.sagemaker import build_job_plan, submit_or_preview_job
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-key", default="qwen35_4b_fused_direct")
+    parser.add_argument("--instance-type")
     parser.add_argument("--limit", type=int, default=1)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--wait", action="store_true")
@@ -34,6 +35,7 @@ def main() -> None:
         config_path=repo_root / "configs/oracle_reader_benchmark.yaml",
         model_lock_path=repo_root / "configs/oracle_reader_models.lock.json",
         model_key=args.model_key,
+        instance_type=args.instance_type,
         bucket=bucket,
         limit=args.limit,
     )
