@@ -39,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-key", default="qwen35_4b_fused_direct")
+    parser.add_argument("--instance-type")
     parser.add_argument("--limit", type=int, default=1)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--wait", action="store_true")
@@ -125,6 +126,7 @@ def main() -> int:
             config_path=root / "configs" / "oracle_reader_benchmark.yaml",
             model_lock_path=root / "configs" / "oracle_reader_models.lock.json",
             model_key=args.model_key,
+            instance_type=args.instance_type,
             bucket=bucket,
             limit=args.limit,
         )
@@ -206,6 +208,7 @@ def main() -> int:
             str(root / "scripts" / "launch_oracle_reader.py"),
             "--model-key",
             args.model_key,
+            *(["--instance-type", args.instance_type] if args.instance_type is not None else []),
             "--limit",
             str(args.limit),
             "--submit",
