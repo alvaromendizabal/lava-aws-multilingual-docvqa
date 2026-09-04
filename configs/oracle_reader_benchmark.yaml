@@ -127,3 +127,27 @@ models:
       do_sample: false
       repetition_penalty: 1.0
       seed: 20260902
+  qwen38_27b_fused_direct:
+    model_id: "Qwen/Qwen3.8-27B"
+    expected_license: "apache-2.0"
+    expected_pipeline_tag: "image-text-to-text"
+    parameters_billion: 27.0
+    reader_family: "qwen3_5"
+    device_placement: "single"
+    min_cuda_devices: 1
+    min_cuda_memory_per_device_gib: 80
+    min_total_cuda_memory_gib: 80
+    trust_remote_code: false
+    instance_type: "ml.g7e.12xlarge"
+    input_mode: "fused"
+    dtype: "bfloat16"
+    attention_implementation: "sdpa"
+    use_kernels: false
+    processor_min_pixels: 200704
+    processor_max_pixels: 1605632
+    generation:
+      mode: "direct"
+      max_new_tokens: 256
+      do_sample: false
+      repetition_penalty: 1.0
+      seed: 20260902

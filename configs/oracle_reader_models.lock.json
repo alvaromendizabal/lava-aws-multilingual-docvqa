@@ -1,8 +1,21 @@
 {
-  "candidate_count": 5,
-  "config_sha256": "d814a0c5e140890f8c144df5a555f16f8ab3be09a9ccf1d737ceb100817c27cb",
-  "generated_at_utc": "2026-09-02T22:29:13.352145+00:00",
-  "registry_sha256": "59064a868e82d52ace9352499d4667d9cab7d57bbb7d528a67c5f0b286a90211",
+  "appended_model_keys": [
+    "qwen38_27b_fused_direct"
+  ],
+  "candidate_count": 6,
+  "config_sha256": "eec46f7f9ef669a9f6037df43164daa631086ee771f8644e228cc0092d06031e",
+  "generated_at_utc": "2026-09-04T00:30:50.821263+00:00",
+  "lineage_depth": 1,
+  "parent_file_sha256": "95eaf0d48e1000c83e858fef98d86c6426fbdf971753b53bb581fc848c00e71f",
+  "parent_registry_sha256": "59064a868e82d52ace9352499d4667d9cab7d57bbb7d528a67c5f0b286a90211",
+  "preserved_model_keys": [
+    "qwen35_4b_fused_direct",
+    "qwen35_4b_image_direct",
+    "qwen35_4b_text_direct",
+    "qwen35_4b_fused_thinking",
+    "qwen35_9b_fused_direct"
+  ],
+  "registry_sha256": "85d0ee5756f6030deb9a14c392e56338b62c1df10d5cbc2b3d28410333bea338",
   "resolved_models": [
     {
       "attention_implementation": "sdpa",
@@ -163,8 +176,46 @@
       "resolved_at_utc": "2026-09-02T22:29:13.352145+00:00",
       "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
       "use_kernels": false
+    },
+    {
+      "attention_implementation": "sdpa",
+      "device_placement": "single",
+      "dtype": "bfloat16",
+      "expected_license": "apache-2.0",
+      "expected_pipeline_tag": "image-text-to-text",
+      "gated": false,
+      "generation": {
+        "do_sample": false,
+        "max_new_tokens": 256,
+        "min_p": null,
+        "mode": "direct",
+        "repetition_penalty": 1.0,
+        "seed": 20260902,
+        "temperature": null,
+        "top_k": null,
+        "top_p": null
+      },
+      "input_mode": "fused",
+      "instance_type": "ml.g7e.12xlarge",
+      "last_modified": "2026-08-14T15:00:01.000Z",
+      "min_cuda_devices": 1,
+      "min_cuda_memory_per_device_gib": 80,
+      "min_total_cuda_memory_gib": 80,
+      "model_id": "Qwen/Qwen3.8-27B",
+      "model_key": "qwen38_27b_fused_direct",
+      "observed_license": "apache-2.0",
+      "observed_pipeline_tag": "image-text-to-text",
+      "parameters_billion": 27.0,
+      "private": false,
+      "processor_max_pixels": 1605632,
+      "processor_min_pixels": 200704,
+      "reader_family": "qwen3_5",
+      "resolved_at_utc": "2026-09-04T00:30:50.821263+00:00",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "trust_remote_code": false,
+      "use_kernels": false
     }
   ],
-  "schema_version": 2,
-  "unique_model_repository_count": 2
+  "schema_version": 3,
+  "unique_model_repository_count": 3
 }
