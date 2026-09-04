@@ -15,6 +15,7 @@ def _safe_plan() -> dict[str, object]:
         "instance_count": 1,
         "max_runtime_seconds": 3600,
         "max_wait_seconds": 3600,
+        "max_pending_seconds": 86400,
         "creates_endpoint": False,
         "managed_spot": False,
     }
@@ -34,6 +35,7 @@ def test_safe_first_smoke_plan_passes() -> None:
         ("instance_count", 2),
         ("max_runtime_seconds", 3601),
         ("max_wait_seconds", 7201),
+        ("max_pending_seconds", 86399),
         ("creates_endpoint", True),
         ("managed_spot", True),
     ],

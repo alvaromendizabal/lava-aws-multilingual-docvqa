@@ -71,7 +71,11 @@ def validate_sagemaker_sdk_contract(expected_version: str) -> dict[str, Any]:
         ),
         "StoppingCondition": (
             inspect.signature(StoppingCondition).parameters,
-            {"max_runtime_in_seconds", "max_wait_time_in_seconds"},
+            {
+                "max_runtime_in_seconds",
+                "max_wait_time_in_seconds",
+                "max_pending_time_in_seconds",
+            },
         ),
         "OutputDataConfig": (
             inspect.signature(OutputDataConfig).parameters,
@@ -236,6 +240,9 @@ def build_job_plan(
         volume_size_gb=int(runtime["volume_size_gb"]),
         max_runtime_seconds=int(runtime["max_runtime_seconds"]),
         max_wait_seconds=int(runtime["max_wait_seconds"]),
+        # Give scarce compatible GPUs a 24-hour server-side acquisition window.
+        # Keep this out of the model-registry YAML so its immutable hash is unchanged.
+        max_pending_seconds=86400,
         managed_spot=bool(runtime["managed_spot_for_smoke"]),
         limit=limit,
         input_mode=model.input_mode,
@@ -257,7 +264,9 @@ def validate_submission_guardrails(plan: SageMakerJobPlan, *, repo_root: Path) -
     if plan.instance_count != 1:
         raise ValueError("Only one SageMaker instance is permitted")
     if plan.max_runtime_seconds > 3600 or plan.max_wait_seconds > 3600:
-        raise ValueError("Smoke jobs are capped at one hour")
+        raise ValueError("Smoke jobs are capped at one hour of compute")
+    if plan.max_pending_seconds != 86400:
+        raise ValueError("The first smoke must use the 24-hour cloud pending cap")
     if plan.limit != 1:
         raise ValueError("The first paid smoke job must run exactly one question")
     if plan.creates_endpoint:
@@ -309,7 +318,10 @@ def create_model_trainer(*, plan: SageMakerJobPlan, repo_root: Path, region: str
         volume_size_in_gb=plan.volume_size_gb,
         enable_managed_spot_training=plan.managed_spot,
     )
-    stopping_kwargs: dict[str, int] = {"max_runtime_in_seconds": plan.max_runtime_seconds}
+    stopping_kwargs: dict[str, int] = {
+        "max_runtime_in_seconds": plan.max_runtime_seconds,
+        "max_pending_time_in_seconds": plan.max_pending_seconds,
+    }
     if plan.managed_spot:
         stopping_kwargs["max_wait_time_in_seconds"] = plan.max_wait_seconds
     stopping = StoppingCondition(**stopping_kwargs)

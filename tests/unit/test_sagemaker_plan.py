@@ -106,6 +106,7 @@ def test_job_plan_is_bounded_endpoint_free_and_preview_is_pure(tmp_path: Path) -
     )
     assert plan.instance_count == 1
     assert plan.max_runtime_seconds == 3600
+    assert plan.max_pending_seconds == 86400
     assert plan.creates_endpoint is False
     assert result["submitted"] is False
     assert result["charged_resources_created"] is False

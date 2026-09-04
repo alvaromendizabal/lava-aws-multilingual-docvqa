@@ -355,6 +355,7 @@ class SageMakerJobPlan(FrozenModel):
     volume_size_gb: int = Field(ge=30, le=500)
     max_runtime_seconds: int = Field(ge=60, le=3600)
     max_wait_seconds: int = Field(ge=60, le=7200)
+    max_pending_seconds: int = Field(default=86400, ge=7200, le=2419200)
     managed_spot: bool
     limit: int = Field(ge=1, le=16)
     input_mode: ReaderInputMode

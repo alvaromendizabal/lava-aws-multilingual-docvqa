@@ -73,6 +73,8 @@ def validate_first_smoke_plan(
         > 7200
     ):
         errors.append("max_wait_seconds must be <= 7200")
+    if _require_int(plan, "max_pending_seconds") != 86400:
+        errors.append("max_pending_seconds must equal 86400 for the first smoke")
 
     if plan.get("creates_endpoint") is not False:
         errors.append("creates_endpoint must be false")
