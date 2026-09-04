@@ -191,6 +191,7 @@ def build_job_plan(
     model_key: str,
     bucket: str,
     limit: int,
+    instance_type: str | None = None,
 ) -> SageMakerJobPlan:
     """Build a fully specified, non-submitting SageMaker job plan."""
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -198,9 +199,20 @@ def build_job_plan(
     runtime = config["training_runtime"]
     git_sha = _git_sha(repo_root)
     manifest_key = config["benchmark"]["private_manifest_s3_key"]
+
+    selected_instance_type = model.instance_type if instance_type is None else instance_type
+
+    if not selected_instance_type or selected_instance_type != selected_instance_type.strip():
+        raise ValueError("instance_type must be non-empty and contain no surrounding whitespace")
+
+    hardware_suffix = ""
+    if instance_type is not None:
+        hardware_slug = selected_instance_type.removeprefix("ml.").replace(".", "-")
+        hardware_suffix = f"/hardware/{hardware_slug}"
+
     output_prefix = (
         f"s3://{bucket}/{config['benchmark']['results_prefix']}/"
-        f"{config['protocol_lock_id']}/{model_key}/{git_sha}"
+        f"{config['protocol_lock_id']}/{model_key}/{git_sha}{hardware_suffix}"
     )
     plan = SageMakerJobPlan(
         sdk_version=runtime["sdk_version"],
@@ -214,7 +226,7 @@ def build_job_plan(
         output_s3_prefix=output_prefix,
         training_image=runtime["image_uri"],
         training_image_digest=runtime["image_digest"],
-        instance_type=model.instance_type,
+        instance_type=selected_instance_type,
         reader_family=model.reader_family,
         device_placement=model.device_placement,
         min_cuda_devices=model.min_cuda_devices,
