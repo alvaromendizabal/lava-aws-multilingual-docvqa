@@ -7,9 +7,6 @@ from collections.abc import Mapping
 
 from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
-_ALLOWED_MODEL_KEY = "qwen35_4b_fused_direct"
-_ALLOWED_INSTANCE_TYPE = "ml.g5.2xlarge"
-
 
 def _require_int(plan: Mapping[str, object], key: str) -> int:
     value = plan.get(key)
@@ -19,26 +16,72 @@ def _require_int(plan: Mapping[str, object], key: str) -> int:
     return value
 
 
-def validate_first_smoke_plan(plan: Mapping[str, object]) -> None:
-    """Validate the bounded first experiment before any paid submission."""
+def validate_first_smoke_plan(
+    plan: Mapping[str, object],
+) -> None:
+    """Fail closed unless a paid one-question GPU smoke plan is safely bounded."""
     errors: list[str] = []
-    if plan.get("model_key") != _ALLOWED_MODEL_KEY:
-        errors.append(f"model_key must be {_ALLOWED_MODEL_KEY!r}")
-    if plan.get("instance_type") != _ALLOWED_INSTANCE_TYPE:
-        errors.append(f"instance_type must be {_ALLOWED_INSTANCE_TYPE!r}")
-    if _require_int(plan, "limit") != 1:
-        errors.append("limit must equal 1")
-    if _require_int(plan, "instance_count") != 1:
+
+    model_key = plan.get("model_key")
+    if not isinstance(model_key, str) or not model_key.strip():
+        errors.append("model_key must be a non-empty string")
+
+    instance_type = plan.get("instance_type")
+
+    if not isinstance(instance_type, str) or not instance_type.strip():
+        errors.append("instance_type must be a non-empty string")
+    elif (
+        instance_type,
+        False,
+    ) not in _EXACT_TRAINING_QUOTA_CODES:
+        errors.append(
+            f"instance_type has no pinned on-demand SageMaker quota binding: {instance_type!r}"
+        )
+
+    if (
+        _require_int(
+            plan,
+            "limit",
+        )
+        != 1
+    ):
+        errors.append("limit must equal 1 for a paid smoke")
+
+    if (
+        _require_int(
+            plan,
+            "instance_count",
+        )
+        != 1
+    ):
         errors.append("instance_count must equal 1")
-    if _require_int(plan, "max_runtime_seconds") > 3600:
-        errors.append("max_runtime_seconds must be at most 3600")
-    if bool(plan.get("creates_endpoint")):
+
+    if (
+        _require_int(
+            plan,
+            "max_runtime_seconds",
+        )
+        > 3600
+    ):
+        errors.append("max_runtime_seconds must be <= 3600")
+
+    if (
+        _require_int(
+            plan,
+            "max_wait_seconds",
+        )
+        > 7200
+    ):
+        errors.append("max_wait_seconds must be <= 7200")
+
+    if plan.get("creates_endpoint") is not False:
         errors.append("creates_endpoint must be false")
-    if bool(plan.get("managed_spot")):
-        errors.append("managed_spot must be false for the first infrastructure smoke test")
+
+    if plan.get("managed_spot") is not False:
+        errors.append("managed_spot must be false for the certified frontier smoke path")
+
     if errors:
-        message = "Unsafe first-smoke plan: " + "; ".join(errors)
-        raise RuntimeError(message)
+        raise RuntimeError("Unsafe smoke plan: " + "; ".join(errors))
 
 
 _EXACT_TRAINING_QUOTA_CODES: dict[tuple[str, bool], str] = {
@@ -46,6 +89,11 @@ _EXACT_TRAINING_QUOTA_CODES: dict[tuple[str, bool], str] = {
     ("ml.g5.2xlarge", True): "L-CAEE7DB7",
     ("ml.g6e.2xlarge", False): "L-D1AFBF6F",
     ("ml.g6e.2xlarge", True): "L-29512C0F",
+    ("ml.g7e.12xlarge", False): "L-99850E94",
+    ("ml.g7e.48xlarge", False): "L-BE072D49",
+    ("ml.p5en.48xlarge", False): "L-1E48384D",
+    ("ml.p6-b200.48xlarge", False): "L-60EA3D74",
+    ("ml.p6-b300.48xlarge", False): "L-82BE9A32",
 }
 
 _RETRIABLE_SERVICE_QUOTA_ERRORS = frozenset(
