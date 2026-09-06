@@ -20,7 +20,9 @@ def analysis_input_digest(root: Path) -> str:
         paths.update(
             path
             for path in (root / directory).rglob("*")
-            if path.is_file() and path.suffix in {".py", ".json", ".yaml", ".sha256"}
+            if path.is_file()
+            and not path.is_relative_to(root / "reports/notebooks")
+            and path.suffix in {".py", ".json", ".yaml", ".sha256"}
         )
     digest = hashlib.sha256()
     for path in sorted(paths):

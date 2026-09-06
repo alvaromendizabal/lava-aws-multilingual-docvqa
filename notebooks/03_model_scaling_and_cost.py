@@ -38,7 +38,13 @@ from pathlib import Path
 from IPython.display import HTML, display
 
 from lava.evaluation.reporting import load_report, render_report
-from lava.evaluation.walkthrough import TABLE_STYLE, comparison_tables, render_table, training_rates
+from lava.evaluation.walkthrough import (
+    TABLE_STYLE,
+    candidate_assessment,
+    comparison_tables,
+    render_table,
+    training_rates,
+)
 from lava.notebook_support import find_repo_root
 from lava.readers.evaluation_contract import load_evaluation_contract
 from lava.readers.runtime_logging import RuntimeEventLogger
@@ -186,8 +192,8 @@ with logger.stage("07_render_visual_report", heartbeat_seconds=15):
 # %% [markdown]
 # ## 8. Make the next decision
 #
-# 1. Reuse the completed 4B and 9B results. Judge a full 27B pilot on the same
-#    questions before comparing its quality; a one-question smoke cannot rank it.
+# 1. Read the measured 27B-versus-9B result below. Only complete, compatible
+#    semantic evaluations enter this decision; a one-question smoke cannot rank it.
 # 2. If 27B gains answer credit, inspect document regressions and extra latency.
 #    A small gain on five PDFs does not automatically justify the larger reader.
 # 3. Keep the best justified reader as a provisional baseline. Evaluate page
@@ -207,6 +213,11 @@ with logger.stage("07_render_visual_report", heartbeat_seconds=15):
 # task performance. Official links: [LAVA](https://lava-workshop.github.io/) and
 # [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B).
 # %%
+with logger.stage("08_assess_candidate", heartbeat_seconds=15):
+    assessment = candidate_assessment(
+        report, "qwen35_9b_fused_direct", "qwen38_27b_nf4_g5_fused_direct"
+    )
+    display(HTML(render_table([assessment], caption="What does the 27B comparison support?")))
 logger.emit(
     "walkthrough.completed",
     verified_runs=len(report["runs"]),

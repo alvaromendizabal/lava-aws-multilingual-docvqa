@@ -103,3 +103,33 @@ def test_table_is_accessible_escaped_and_distinguishes_zero_from_missing():
     assert "0.00%" in rendered
     assert "Not evaluated" in rendered
     assert "<caption>Scores &amp; coverage</caption>" in rendered
+
+
+def test_real_27b_pilot_is_scored_and_its_failure_remains_in_denominator(report, prices):
+    from lava.evaluation.walkthrough import candidate_assessment
+
+    rows = comparison_tables(report, training_rates(prices))["quality"]
+    large = next(row for row in rows if row["Reader"] == "Qwen3.8 · 27B NF4")
+    assert large["Local LAVA overall"] == pytest.approx(0.8035714285714286)
+    assert large["Valid output"] == 15 / 16
+    result = candidate_assessment(
+        report, "qwen35_9b_fused_direct", "qwen38_27b_nf4_g5_fused_direct"
+    )
+    assert result["Higher question-average local score"] == "Qwen3.5 · 9B"
+    assert result["Question delta (pp)"] == pytest.approx(-6.666666666666665)
+    assert result["Challenger PDFs improved / tied / regressed"] == "1 / 2 / 2"
+
+
+@pytest.mark.parametrize("change", ["smoke", "stale"])
+def test_candidate_assessment_does_not_rank_incomplete_or_stale_results(report, change):
+    from lava.evaluation.walkthrough import candidate_assessment
+
+    report = deepcopy(report)
+    challenger = next(run for run in report["current_models"] if "27b" in run["model_key"])
+    if change == "smoke":
+        challenger["complete"] = False
+    else:
+        challenger["semantic_summary"]["contract_current"] = False
+    result = candidate_assessment(report, "qwen35_9b_fused_direct", challenger["model_key"])
+    assert "Higher question-average local score" not in result
+    assert "required" in result["Status"]

@@ -86,6 +86,8 @@ def test_digest_tracks_data_and_code_but_not_transient_outputs(tmp_path):
     before = analysis_input_digest(tmp_path)
     (tmp_path / "artifacts").mkdir()
     (tmp_path / "artifacts/runtime.json").write_text("progress")
+    (tmp_path / "reports/notebooks").mkdir()
+    (tmp_path / "reports/notebooks/analysis.manifest.json").write_text("published output")
     assert analysis_input_digest(tmp_path) == before
     data.write_text('{"score": 0.9}')
     assert analysis_input_digest(tmp_path) != before

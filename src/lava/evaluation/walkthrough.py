@@ -6,7 +6,7 @@ import html
 import math
 from typing import Any
 
-from lava.evaluation.analysis import validate_semantic_metrics
+from lava.evaluation.analysis import compare_semantic_runs, validate_semantic_metrics
 
 
 def training_rates(snapshot: dict[str, Any]) -> dict[str, float]:
@@ -98,6 +98,39 @@ def comparison_tables(report: dict[str, Any], rates: dict[str, float]) -> dict[s
             }
         )
     return {"coverage": coverage, "quality": quality, "systems": systems, "lineage": lineage}
+
+
+def candidate_assessment(
+    report: dict[str, Any], baseline_key: str, challenger_key: str
+) -> dict[str, Any]:
+    """Describe a compatible full-pilot comparison without promoting a model."""
+    runs = {run["model_key"]: run for run in report["current_models"]}
+    baseline, challenger = runs.get(baseline_key), runs.get(challenger_key)
+    if not baseline or not challenger or not baseline["complete"] or not challenger["complete"]:
+        return {"Status": "Two complete pilots are required"}
+    comparisons = compare_semantic_runs(baseline, challenger)
+    if not comparisons:
+        return {"Status": "Compatible current semantic scores are required"}
+    overall = next(pair for pair in comparisons if pair["metric"] == "overall")
+    delta = overall["question_mean_delta"]
+    leader = (
+        "Tied"
+        if math.isclose(delta, 0, abs_tol=1e-12)
+        else challenger["label"]
+        if delta > 0
+        else baseline["label"]
+    )
+    return {
+        "Comparison": f"{challenger['label']} minus {baseline['label']}",
+        "Higher question-average local score": leader,
+        "Question delta (pp)": 100 * delta,
+        "Document delta (pp)": 100 * overall["mean_delta"],
+        "Challenger PDFs improved / tied / regressed": (
+            f"{overall['documents_improved']} / {overall['documents_tied']} / "
+            f"{overall['documents_regressed']}"
+        ),
+        "Interpretation": "Descriptive pilot; no held-out superiority or model promotion established",
+    }
 
 
 def render_table(

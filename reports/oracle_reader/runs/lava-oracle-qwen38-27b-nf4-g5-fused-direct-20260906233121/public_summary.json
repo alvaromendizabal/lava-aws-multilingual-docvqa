@@ -1,0 +1,123 @@
+{
+  "abstention_rate": 0.0625,
+  "answer_format_counts": {
+    "number": 4,
+    "ordered_list": 1,
+    "string": 7,
+    "unordered_list": 4
+  },
+  "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+  "by_answer_format": {
+    "number": {
+      "document_count": 2,
+      "normalized_exact_answer_micro": 0.25,
+      "question_count": 4,
+      "schema_valid_rate": 1.0,
+      "self_grounding_f1_micro": 1.0
+    },
+    "ordered_list": {
+      "document_count": 1,
+      "normalized_exact_answer_micro": 0.0,
+      "question_count": 1,
+      "schema_valid_rate": 0.0,
+      "self_grounding_f1_micro": 0.0
+    },
+    "string": {
+      "document_count": 3,
+      "normalized_exact_answer_micro": 0.2857142857142857,
+      "question_count": 7,
+      "schema_valid_rate": 1.0,
+      "self_grounding_f1_micro": 0.9285714285714286
+    },
+    "unordered_list": {
+      "document_count": 3,
+      "normalized_exact_answer_micro": 0.5892857142857143,
+      "question_count": 4,
+      "schema_valid_rate": 1.0,
+      "self_grounding_f1_micro": 0.9642857142857143
+    }
+  },
+  "by_language": {
+    "ja": {
+      "document_count": 4,
+      "normalized_exact_answer_micro": 0.3571428571428571,
+      "question_count": 15,
+      "schema_valid_rate": 0.9333333333333333,
+      "self_grounding_f1_micro": 0.9
+    },
+    "vi": {
+      "document_count": 1,
+      "normalized_exact_answer_micro": 0.0,
+      "question_count": 1,
+      "schema_valid_rate": 1.0,
+      "self_grounding_f1_micro": 0.8571428571428571
+    }
+  },
+  "coverage_status": "complete_frozen_pilot",
+  "document_count": 5,
+  "document_question_counts": {
+    "doc-01": 4,
+    "doc-02": 4,
+    "doc-03": 3,
+    "doc-04": 4,
+    "doc-05": 1
+  },
+  "document_scores": {
+    "doc-01": 0.25,
+    "doc-02": 0.0,
+    "doc-03": 0.6190476190476191,
+    "doc-04": 0.625,
+    "doc-05": 0.0
+  },
+  "dtype": "bfloat16",
+  "experiment_id": "benchmark-qwen38_27b_nf4_g5_fused_direct-f9f6c4a8",
+  "generated_at_utc": "2026-09-06T23:48:04.492097+00:00",
+  "generation": {
+    "do_sample": false,
+    "max_new_tokens": 256,
+    "min_p": null,
+    "mode": "direct",
+    "repetition_penalty": 1.0,
+    "seed": 20260902,
+    "temperature": null,
+    "top_k": null,
+    "top_p": null
+  },
+  "git_commit_sha": "f9f6c4a8d7207e045eb4337a5483e8b884890e3a",
+  "input_mode": "fused",
+  "language_counts": {
+    "ja": 15,
+    "vi": 1
+  },
+  "max_peak_cuda_memory_allocated_mib": 21121.41162109375,
+  "max_peak_cuda_memory_reserved_mib": 22204.0,
+  "mean_generated_tokens": 36.75,
+  "mean_generation_seconds": 12.238197190374997,
+  "mean_model_load_seconds": 517.152506622,
+  "mean_preprocessing_seconds": 0.510564331750011,
+  "mean_prompt_tokens": 4612.1875,
+  "mean_total_seconds": 45.07309778668752,
+  "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+  "model_id": "Qwen/Qwen3.8-27B",
+  "model_key": "qwen38_27b_nf4_g5_fused_direct",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "normalized_exact_answer_document_macro": 0.2988095238095238,
+  "normalized_exact_answer_micro": 0.33482142857142855,
+  "oracle_fixed_overall_diagnostic": 0.6674107142857143,
+  "parser_error_counts": {
+    "invalid_abstention": 1,
+    "none": 15
+  },
+  "prompt_version": "oracle-reader-json-v3",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "quantization": "nf4",
+  "record_count": 16,
+  "resume": {
+    "new_question_count": 16,
+    "reused_question_count": 0
+  },
+  "run_kind": "benchmark",
+  "schema_valid_rate": 0.9375,
+  "schema_version": 2,
+  "self_grounding_f1_micro": 0.8973214285714286
+}
