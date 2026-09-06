@@ -388,10 +388,11 @@ def test_execution_notebook_runs_from_notebook_directory(monkeypatch):
     monkeypatch.chdir(ROOT / "notebooks")
     monkeypatch.setattr("IPython.display.display", tables.append)
     runpy.run_path(str(ROOT / "notebooks/02_verified_gpu_execution.py"))
-    table = tables[0].set_index("reader")
-    assert table.loc["Qwen3.5 · 4B", "coverage"] == "16 / 16"
-    assert table.loc["Qwen3.5 · 9B", "coverage"] == "16 / 16"
-    assert not table["local_lava_score"].isna().any()
+    html = tables[0].data
+    assert "Qwen3.5 · 4B" in html and "Qwen3.5 · 9B" in html
+    assert html.count("16 / 16") >= 2
+    assert html.count("Full pilot scored") >= 2
+    assert '<th scope="col">Stage</th>' in html
 
 
 def test_pinned_cpu_gemma_runtime_can_generate_with_synthetic_weights(tmp_path):

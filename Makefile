@@ -39,7 +39,10 @@ stop:
 notebooks:
 	uv run --frozen jupytext --sync notebooks/*.py
 
-.PHONY: benchmark-preview benchmark-submit report
+.PHONY: benchmark-preflight benchmark-preview benchmark-submit report
+benchmark-preflight:
+	uv run --frozen python scripts/preflight.py --mode benchmark --model-key $(MODEL)
+
 benchmark-preview:
 	uv run --frozen python scripts/run_oracle_reader.py --mode benchmark --model-key $(MODEL)
 

@@ -25,6 +25,7 @@ from lava.observability import (
     validate_first_smoke_plan,
     verify_training_quota,
 )
+from lava.readers.evaluation_contract import validate_evaluation_plan
 from lava.readers.sagemaker import build_job_plan, validate_sagemaker_sdk_contract
 
 
@@ -51,7 +52,8 @@ def main() -> int:
     """Validate local state, private assets, quota, and cost without paid compute."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-key", default="qwen35_9b_fused_direct")
-    parser.add_argument("--limit", type=int, default=1)
+    parser.add_argument("--mode", choices=("smoke", "benchmark"), default="smoke")
+    parser.add_argument("--limit", type=int)
     parser.add_argument("--hourly-usd-ceiling", type=float, default=10.0)
     parser.add_argument("--maximum-total-usd", type=float, default=12.5)
     args = parser.parse_args()
@@ -110,12 +112,16 @@ def main() -> int:
             model_lock_path=root / "configs" / "oracle_reader_models.lock.json",
             model_key=args.model_key,
             bucket=bucket,
-            limit=args.limit,
+            limit=args.limit if args.limit is not None else (16 if args.mode == "benchmark" else 1),
+            mode=args.mode,
         )
         plan = plan_model.model_dump(mode="json")
         if plan.get("protocol_lock_id") != protocol_lock_id:
             raise RuntimeError("Constructed SageMaker plan conflicts with protocol lock.")
-        validate_first_smoke_plan(plan)
+        if args.mode == "benchmark":
+            validate_evaluation_plan(plan_model, root)
+        else:
+            validate_first_smoke_plan(plan)
 
         max_runtime_seconds = plan.get("max_runtime_seconds")
         instance_count = plan.get("instance_count")
