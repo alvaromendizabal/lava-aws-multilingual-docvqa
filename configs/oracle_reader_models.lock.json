@@ -1,23 +1,24 @@
 {
   "appended_model_keys": [
-    "qwen38_27b_int8_fused_direct",
-    "qwen38_27b_nf4_fused_direct"
+    "qwen38_27b_nf4_g5_fused_direct"
   ],
-  "candidate_count": 8,
-  "config_sha256": "77996e670791c537e1d4e4e14358e3f11082a7a54290ffaf83510d0fe5f67e2d",
-  "generated_at_utc": "2026-09-06T03:44:37.707820+00:00",
-  "lineage_depth": 2,
-  "parent_file_sha256": "7ae30dc22eedd72d0d55a3140f042321581426ba7aa815f487421a9313580a49",
-  "parent_registry_sha256": "85d0ee5756f6030deb9a14c392e56338b62c1df10d5cbc2b3d28410333bea338",
+  "candidate_count": 9,
+  "config_sha256": "e8320037bd93b08a90aa2e6fb0c0f610cb6f963ff6a2f96364fb17d8639369e5",
+  "generated_at_utc": "2026-09-06T04:34:16.870245+00:00",
+  "lineage_depth": 3,
+  "parent_file_sha256": "f8f2f257a71c636d35e94990ad895fae0e176cf93aefb13700b8306a846d82d9",
+  "parent_registry_sha256": "22067c54115f5c0646c77cda5a97ff72c1ddaa92eacf5d220b195de68bb08bdc",
   "preserved_model_keys": [
     "qwen35_4b_fused_direct",
     "qwen35_4b_image_direct",
     "qwen35_4b_text_direct",
     "qwen35_4b_fused_thinking",
     "qwen35_9b_fused_direct",
-    "qwen38_27b_fused_direct"
+    "qwen38_27b_fused_direct",
+    "qwen38_27b_int8_fused_direct",
+    "qwen38_27b_nf4_fused_direct"
   ],
-  "registry_sha256": "22067c54115f5c0646c77cda5a97ff72c1ddaa92eacf5d220b195de68bb08bdc",
+  "registry_sha256": "e45eafc04ba680d8118e2076007e391a9e24d70aae2020a9c74fd062a730722a",
   "resolved_models": [
     {
       "attention_implementation": "sdpa",
@@ -291,6 +292,45 @@
       "quantization": "nf4",
       "reader_family": "qwen3_5",
       "resolved_at_utc": "2026-09-06T03:44:37.707820+00:00",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "trust_remote_code": false,
+      "use_kernels": false
+    },
+    {
+      "attention_implementation": "sdpa",
+      "device_placement": "single",
+      "dtype": "bfloat16",
+      "expected_license": "apache-2.0",
+      "expected_pipeline_tag": "image-text-to-text",
+      "gated": false,
+      "generation": {
+        "do_sample": false,
+        "max_new_tokens": 256,
+        "min_p": null,
+        "mode": "direct",
+        "repetition_penalty": 1.0,
+        "seed": 20260902,
+        "temperature": null,
+        "top_k": null,
+        "top_p": null
+      },
+      "input_mode": "fused",
+      "instance_type": "ml.g5.2xlarge",
+      "last_modified": "2026-08-14T15:00:01.000Z",
+      "min_cuda_devices": 1,
+      "min_cuda_memory_per_device_gib": 20,
+      "min_total_cuda_memory_gib": 20,
+      "model_id": "Qwen/Qwen3.8-27B",
+      "model_key": "qwen38_27b_nf4_g5_fused_direct",
+      "observed_license": "apache-2.0",
+      "observed_pipeline_tag": "image-text-to-text",
+      "parameters_billion": 27.0,
+      "private": false,
+      "processor_max_pixels": 1605632,
+      "processor_min_pixels": 200704,
+      "quantization": "nf4",
+      "reader_family": "qwen3_5",
+      "resolved_at_utc": "2026-09-06T04:34:16.870245+00:00",
       "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
       "trust_remote_code": false,
       "use_kernels": false

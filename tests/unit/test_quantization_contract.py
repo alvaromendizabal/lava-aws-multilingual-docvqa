@@ -124,3 +124,23 @@ def test_sagemaker_plan_exposes_quantization_before_paid_submission() -> None:
     source = (ROOT / "src/lava/readers/sagemaker.py").read_text(encoding="utf-8")
     assert "quantization=model.quantization" in source
     assert "dtype=model.dtype" in source
+
+
+def test_nf4_g5_candidate_uses_distinct_capacity_pool() -> None:
+    config = yaml.safe_load(
+        (ROOT / "configs/oracle_reader_benchmark.yaml").read_text(encoding="utf-8")
+    )
+    model = config["models"]["qwen38_27b_nf4_g5_fused_direct"]
+    assert model["model_id"] == "Qwen/Qwen3.8-27B"
+    assert model["instance_type"] == "ml.g5.2xlarge"
+    assert model["quantization"] == "nf4"
+    assert model["device_placement"] == "single"
+    assert model["min_cuda_devices"] == 1
+    assert model["min_cuda_memory_per_device_gib"] == 20
+
+    lock = json.loads((ROOT / "configs/oracle_reader_models.lock.json").read_text(encoding="utf-8"))
+    resolved = {row["model_key"]: row for row in lock["resolved_models"]}
+    row = resolved["qwen38_27b_nf4_g5_fused_direct"]
+    assert row["revision"] == REVISION
+    assert row["instance_type"] == "ml.g5.2xlarge"
+    assert row["quantization"] == "nf4"
