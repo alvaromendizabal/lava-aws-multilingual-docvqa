@@ -154,11 +154,12 @@ tested runner capability; the current submission guard allows one active LAVA jo
 
 ## Engineering controls
 
-The submission-preparation branch passes 371 tests. Its real Studio check verified
-all 624 test IDs and reused both cached inputs; notebook 03 ran in 1.080 seconds
-without the progress-widget warning. S3 submission log archival is awaiting a
-narrow IAM permission approval. See the [submission guide](docs/submission.md)
-and [validation record](reports/submission/validation.json) before running it.
+The submission-preparation milestone passes all 373 tests in Linux CI. Two real
+Studio checks verified all 624 test IDs, reused both cached inputs and read back
+their persisted S3 logs. Notebooks 02 and 03 executed in 1.308 and 0.944 seconds;
+the Linux headless runner uses local IPC and avoids the earlier kernel transport
+warning. Executed notebook copies are preserved in S3. See the
+[submission guide](docs/submission.md) and [validation record](reports/submission/validation.json).
 
 - Python 3.12 environment locked with `uv.lock` and `uv sync --frozen`.
 - Ruff formatting/linting, repo-wide Mypy, Pytest, compile checks, shell syntax checks, notebook hygiene, and Git diff validation run through one fail-closed quality gate.

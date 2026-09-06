@@ -439,10 +439,10 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the submission gate passed all 371 tests and Mypy across 67 source
-files in 45 seconds locally. The initial 369-test branch passed CI in 93 seconds;
-two additional regressions cover log-upload failures and preservation of an earlier
-input error. The canonical
+On 2026-09-06, the submission gate passed all 373 tests and Mypy across 67 source
+files in 94 seconds in Linux CI. The restricted scratch sandbox passed 371 tests
+and skipped the two IPC kernel tests because it prohibits local sockets; both
+real-kernel tests passed in CI and in SageMaker Studio. The canonical
 `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
@@ -455,11 +455,15 @@ chart geometry, and HTML escaping. Two presentation
 regressions verify that current semantic results drive semantic charts and stale
 results retain diagnostic labels.
 The notebook-filter regression preserves IDs while removing execution output.
-The semantic-analysis and submission update adds 63 tests. These cover paired
+The semantic-analysis and submission update adds 67 tests. These cover paired
 document comparisons, additive score gaps, incompatible or invalid metrics,
 model-free report imports, and the strict, resumable CSV export described in
 [the submission guide](submission.md). Synthetic CSV tests verify the exporter;
 they do not establish test-set model quality or competition eligibility.
+Two regressions verify local error logging when archival fails, including
+preservation of an earlier input error. Two real-kernel tests verify Linux IPC
+transport and socket cleanup after successful and failed notebook cells. The
+headless runner keeps canonical notebook files unchanged and propagates errors.
 Three deterministic concurrency regressions delay a heartbeat until after stage
 shutdown and cover successful, failed and interrupted stages. They fail against
 the earlier logger and pass with serialized terminal events. Heartbeat output
