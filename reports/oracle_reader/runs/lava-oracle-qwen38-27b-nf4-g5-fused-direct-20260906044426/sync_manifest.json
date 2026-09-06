@@ -1,0 +1,20 @@
+{
+  "artifact_gate": {
+    "model_artifact_uri": "s3://lava-docvqa-560403859723-us-west-2/experiments/oracle-reader/v3/23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61/qwen38_27b_nf4_g5_fused_direct/9cf5e16eedc9d0dc4aa8a1548afa3dc1e2d3268a/sagemaker-output/lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906044426/output/model",
+    "parser_error_counts": {},
+    "raw_response_count": 1,
+    "schema_valid_rate": 1.0
+  },
+  "billable_time_seconds": 783,
+  "git_commit_sha": "9cf5e16eedc9d0dc4aa8a1548afa3dc1e2d3268a",
+  "instance_type": "ml.g5.2xlarge",
+  "job_name": "lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906044426",
+  "model_id": "Qwen/Qwen3.8-27B",
+  "model_key": "qwen38_27b_nf4_g5_fused_direct",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "public_summary_sha256": "3c95d7e188ef9d0013ef4a9661c56f311e3a68597dd4e759d0ab43bd85160433",
+  "schema_version": 1,
+  "synced_at_utc": "2026-09-06T05:07:37+00:00",
+  "training_time_seconds": 783
+}

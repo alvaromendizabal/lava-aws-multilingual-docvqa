@@ -1,0 +1,38 @@
+{
+  "answer_format_counts": {
+    "number": 4,
+    "ordered_list": 1,
+    "string": 7,
+    "unordered_list": 4
+  },
+  "document_count": 5,
+  "evidence_cardinality_counts": {
+    "1": 8,
+    "2": 6,
+    "3": 1,
+    "4": 1
+  },
+  "generated_at_utc": "2026-09-02T22:29:38.952716+00:00",
+  "language_counts": {
+    "ja": 15,
+    "vi": 1
+  },
+  "object_status_counts": {
+    "reused": 63
+  },
+  "privacy_boundary": "Questions, answers, source IDs, page images, text, and layout stay in private S3.",
+  "private_manifest_s3_uri": "s3://lava-docvqa-560403859723-us-west-2/processed/oracle-reader/v3/manifests/latest/oracle_examples.jsonl",
+  "private_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+  "private_manifest_version_id": "ypRTl7C6zNtPwF9LS9bb4bfkz66qBn_b",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "question_count": 16,
+  "render": {
+    "asset_config_sha256": "4a074f3bfa4270934c595c900f0fb75156be50e390a23587b6a8d246197dc755",
+    "dpi": 180,
+    "format": "png",
+    "max_long_edge": 2048,
+    "profile": "standard"
+  },
+  "schema_version": 2,
+  "unique_evidence_page_count": 21
+}

@@ -1,0 +1,34 @@
+{
+  "artifact_gate": {
+    "model_artifact_uri": "s3://<redacted-bucket>/experiments/oracle-reader/v3/23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61/qwen35_4b_fused_direct/a4a5b8b1271cef96866f6c16134670cac78867d7/benchmark/sagemaker-output/lava-oracle-qwen35-4b-fused-direct-20260906180137/output/model",
+    "parser_error_counts": {},
+    "raw_response_count": 16,
+    "schema_valid_rate": 1.0
+  },
+  "billable_time_seconds": 380,
+  "git_commit_sha": "a4a5b8b1271cef96866f6c16134670cac78867d7",
+  "instance_type": "ml.g5.2xlarge",
+  "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+  "job_timing": {
+    "compute_started_at_utc": "2026-09-06T18:02:49.118000+00:00",
+    "created_at_utc": "2026-09-06T18:01:51.427000+00:00",
+    "elapsed_seconds": 438.12,
+    "ended_at_utc": "2026-09-06T18:09:09.547000+00:00",
+    "phase_seconds": {
+      "Completed": 0.0,
+      "Downloading": 177.199,
+      "Pending": 57.432,
+      "Starting": 0.259,
+      "Training": 195.848,
+      "Uploading": 7.382
+    }
+  },
+  "model_id": "Qwen/Qwen3.5-4B",
+  "model_key": "qwen35_4b_fused_direct",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "public_summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926",
+  "schema_version": 1,
+  "synced_at_utc": "2026-09-06T18:44:47+00:00",
+  "training_time_seconds": 380
+}

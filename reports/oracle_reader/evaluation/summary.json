@@ -1,0 +1,1013 @@
+{
+  "current_models": [
+    {
+      "billable_seconds": 380,
+      "complete": true,
+      "instance_type": "ml.g5.2xlarge",
+      "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "job_timing": {
+        "compute_started_at_utc": "2026-09-06T18:02:49.118000+00:00",
+        "created_at_utc": "2026-09-06T18:01:51.427000+00:00",
+        "elapsed_seconds": 438.12,
+        "ended_at_utc": "2026-09-06T18:09:09.547000+00:00",
+        "phase_seconds": {
+          "Completed": 0.0,
+          "Downloading": 177.199,
+          "Pending": 57.432,
+          "Starting": 0.259,
+          "Training": 195.848,
+          "Uploading": 7.382
+        }
+      },
+      "label": "Qwen3.5 \u00b7 4B",
+      "model_key": "qwen35_4b_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "number": 4,
+          "ordered_list": 1,
+          "string": 7,
+          "unordered_list": 4
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "by_answer_format": {
+          "number": {
+            "document_count": 2,
+            "normalized_exact_answer_micro": 0.0,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9166666666666666
+          },
+          "ordered_list": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 0.5,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "string": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.42857142857142855,
+            "question_count": 7,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "unordered_list": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.65,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9642857142857143
+          }
+        },
+        "by_language": {
+          "ja": {
+            "document_count": 4,
+            "normalized_exact_answer_micro": 0.35333333333333333,
+            "question_count": 15,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9777777777777777
+          },
+          "vi": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 0.8,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.8571428571428571
+          }
+        },
+        "coverage_status": "complete_frozen_pilot",
+        "document_count": 5,
+        "document_question_counts": {
+          "doc-01": 4,
+          "doc-02": 4,
+          "doc-03": 3,
+          "doc-04": 4,
+          "doc-05": 1
+        },
+        "document_scores": {
+          "doc-01": 0.5,
+          "doc-02": 0.0,
+          "doc-03": 0.26666666666666666,
+          "doc-04": 0.625,
+          "doc-05": 0.8
+        },
+        "dtype": "bfloat16",
+        "experiment_id": "benchmark-qwen35_4b_fused_direct-a4a5b8b1",
+        "generated_at_utc": "2026-09-06T18:08:54.520720+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "a4a5b8b1271cef96866f6c16134670cac78867d7",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 15,
+          "vi": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 11214.1181640625,
+        "max_peak_cuda_memory_reserved_mib": 14174.0,
+        "mean_generated_tokens": 50.1875,
+        "mean_generation_seconds": 5.516889436562504,
+        "mean_model_load_seconds": 72.37140765199999,
+        "mean_preprocessing_seconds": 0.5235839006875018,
+        "mean_prompt_tokens": 4612.1875,
+        "mean_total_seconds": 10.566387925499997,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.5-4B",
+        "model_key": "qwen35_4b_fused_direct",
+        "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "normalized_exact_answer_document_macro": 0.43833333333333335,
+        "normalized_exact_answer_micro": 0.38125,
+        "oracle_fixed_overall_diagnostic": 0.690625,
+        "parser_error_counts": {
+          "none": 16
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "quantization": "none",
+        "record_count": 16,
+        "run_kind": "benchmark",
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 0.9702380952380952
+      },
+      "summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926",
+      "supporting_metrics": {
+        "answer": {
+          "abstention_rate": 0.0,
+          "full_credit_rate": 0.1875,
+          "normalized_exact_question_average": 0.38125,
+          "schema_valid_rate": 1.0,
+          "zero_credit_rate": 0.5
+        },
+        "grounding": {
+          "document_average_f1": 0.9547619047619047,
+          "evidence_scope": "oracle_supplied_pages",
+          "exact_page_set_rate": 0.875,
+          "question_average_f1": 0.9702380952380952,
+          "question_average_precision": 1.0,
+          "question_average_recall": 0.953125
+        },
+        "latency": {
+          "generation_p50_seconds": 5.286097590499992,
+          "generation_p95_seconds": 8.910279153000003,
+          "generation_tokens_per_second": 9.097064673326338,
+          "scope": "generation_only; excludes provisioning, model loading, preprocessing, and storage"
+        },
+        "official_server_score": null,
+        "question_count": 16,
+        "schema_version": 1,
+        "semantic_vqa_score": null,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+          "model_key": "qwen35_4b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "0b8c8d6313a1de9bd8ebe51fe2d350bb64a952913a0be1443ecbc6d85ed5b0ce",
+          "source_summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926"
+        }
+      }
+    },
+    {
+      "billable_seconds": 395,
+      "complete": true,
+      "instance_type": "ml.g6e.2xlarge",
+      "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "job_timing": {
+        "compute_started_at_utc": "2026-09-06T19:31:24.453000+00:00",
+        "created_at_utc": "2026-09-06T19:05:17.325000+00:00",
+        "elapsed_seconds": 1962.119,
+        "ended_at_utc": "2026-09-06T19:37:59.444000+00:00",
+        "phase_seconds": {
+          "Completed": 0.0,
+          "Downloading": 136.57,
+          "Pending": 1566.156,
+          "Starting": 0.972,
+          "Training": 251.032,
+          "Uploading": 7.389
+        }
+      },
+      "label": "Qwen3.5 \u00b7 9B",
+      "model_key": "qwen35_9b_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "number": 4,
+          "ordered_list": 1,
+          "string": 7,
+          "unordered_list": 4
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "by_answer_format": {
+          "number": {
+            "document_count": 2,
+            "normalized_exact_answer_micro": 0.25,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "ordered_list": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 1.0,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "string": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.42857142857142855,
+            "question_count": 7,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9285714285714286
+          },
+          "unordered_list": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.5809523809523809,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.8809523809523809
+          }
+        },
+        "by_language": {
+          "ja": {
+            "document_count": 4,
+            "normalized_exact_answer_micro": 0.4882539682539682,
+            "question_count": 15,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9444444444444444
+          },
+          "vi": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 0.0,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.8571428571428571
+          }
+        },
+        "coverage_status": "complete_frozen_pilot",
+        "document_count": 5,
+        "document_question_counts": {
+          "doc-01": 4,
+          "doc-02": 4,
+          "doc-03": 3,
+          "doc-04": 4,
+          "doc-05": 1
+        },
+        "document_scores": {
+          "doc-01": 0.5,
+          "doc-02": 0.0,
+          "doc-03": 0.6190476190476191,
+          "doc-04": 0.8666666666666667,
+          "doc-05": 0.0
+        },
+        "dtype": "bfloat16",
+        "experiment_id": "benchmark-qwen35_9b_fused_direct-5fcc7a35",
+        "generated_at_utc": "2026-09-06T19:37:48.014190+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "5fcc7a35ac39c7223810004042b055abc79bf14b",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 15,
+          "vi": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 20632.52392578125,
+        "max_peak_cuda_memory_reserved_mib": 22050.0,
+        "mean_generated_tokens": 41.3125,
+        "mean_generation_seconds": 3.6096579914375084,
+        "mean_model_load_seconds": 118.45650877099999,
+        "mean_preprocessing_seconds": 0.3723605056874959,
+        "mean_prompt_tokens": 4612.1875,
+        "mean_total_seconds": 11.387828160624998,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.5-9B",
+        "model_key": "qwen35_9b_fused_direct",
+        "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+        "normalized_exact_answer_document_macro": 0.39714285714285713,
+        "normalized_exact_answer_micro": 0.4577380952380952,
+        "oracle_fixed_overall_diagnostic": 0.7288690476190476,
+        "parser_error_counts": {
+          "none": 16
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "quantization": "none",
+        "record_count": 16,
+        "resume": {
+          "new_question_count": 16,
+          "reused_question_count": 0
+        },
+        "run_kind": "benchmark",
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 0.9389880952380952
+      },
+      "summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc",
+      "supporting_metrics": {
+        "answer": {
+          "abstention_rate": 0.0,
+          "full_credit_rate": 0.3125,
+          "normalized_exact_question_average": 0.4577380952380952,
+          "schema_valid_rate": 1.0,
+          "zero_credit_rate": 0.5
+        },
+        "grounding": {
+          "document_average_f1": 0.9297619047619048,
+          "evidence_scope": "oracle_supplied_pages",
+          "exact_page_set_rate": 0.8125,
+          "question_average_f1": 0.9389880952380952,
+          "question_average_precision": 1.0,
+          "question_average_recall": 0.9114583333333334
+        },
+        "latency": {
+          "generation_p50_seconds": 3.422353934999961,
+          "generation_p95_seconds": 5.15651527125003,
+          "generation_tokens_per_second": 11.444990106541294,
+          "scope": "generation_only; excludes provisioning, model loading, preprocessing, and storage"
+        },
+        "official_server_score": null,
+        "question_count": 16,
+        "schema_version": 1,
+        "semantic_vqa_score": null,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+          "model_key": "qwen35_9b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "8ecff0b63955b147509749f523b52748f45dbf6732d0f4794bb71ca58523395b",
+          "source_summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc"
+        }
+      }
+    },
+    {
+      "billable_seconds": 783,
+      "complete": false,
+      "instance_type": "ml.g5.2xlarge",
+      "job_name": "lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906044426",
+      "job_timing": {},
+      "label": "Qwen3.8 \u00b7 27B NF4",
+      "model_key": "qwen38_27b_nf4_g5_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "string": 1
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "document_scores": {
+          "doc-01": 0.0
+        },
+        "dtype": "bfloat16",
+        "experiment_id": "smoke-qwen38_27b_nf4_g5_fused_direct-9cf5e16e",
+        "generated_at_utc": "2026-09-06T04:58:56.718472+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "9cf5e16eedc9d0dc4aa8a1548afa3dc1e2d3268a",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 19312.35693359375,
+        "max_peak_cuda_memory_reserved_mib": 19782.0,
+        "mean_generated_tokens": 29.0,
+        "mean_generation_seconds": 13.56366140900002,
+        "mean_model_load_seconds": 515.953787102,
+        "mean_preprocessing_seconds": 0.7822265710000238,
+        "mean_prompt_tokens": 5069.0,
+        "mean_total_seconds": 530.303447216,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.8-27B",
+        "model_key": "qwen38_27b_nf4_g5_fused_direct",
+        "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "normalized_exact_answer_document_macro": 0.0,
+        "normalized_exact_answer_micro": 0.0,
+        "oracle_fixed_overall_diagnostic": 0.5,
+        "parser_error_counts": {
+          "none": 1
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "quantization": "nf4",
+        "record_count": 1,
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 1.0
+      },
+      "summary_sha256": "3c95d7e188ef9d0013ef4a9661c56f311e3a68597dd4e759d0ab43bd85160433",
+      "supporting_metrics": null
+    }
+  ],
+  "expected_documents": 5,
+  "expected_questions": 16,
+  "interpretation": "Small oracle-reader pilot. Normalized-exact diagnostics and local semantic scores are distinct; no organizer-server parity or model promotion is claimed.",
+  "paired_document_comparisons": [
+    {
+      "baseline_job": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "challenger_job": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "document_count": 5,
+      "documents_improved": 2,
+      "documents_regressed": 1,
+      "documents_tied": 2,
+      "exact_two_sided_sign_flip_p_value": 1.0,
+      "exploratory_cluster_bootstrap_95_interval": [
+        -0.43166666666666664,
+        0.25976190476190475
+      ],
+      "maximum_delta": 0.3523809523809524,
+      "mean_delta": -0.04119047619047619,
+      "median_delta": 0.0,
+      "minimum_delta": -0.8,
+      "per_document_delta": {
+        "doc-01": 0.0,
+        "doc-02": 0.0,
+        "doc-03": 0.3523809523809524,
+        "doc-04": 0.2416666666666667,
+        "doc-05": -0.8
+      }
+    }
+  ],
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "runs": [
+    {
+      "billable_seconds": 336,
+      "complete": false,
+      "instance_type": "ml.g5.2xlarge",
+      "job_name": "lava-oracle-qwen35-4b-fused-direct-20260904193156",
+      "job_timing": {},
+      "label": "Qwen3.5 \u00b7 4B",
+      "model_key": "qwen35_4b_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "string": 1
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "document_scores": {
+          "doc-01": 1.0
+        },
+        "experiment_id": "smoke-qwen35_4b_fused_direct-a773e824",
+        "generated_at_utc": "2026-09-04T19:51:50.210726+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "a773e824e1f8457e9c3eb74ef9af9428c403cb1c",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 10050.33642578125,
+        "max_peak_cuda_memory_reserved_mib": 10334.0,
+        "mean_generated_tokens": 59.0,
+        "mean_generation_seconds": 7.496634870000037,
+        "mean_model_load_seconds": 71.23106131400004,
+        "mean_preprocessing_seconds": 0.7508106200000384,
+        "mean_prompt_tokens": 5069.0,
+        "mean_total_seconds": 79.48153213400002,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.5-4B",
+        "model_key": "qwen35_4b_fused_direct",
+        "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "normalized_exact_answer_document_macro": 1.0,
+        "normalized_exact_answer_micro": 1.0,
+        "oracle_fixed_overall_diagnostic": 1.0,
+        "parser_error_counts": {
+          "none": 1
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "record_count": 1,
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 1.0
+      },
+      "summary_sha256": "9db43adf97587441f3ada2859b9b0efa383c79d44636a4931b94a9ef6f9115b7",
+      "supporting_metrics": null
+    },
+    {
+      "billable_seconds": 380,
+      "complete": true,
+      "instance_type": "ml.g5.2xlarge",
+      "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "job_timing": {
+        "compute_started_at_utc": "2026-09-06T18:02:49.118000+00:00",
+        "created_at_utc": "2026-09-06T18:01:51.427000+00:00",
+        "elapsed_seconds": 438.12,
+        "ended_at_utc": "2026-09-06T18:09:09.547000+00:00",
+        "phase_seconds": {
+          "Completed": 0.0,
+          "Downloading": 177.199,
+          "Pending": 57.432,
+          "Starting": 0.259,
+          "Training": 195.848,
+          "Uploading": 7.382
+        }
+      },
+      "label": "Qwen3.5 \u00b7 4B",
+      "model_key": "qwen35_4b_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "number": 4,
+          "ordered_list": 1,
+          "string": 7,
+          "unordered_list": 4
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "by_answer_format": {
+          "number": {
+            "document_count": 2,
+            "normalized_exact_answer_micro": 0.0,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9166666666666666
+          },
+          "ordered_list": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 0.5,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "string": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.42857142857142855,
+            "question_count": 7,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "unordered_list": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.65,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9642857142857143
+          }
+        },
+        "by_language": {
+          "ja": {
+            "document_count": 4,
+            "normalized_exact_answer_micro": 0.35333333333333333,
+            "question_count": 15,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9777777777777777
+          },
+          "vi": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 0.8,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.8571428571428571
+          }
+        },
+        "coverage_status": "complete_frozen_pilot",
+        "document_count": 5,
+        "document_question_counts": {
+          "doc-01": 4,
+          "doc-02": 4,
+          "doc-03": 3,
+          "doc-04": 4,
+          "doc-05": 1
+        },
+        "document_scores": {
+          "doc-01": 0.5,
+          "doc-02": 0.0,
+          "doc-03": 0.26666666666666666,
+          "doc-04": 0.625,
+          "doc-05": 0.8
+        },
+        "dtype": "bfloat16",
+        "experiment_id": "benchmark-qwen35_4b_fused_direct-a4a5b8b1",
+        "generated_at_utc": "2026-09-06T18:08:54.520720+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "a4a5b8b1271cef96866f6c16134670cac78867d7",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 15,
+          "vi": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 11214.1181640625,
+        "max_peak_cuda_memory_reserved_mib": 14174.0,
+        "mean_generated_tokens": 50.1875,
+        "mean_generation_seconds": 5.516889436562504,
+        "mean_model_load_seconds": 72.37140765199999,
+        "mean_preprocessing_seconds": 0.5235839006875018,
+        "mean_prompt_tokens": 4612.1875,
+        "mean_total_seconds": 10.566387925499997,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.5-4B",
+        "model_key": "qwen35_4b_fused_direct",
+        "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "normalized_exact_answer_document_macro": 0.43833333333333335,
+        "normalized_exact_answer_micro": 0.38125,
+        "oracle_fixed_overall_diagnostic": 0.690625,
+        "parser_error_counts": {
+          "none": 16
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "quantization": "none",
+        "record_count": 16,
+        "run_kind": "benchmark",
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 0.9702380952380952
+      },
+      "summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926",
+      "supporting_metrics": {
+        "answer": {
+          "abstention_rate": 0.0,
+          "full_credit_rate": 0.1875,
+          "normalized_exact_question_average": 0.38125,
+          "schema_valid_rate": 1.0,
+          "zero_credit_rate": 0.5
+        },
+        "grounding": {
+          "document_average_f1": 0.9547619047619047,
+          "evidence_scope": "oracle_supplied_pages",
+          "exact_page_set_rate": 0.875,
+          "question_average_f1": 0.9702380952380952,
+          "question_average_precision": 1.0,
+          "question_average_recall": 0.953125
+        },
+        "latency": {
+          "generation_p50_seconds": 5.286097590499992,
+          "generation_p95_seconds": 8.910279153000003,
+          "generation_tokens_per_second": 9.097064673326338,
+          "scope": "generation_only; excludes provisioning, model loading, preprocessing, and storage"
+        },
+        "official_server_score": null,
+        "question_count": 16,
+        "schema_version": 1,
+        "semantic_vqa_score": null,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+          "model_key": "qwen35_4b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "0b8c8d6313a1de9bd8ebe51fe2d350bb64a952913a0be1443ecbc6d85ed5b0ce",
+          "source_summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926"
+        }
+      }
+    },
+    {
+      "billable_seconds": 350,
+      "complete": false,
+      "instance_type": "ml.g6e.2xlarge",
+      "job_name": "lava-oracle-qwen35-9b-fused-direct-20260904203547",
+      "job_timing": {},
+      "label": "Qwen3.5 \u00b7 9B",
+      "model_key": "qwen35_9b_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "string": 1
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "document_scores": {
+          "doc-01": 0.0
+        },
+        "experiment_id": "smoke-qwen35_9b_fused_direct-a773e824",
+        "generated_at_utc": "2026-09-05T14:02:12.957962+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "a773e824e1f8457e9c3eb74ef9af9428c403cb1c",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 19403.55615234375,
+        "max_peak_cuda_memory_reserved_mib": 19642.0,
+        "mean_generated_tokens": 36.0,
+        "mean_generation_seconds": 4.370779269000025,
+        "mean_model_load_seconds": 118.57771003599998,
+        "mean_preprocessing_seconds": 0.694010741999989,
+        "mean_prompt_tokens": 5069.0,
+        "mean_total_seconds": 123.64522901000001,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.5-9B",
+        "model_key": "qwen35_9b_fused_direct",
+        "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+        "normalized_exact_answer_document_macro": 0.0,
+        "normalized_exact_answer_micro": 0.0,
+        "oracle_fixed_overall_diagnostic": 0.5,
+        "parser_error_counts": {
+          "none": 1
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "record_count": 1,
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 1.0
+      },
+      "summary_sha256": "6984264c68d1b38f119654e2cb68c49c48dcdf92db17f859039fa7523344f324",
+      "supporting_metrics": null
+    },
+    {
+      "billable_seconds": 395,
+      "complete": true,
+      "instance_type": "ml.g6e.2xlarge",
+      "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "job_timing": {
+        "compute_started_at_utc": "2026-09-06T19:31:24.453000+00:00",
+        "created_at_utc": "2026-09-06T19:05:17.325000+00:00",
+        "elapsed_seconds": 1962.119,
+        "ended_at_utc": "2026-09-06T19:37:59.444000+00:00",
+        "phase_seconds": {
+          "Completed": 0.0,
+          "Downloading": 136.57,
+          "Pending": 1566.156,
+          "Starting": 0.972,
+          "Training": 251.032,
+          "Uploading": 7.389
+        }
+      },
+      "label": "Qwen3.5 \u00b7 9B",
+      "model_key": "qwen35_9b_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "number": 4,
+          "ordered_list": 1,
+          "string": 7,
+          "unordered_list": 4
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "by_answer_format": {
+          "number": {
+            "document_count": 2,
+            "normalized_exact_answer_micro": 0.25,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "ordered_list": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 1.0,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 1.0
+          },
+          "string": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.42857142857142855,
+            "question_count": 7,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9285714285714286
+          },
+          "unordered_list": {
+            "document_count": 3,
+            "normalized_exact_answer_micro": 0.5809523809523809,
+            "question_count": 4,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.8809523809523809
+          }
+        },
+        "by_language": {
+          "ja": {
+            "document_count": 4,
+            "normalized_exact_answer_micro": 0.4882539682539682,
+            "question_count": 15,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.9444444444444444
+          },
+          "vi": {
+            "document_count": 1,
+            "normalized_exact_answer_micro": 0.0,
+            "question_count": 1,
+            "schema_valid_rate": 1.0,
+            "self_grounding_f1_micro": 0.8571428571428571
+          }
+        },
+        "coverage_status": "complete_frozen_pilot",
+        "document_count": 5,
+        "document_question_counts": {
+          "doc-01": 4,
+          "doc-02": 4,
+          "doc-03": 3,
+          "doc-04": 4,
+          "doc-05": 1
+        },
+        "document_scores": {
+          "doc-01": 0.5,
+          "doc-02": 0.0,
+          "doc-03": 0.6190476190476191,
+          "doc-04": 0.8666666666666667,
+          "doc-05": 0.0
+        },
+        "dtype": "bfloat16",
+        "experiment_id": "benchmark-qwen35_9b_fused_direct-5fcc7a35",
+        "generated_at_utc": "2026-09-06T19:37:48.014190+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "5fcc7a35ac39c7223810004042b055abc79bf14b",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 15,
+          "vi": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 20632.52392578125,
+        "max_peak_cuda_memory_reserved_mib": 22050.0,
+        "mean_generated_tokens": 41.3125,
+        "mean_generation_seconds": 3.6096579914375084,
+        "mean_model_load_seconds": 118.45650877099999,
+        "mean_preprocessing_seconds": 0.3723605056874959,
+        "mean_prompt_tokens": 4612.1875,
+        "mean_total_seconds": 11.387828160624998,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.5-9B",
+        "model_key": "qwen35_9b_fused_direct",
+        "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+        "normalized_exact_answer_document_macro": 0.39714285714285713,
+        "normalized_exact_answer_micro": 0.4577380952380952,
+        "oracle_fixed_overall_diagnostic": 0.7288690476190476,
+        "parser_error_counts": {
+          "none": 16
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "quantization": "none",
+        "record_count": 16,
+        "resume": {
+          "new_question_count": 16,
+          "reused_question_count": 0
+        },
+        "run_kind": "benchmark",
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 0.9389880952380952
+      },
+      "summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc",
+      "supporting_metrics": {
+        "answer": {
+          "abstention_rate": 0.0,
+          "full_credit_rate": 0.3125,
+          "normalized_exact_question_average": 0.4577380952380952,
+          "schema_valid_rate": 1.0,
+          "zero_credit_rate": 0.5
+        },
+        "grounding": {
+          "document_average_f1": 0.9297619047619048,
+          "evidence_scope": "oracle_supplied_pages",
+          "exact_page_set_rate": 0.8125,
+          "question_average_f1": 0.9389880952380952,
+          "question_average_precision": 1.0,
+          "question_average_recall": 0.9114583333333334
+        },
+        "latency": {
+          "generation_p50_seconds": 3.422353934999961,
+          "generation_p95_seconds": 5.15651527125003,
+          "generation_tokens_per_second": 11.444990106541294,
+          "scope": "generation_only; excludes provisioning, model loading, preprocessing, and storage"
+        },
+        "official_server_score": null,
+        "question_count": 16,
+        "schema_version": 1,
+        "semantic_vqa_score": null,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+          "model_key": "qwen35_9b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "8ecff0b63955b147509749f523b52748f45dbf6732d0f4794bb71ca58523395b",
+          "source_summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc"
+        }
+      }
+    },
+    {
+      "billable_seconds": 783,
+      "complete": false,
+      "instance_type": "ml.g5.2xlarge",
+      "job_name": "lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906044426",
+      "job_timing": {},
+      "label": "Qwen3.8 \u00b7 27B NF4",
+      "model_key": "qwen38_27b_nf4_g5_fused_direct",
+      "semantic_summary": null,
+      "summary": {
+        "abstention_rate": 0.0,
+        "answer_format_counts": {
+          "string": 1
+        },
+        "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+        "document_scores": {
+          "doc-01": 0.0
+        },
+        "dtype": "bfloat16",
+        "experiment_id": "smoke-qwen38_27b_nf4_g5_fused_direct-9cf5e16e",
+        "generated_at_utc": "2026-09-06T04:58:56.718472+00:00",
+        "generation": {
+          "do_sample": false,
+          "max_new_tokens": 256,
+          "min_p": null,
+          "mode": "direct",
+          "repetition_penalty": 1.0,
+          "seed": 20260902,
+          "temperature": null,
+          "top_k": null,
+          "top_p": null
+        },
+        "git_commit_sha": "9cf5e16eedc9d0dc4aa8a1548afa3dc1e2d3268a",
+        "input_mode": "fused",
+        "language_counts": {
+          "ja": 1
+        },
+        "max_peak_cuda_memory_allocated_mib": 19312.35693359375,
+        "max_peak_cuda_memory_reserved_mib": 19782.0,
+        "mean_generated_tokens": 29.0,
+        "mean_generation_seconds": 13.56366140900002,
+        "mean_model_load_seconds": 515.953787102,
+        "mean_preprocessing_seconds": 0.7822265710000238,
+        "mean_prompt_tokens": 5069.0,
+        "mean_total_seconds": 530.303447216,
+        "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+        "model_id": "Qwen/Qwen3.8-27B",
+        "model_key": "qwen38_27b_nf4_g5_fused_direct",
+        "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "normalized_exact_answer_document_macro": 0.0,
+        "normalized_exact_answer_micro": 0.0,
+        "oracle_fixed_overall_diagnostic": 0.5,
+        "parser_error_counts": {
+          "none": 1
+        },
+        "prompt_version": "oracle-reader-json-v3",
+        "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+        "quantization": "nf4",
+        "record_count": 1,
+        "schema_valid_rate": 1.0,
+        "schema_version": 2,
+        "self_grounding_f1_micro": 1.0
+      },
+      "summary_sha256": "3c95d7e188ef9d0013ef4a9661c56f311e3a68597dd4e759d0ab43bd85160433",
+      "supporting_metrics": null
+    }
+  ],
+  "schema_version": 1
+}

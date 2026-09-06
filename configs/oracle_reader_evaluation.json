@@ -1,0 +1,32 @@
+{
+  "answer_format_counts": {
+    "number": 4,
+    "ordered_list": 1,
+    "string": 7,
+    "unordered_list": 4
+  },
+  "document_count": 5,
+  "document_question_counts": {
+    "doc-01": 4,
+    "doc-02": 4,
+    "doc-03": 3,
+    "doc-04": 4,
+    "doc-05": 1
+  },
+  "language_counts": {
+    "ja": 15,
+    "vi": 1
+  },
+  "metric_boundary": "Normalized-exact diagnostic; semantic judge pending; no model promotion from this pilot.",
+  "mode": "benchmark",
+  "models": {
+    "qwen35_4b_fused_direct": "ml.g5.2xlarge",
+    "qwen35_9b_fused_direct": "ml.g6e.2xlarge",
+    "qwen38_27b_nf4_g5_fused_direct": "ml.g5.2xlarge"
+  },
+  "private_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+  "private_manifest_version_id": "ypRTl7C6zNtPwF9LS9bb4bfkz66qBn_b",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "question_count": 16,
+  "schema_version": 1
+}

@@ -1,0 +1,52 @@
+{
+  "abstention_rate": 0.0,
+  "answer_format_counts": {
+    "string": 1
+  },
+  "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+  "document_scores": {
+    "doc-01": 0.0
+  },
+  "experiment_id": "smoke-qwen35_9b_fused_direct-a773e824",
+  "generated_at_utc": "2026-09-05T14:02:12.957962+00:00",
+  "generation": {
+    "do_sample": false,
+    "max_new_tokens": 256,
+    "min_p": null,
+    "mode": "direct",
+    "repetition_penalty": 1.0,
+    "seed": 20260902,
+    "temperature": null,
+    "top_k": null,
+    "top_p": null
+  },
+  "git_commit_sha": "a773e824e1f8457e9c3eb74ef9af9428c403cb1c",
+  "input_mode": "fused",
+  "language_counts": {
+    "ja": 1
+  },
+  "max_peak_cuda_memory_allocated_mib": 19403.55615234375,
+  "max_peak_cuda_memory_reserved_mib": 19642.0,
+  "mean_generated_tokens": 36.0,
+  "mean_generation_seconds": 4.370779269000025,
+  "mean_model_load_seconds": 118.57771003599998,
+  "mean_preprocessing_seconds": 0.694010741999989,
+  "mean_prompt_tokens": 5069.0,
+  "mean_total_seconds": 123.64522901000001,
+  "metric_boundary": "Normalized-exact diagnostics only; not the organizer-server semantic score.",
+  "model_id": "Qwen/Qwen3.5-9B",
+  "model_key": "qwen35_9b_fused_direct",
+  "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "normalized_exact_answer_document_macro": 0.0,
+  "normalized_exact_answer_micro": 0.0,
+  "oracle_fixed_overall_diagnostic": 0.5,
+  "parser_error_counts": {
+    "none": 1
+  },
+  "prompt_version": "oracle-reader-json-v3",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "record_count": 1,
+  "schema_valid_rate": 1.0,
+  "schema_version": 2,
+  "self_grounding_f1_micro": 1.0
+}
