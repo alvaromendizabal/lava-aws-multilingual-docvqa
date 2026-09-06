@@ -24,6 +24,8 @@ from lava.evaluation.semantic import (
     DurableSemanticJudge,
     GemmaDecision,
     ImmutableS3Objects,
+    JudgeAcceptanceError,
+    JudgeOutputError,
     judge_contract,
 )
 from lava.notebook_support import find_repo_root
@@ -50,6 +52,10 @@ def main() -> int:
         logger.emit("evaluation.action_required", level="ERROR", instruction=str(error))
         print("EVALUATION_ACTION_REQUIRED")
         return 2
+    except (JudgeAcceptanceError, JudgeOutputError) as error:
+        logger.emit("evaluation.judge_rejected", level="ERROR", instruction=str(error))
+        print("SEMANTIC_JUDGE_REJECTED")
+        return 3
     except KeyboardInterrupt:
         logger.emit(
             "evaluation.interrupted", instruction="Rerun make evaluate to reuse saved decisions."

@@ -43,8 +43,8 @@ Perform these steps in order. Paste an interactive login command **by itself**.
 
    ```bash
    cd "$HOME/lava-aws-multilingual-docvqa"
-   git fetch origin
-   git switch main
+   git fetch origin &&
+   git switch main &&
    git merge --ff-only origin/main
    ```
 
@@ -102,6 +102,39 @@ After successful scoring, review and commit only public result aggregates and
 the report on a results branch, run `make quality`, and merge through a reviewed
 pull request. Questions, answers, credentials, weights, and logs remain outside
 Git. A new implementation or judge contract uses a separate scoring cache.
+
+## Judge validation and notebook update recovery
+
+The 2026-09-06 operator run passed access checks with 28.16 GiB available, loaded
+Gemma successfully, and stopped because the original prompt judged `1000` and
+`1001` equivalent. This was a judge-quality failure. The earlier gated-model 403
+was resolved by the operator; repeated login or reader GPU runs cannot correct
+an inaccurate judge.
+
+The revised prompt explicitly treats the ground truth as authoritative and grades
+a quoted submitted answer against it. It preserves the pinned Gemma revision,
+float32 CPU runtime, strict YES/NO parsing, and all published score formulas.
+No probe answers are inserted into the prompt. The original eight controls remain;
+20 additional controls cover decimal precision, dates, opposite meanings, empty
+answers, multilingual names and negation, formatting, and injected instructions.
+All 28 passed on the real cached model in `lava-dev`; see the
+[validation evidence](../reports/oracle_reader/judge_validation.json). These are public development
+controls, not a held-out estimate of general judge accuracy or organizer parity.
+
+Every acceptance run evaluates all controls, logs expected/observed results with
+UTC timestamps, and saves a content-addressed report in S3 before reporting pass
+or failure. Malformed output is not converted to a negative vote. A rejection
+exits with status 3 and `SEMANTIC_JUDGE_REJECTED`; saved reader answers remain valid.
+The changed scoring contract isolates earlier decisions, including the incorrect
+old numeric decision. Compatible decisions within the new contract are reusable.
+
+If an executed notebook blocks `git switch main`, preserve it with a **named Git
+stash** before switching, then apply that exact stash after the update. Do not
+paste independent update commands that continue after a failed switch. The `&&`
+chain in step 4 stops at the first error. Never use `reset --hard` to resolve this.
+A notebook's outputs are local work, not evidence that reader inference needs to
+be repeated. Generated outputs belong under `artifacts/notebook_runs/`; the paired
+public notebook sources stay clean and reviewable.
 
 ## Verified reader results
 
