@@ -3,21 +3,26 @@
 from __future__ import annotations
 
 import json
+import os
 import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 
 class RuntimeEventLogger:
     """Emit machine-readable one-line events suitable for CloudWatch and terminal tails."""
 
-    def __init__(self, component: str) -> None:
+    def __init__(self, component: str, *, jsonl_path: Path | None = None) -> None:
         self.component = component
         self.started = time.monotonic()
         self._lock = threading.Lock()
+        self.jsonl_path = jsonl_path
+        if jsonl_path is not None:
+            jsonl_path.parent.mkdir(parents=True, exist_ok=True)
 
     def emit(self, event: str, *, level: str = "INFO", **fields: Any) -> None:
         """Emit one event with UTC time and total elapsed seconds."""
@@ -30,7 +35,13 @@ class RuntimeEventLogger:
             **fields,
         }
         with self._lock:
-            print(json.dumps(payload, ensure_ascii=False, sort_keys=True), flush=True)
+            line = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            if self.jsonl_path is not None:
+                with self.jsonl_path.open("a", encoding="utf-8") as stream:
+                    stream.write(line + "\n")
+                    stream.flush()
+                    os.fsync(stream.fileno())
+            print(line, flush=True)
 
     @contextmanager
     def stage(self, name: str, *, heartbeat_seconds: float = 15.0) -> Iterator[None]:
@@ -52,7 +63,7 @@ class RuntimeEventLogger:
         thread.start()
         try:
             yield
-        except Exception as exc:
+        except BaseException as exc:
             self.emit(
                 f"{name}.failed",
                 level="ERROR",

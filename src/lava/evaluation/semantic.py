@@ -13,6 +13,7 @@ from typing import Any, Literal, cast
 from botocore.exceptions import ClientError
 from pydantic import BaseModel, ConfigDict, Field
 
+from lava.evaluation.access import check_cpu_memory, hub_access_errors
 from lava.readers.runtime_logging import RuntimeEventLogger
 
 PROMPT = """Judge whether the candidate answer means the same thing as the reference answer.
@@ -156,6 +157,8 @@ class GemmaDecision:
         self.tokenizer: Any = None
 
     def __call__(self, reference: str, prediction: str, language: str) -> str:
+        if self.model is None:
+            check_cpu_memory(self.logger)
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -170,7 +173,7 @@ class GemmaDecision:
             torch.manual_seed(config["seed"])
             torch.set_num_threads(config["threads"])
             torch.use_deterministic_algorithms(True)
-            with self.logger.stage("judge.load", heartbeat_seconds=15):
+            with self.logger.stage("judge.load", heartbeat_seconds=15), hub_access_errors():
                 self.tokenizer = AutoTokenizer.from_pretrained(
                     config["model_id"],
                     revision=config["tokenizer_revision"],

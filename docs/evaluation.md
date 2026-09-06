@@ -1,5 +1,110 @@
 # Oracle-reader evaluation and recovery
 
+## Operator steps: Hugging Face login and saved-answer scoring
+
+No Claude account, Claude installation, or Claude API key is used by this project.
+The Hugging Face CLI may print `hf skills add -g --claude`. This is an optional
+AI-assistant skill suggestion; ignore it. The login menu that follows belongs to
+**Hugging Face**. See the [official CLI guide](https://huggingface.co/docs/huggingface_hub/en/guides/cli#hf-auth-login).
+
+GitHub stores reviewed source and reports. AWS runs readers and retains private
+results in S3. Hugging Face provides model files, including Google's Gemma judge.
+Linking these services to ChatGPT does not automatically authenticate the CLI
+running inside your separate SageMaker terminal. Model-term acceptance is also
+separate from signing in.
+
+Perform these steps in order. Paste an interactive login command **by itself**.
+
+1. If the terminal is currently showing the login menu, leave **Log in with your
+   browser** selected and press **Enter**. Open the Hugging Face URL it prints in
+   your desktop browser, sign in, enter the displayed one-time code if requested,
+   and approve the device authorization. Wait for **Login successful** and the
+   ordinary `sagemaker-user@...$` prompt. If a previously pasted `make evaluate`
+   starts automatically on the old 4 GiB space, press **Ctrl+C** to stop the CPU
+   evaluation before proceeding. Completed reader answers remain in S3.
+
+2. In that same browser account, open
+   [google/gemma-3-1b-it](https://huggingface.co/google/gemma-3-1b-it). If prompted,
+   review and accept Google's terms or request access. Continue once access is
+   granted. You do not need another model-provider account.
+
+3. The verified `lava-dev` app was on **ml.t3.medium (4 GiB)** on 2026-09-06.
+   This is insufficient headroom for the pinned float32 CPU judge. Save notebook
+   files, open **SageMaker Studio > JupyterLab > lava-dev**, choose **Stop space**,
+   wait until stopped, select **ml.m7i.2xlarge (8 vCPUs / 32 GiB)**, and choose
+   **Run space**, then **Open JupyterLab**. Review the displayed CPU price before
+   starting it. Keep the existing space/storage and do not delete them: its EBS
+   volume persists across instance changes. This is a billed CPU size change,
+   not a GPU job. See the [AWS JupyterLab guide](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-updated-jl-user-guide.html).
+
+4. At an idle terminal prompt, update the merged main branch. This preserves
+   original experiment commits in Git history. Do not use force/reset commands
+   to discard local work if Git reports uncommitted changes.
+
+   ```bash
+   cd "$HOME/lava-aws-multilingual-docvqa"
+   git fetch origin
+   git switch main
+   git merge --ff-only origin/main
+   ```
+
+5. If login has not been completed, run just this command, then complete step 1:
+
+   ```bash
+   uv run --frozen --group judge hf auth login
+   ```
+
+6. Check memory, the terminal's account and the pinned Gemma resource. This downloads no
+   weights, reads no private predictions, and creates no AWS resources:
+
+   ```bash
+   make evaluation-check
+   ```
+
+   Continue only after **SEMANTIC_JUDGE_ACCESS_VERIFIED**. The output identifies
+   available RAM, the account and pinned model revision. A memory/login/access/network problem returns
+   a nonzero exit code with a specific next action, not an ambiguous success.
+
+7. Evaluate the saved complete pilots:
+
+   ```bash
+   make evaluate
+   ```
+
+   Expect source verification, `judge.load` heartbeats, acceptance probes, and
+   `judge.decision.completed` events with new/reused counts. CPU model loading or
+   judging can take time; a heartbeat is a liveness signal, not a quality score.
+   Completion is **SAVED_PREDICTIONS_EVALUATION_COMPLETED**. This creates no new
+   reader GPU job. Re-running the same command reuses compatible S3 decisions.
+
+8. Open `notebooks/03_model_scaling_and_cost.ipynb` in JupyterLab and select
+   **Run > Run All Cells**, or open the generated
+   `reports/oracle_reader/evaluation/index.html`. Notebook 02 shows current
+   coverage; notebook 03 embeds the report. The semantic score remains a clearly
+   labeled local implementation of the published formulas.
+
+Each evaluation/check invocation prints its log path under
+`artifacts/semantic_judge/runtime/<attempt>/events.jsonl`. These UTF-8 logs append
+UTC timestamps, stage durations, total elapsed time, heartbeats, and progress;
+each event is flushed to disk before it is printed. Keep these private workspace
+logs with the run. Accepted answer-pair decisions are separately durable in S3,
+including after loss of the local workspace. CPU judging runs on the current
+host: if that host stops, rerun the command to resume.
+
+The memory gate requires at least 8 GiB currently available, bounded by Linux
+container limits as well as host RAM. It repeats immediately before uncached
+model loading; the threshold is conservative operating headroom, not a measured
+peak-memory claim. Fully cached judge decisions can still be reused without
+loading the model. Model loading and live semantic scores remain unverified until
+the authorized host completes acceptance and evaluation.
+
+After successful scoring, review and commit only public result aggregates and
+the report on a results branch, run `make quality`, and merge through a reviewed
+pull request. Questions, answers, credentials, weights, and logs remain outside
+Git. A new implementation or judge contract uses a separate scoring cache.
+
+## Verified reader results
+
 The **4B and 9B complete pilots are verified**: each covers the same 16 questions
 across five documents, with 100% valid output and no parser errors. Their
 normalized-exact diagnostics are:
@@ -138,10 +243,9 @@ Google requires accepting the [Gemma terms](https://huggingface.co/google/gemma-
 and authenticating an authorized Hugging Face account. Configure access locally;
 never paste a token into ChatGPT, a notebook, or Git:
 
-```bash
-uv run --frozen --group judge hf auth login
-make evaluate
-```
+Run `uv run --frozen --group judge hf auth login` by itself and finish browser
+authorization. Then run `make evaluation-check`, followed by `make evaluate`
+after the access check succeeds. The operator steps above explain each prompt.
 
 On 2026-09-06 this editing environment received HTTP 401 `GatedRepoError` for the
 pinned model. No pretrained Gemma judgments or semantic scores have been produced
@@ -264,7 +368,7 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the canonical gate passed all 268 tests and Mypy across 62 source
+On 2026-09-06, the canonical gate passed all 293 tests and Mypy across 63 source
 files. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
@@ -273,7 +377,7 @@ writes, immutable idempotent writes, parser failures, and complete artifact audi
 Tests use injected model and cloud adapters; they do not claim GPU execution.
 Checks also cover UTC lifecycle arithmetic and invalid timestamps,
 missing historical telemetry, the verified mixed 4B/9B result, accessible signed
-chart geometry, and HTML escaping. The quality gate completed in 52 seconds.
+chart geometry, and HTML escaping. The current quality gate completed in 46 seconds.
 The semantic evaluation stage adds 34 tests covering immutable decision reuse,
 negative decisions, rejected writes, ambiguous output, corruption, stale contracts,
 source hashes, actual predicted-page scoring, missing access, metric denominators,
@@ -281,6 +385,14 @@ latency percentiles, and notebook execution from its own directory. A tiny Gemma
 model with synthetic weights exercises the real pinned CPU generation path; it
 does not validate pretrained semantic judgment quality. No gated weights are
 downloaded in CI.
+
+The operator-readiness update adds 25 tests covering terminal authentication,
+gated permissions, network failures, secret-safe error messages, metadata-only
+access checks, host and cgroup memory limits, pre-load memory rejection, persisted
+event logs, interruption, and type checking with a corrupt old SQLite cache.
+Mypy uses its supported file-cache backend; actual type errors still fail the gate.
+An AWS read-only check identified `lava-dev` on `ml.t3.medium`; resizing is an
+operator action because it stops the current app and changes billed CPU capacity.
 
 The 4B and 9B runs are real AWS evidence. Each was independently checked against all
 16 downloaded raw generations and the pinned manifest before synchronizing its

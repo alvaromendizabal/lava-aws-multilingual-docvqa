@@ -70,6 +70,10 @@ See [`docs/architecture.md`](docs/architecture.md) for the execution and lineage
 ## Reproducible workflow
 
 The public interface is intentionally small. Historical phase-specific wrappers have been removed.
+Start with the [operator steps](docs/evaluation.md#operator-steps-hugging-face-login-and-saved-answer-scoring)
+for browser login, Gemma access, scoring, and opening the notebooks. No Claude
+account is required; any `hf skills ... --claude` hint is optional CLI guidance.
+Run interactive login separately from evaluation commands.
 
 ```bash
 # Local quality and reproducibility gate
@@ -82,6 +86,7 @@ make report
 make evaluation-preview
 
 # Once Gemma access is configured, judge saved complete pilots on the current CPU
+make evaluation-check
 make evaluate
 
 # Optional 27B plan review; no GPU is launched
