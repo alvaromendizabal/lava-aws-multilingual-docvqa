@@ -20,6 +20,44 @@ LABELS = {
 }
 
 
+def _load_evaluation(path: Path, name: str, summary_sha: str) -> dict[str, Any] | None:
+    """Require derived evaluations to match the exact original reader summary."""
+    artifact = path.parent / f"{name}.json"
+    if not artifact.exists():
+        return None
+    payload = artifact.read_bytes()
+    expected = artifact.with_suffix(".sha256").read_text().strip()
+    if hashlib.sha256(payload).hexdigest() != expected:
+        raise ValueError(f"Derived evaluation checksum mismatch: {name}")
+    value = json.loads(payload)
+    if value["source"]["source_summary_sha256"] != summary_sha:
+        raise ValueError("Derived evaluation belongs to a different reader result")
+    if value["source"]["job_name"] != path.parent.name:
+        raise ValueError("Derived evaluation belongs to a different job")
+    if name == "semantic_summary":
+        from lava.evaluation.semantic import judge_contract
+
+        root = path.parents[4]
+        # Retain provenance for historical scores while allowing a new evaluator to resume.
+        value["contract_current"] = value["judge_contract"] == judge_contract(root)
+        if (
+            value["official_server_score"] is not None
+            or value["status"] != "local_published_formula_score"
+        ):
+            raise ValueError("A local judge result cannot claim an organizer-server score")
+    return dict(value)
+
+
+def current_model_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Prefer completed full pilots over smokes, then recency; never select by score."""
+    selected: dict[str, dict[str, Any]] = {}
+    for run in sorted(
+        runs, key=lambda r: (r["complete"], r["summary"].get("generated_at_utc", ""), r["job_name"])
+    ):
+        selected[run["model_key"]] = run
+    return [selected[key] for key in sorted(selected)]
+
+
 def load_report(root: Path) -> dict[str, Any]:
     """Verify local summary hashes and distinguish smoke runs from complete pilots."""
     contract = load_evaluation_contract(root)
@@ -87,6 +125,12 @@ def load_report(root: Path) -> dict[str, Any]:
                 "summary_sha256": manifest["public_summary_sha256"],
                 "complete": complete,
                 "summary": summary,
+                "supporting_metrics": _load_evaluation(
+                    path, "supporting_metrics", manifest["public_summary_sha256"]
+                ),
+                "semantic_summary": _load_evaluation(
+                    path, "semantic_summary", manifest["public_summary_sha256"]
+                ),
             }
         )
     comparisons = []
@@ -119,8 +163,9 @@ def load_report(root: Path) -> dict[str, Any]:
         "expected_questions": contract["question_count"],
         "expected_documents": contract["document_count"],
         "runs": runs,
+        "current_models": current_model_runs(runs),
         "paired_document_comparisons": comparisons,
-        "interpretation": "Descriptive normalized-exact pilot; semantic judging and model promotion pending.",
+        "interpretation": "Small oracle-reader pilot. Normalized-exact diagnostics and local semantic scores are distinct; no organizer-server parity or model promotion is claimed.",
     }
 
 
@@ -154,6 +199,34 @@ def _pilot_detail(run: dict[str, Any]) -> str:
         (f"{s['normalized_exact_answer_document_macro']:.1%}", "Document-average answer score"),
         (f"{s['schema_valid_rate']:.1%}", "Valid output format"),
     )
+    metrics = run.get("supporting_metrics")
+    semantic = run.get("semantic_summary")
+    if semantic and semantic["contract_current"]:
+        official = semantic["metrics"]["question_micro"]
+        score_text = (
+            f"Local published-formula score: <strong>{official['overall']:.1%}</strong> · "
+            f"Semantic VQA: {official['answer']:.1%} · Grounding F1: {official['grounding']:.1%}. "
+            "Pinned Gemma judge; organizer-server parity is not claimed."
+        )
+    else:
+        score_text = (
+            "Semantic VQA and combined LAVA score: <strong>not yet evaluated</strong>. "
+            f"Measured evidence-page F1: <strong>{s['self_grounding_f1_micro']:.1%}</strong>. "
+            "The saved answers can be judged without rerunning this reader."
+        )
+        if semantic:
+            score_text += " A historical judge result is retained; its evaluator contract is stale."
+    extra = ""
+    if metrics:
+        g, a, latency = metrics["grounding"], metrics["answer"], metrics["latency"]
+        extra = (
+            '<p class="muted">'
+            f"Evidence precision {g['question_average_precision']:.1%} · recall {g['question_average_recall']:.1%} · "
+            f"exact page set {g['exact_page_set_rate']:.1%}<br>"
+            f"Normalized-exact full-credit answers {a['full_credit_rate']:.1%} · zero-credit answers {a['zero_credit_rate']:.1%}<br>"
+            f"Generation p50 {latency['generation_p50_seconds']:.2f} s · p95 {latency['generation_p95_seconds']:.2f} s"
+            "</p>"
+        )
     card_html = "".join(
         f'<div class="card"><strong>{value}</strong><span>{label}</span></div>'
         for value, label in cards
@@ -185,6 +258,7 @@ def _pilot_detail(run: dict[str, Any]) -> str:
     )
     return (
         f'<section class="pilot"><h2>{html.escape(run["label"])} · complete frozen pilot</h2>'
+        f'<p class="notice">{score_text}</p>'
         f'<div class="cards">{card_html}</div><p class="muted">'
         "Answer scores award partial credit for lists. Valid formatting does not establish answer correctness. "
         f"All {s['record_count']} questions remain in the denominator.</p>"
@@ -193,7 +267,7 @@ def _pilot_detail(run: dict[str, Any]) -> str:
         f"{s['max_peak_cuda_memory_allocated_mib'] / 1024:.2f} GiB peak allocated memory · "
         f"{run['billable_seconds']} billable seconds · {html.escape(run['instance_type'])}"
         f"<br>{lifecycle}"
-        "</p></section>"
+        f"</p>{extra}</section>"
     )
 
 
@@ -278,6 +352,38 @@ def _comparison_detail(pair: dict[str, Any], runs: dict[str, dict[str, Any]]) ->
 def render_report(report: dict[str, Any]) -> str:
     """Render an offline, self-contained report with escaped public fields only."""
     runs = report["runs"]
+    current = current_model_runs(runs)
+    coverage_rows = []
+    for run in current:
+        s = run["summary"]
+        semantic = run.get("semantic_summary")
+        overall = (
+            f"{semantic['metrics']['question_micro']['overall']:.1%}"
+            if semantic and semantic["contract_current"]
+            else "Not evaluated"
+        )
+        cells = (
+            run["label"],
+            f"{s['record_count']} / {report['expected_questions']}",
+            "Full pilot verified" if run["complete"] else "Smoke only; full pilot pending",
+            f"{s['normalized_exact_answer_micro']:.1%}" if run["complete"] else "—",
+            f"{s['self_grounding_f1_micro']:.1%}" if run["complete"] else "—",
+            overall,
+        )
+        coverage_rows.append(
+            "<tr>" + "".join(f"<td>{html.escape(cell)}</td>" for cell in cells) + "</tr>"
+        )
+    coverage_head = "".join(
+        f'<th scope="col">{label}</th>'
+        for label in (
+            "Reader",
+            "Questions completed",
+            "Current coverage",
+            "Answer diagnostic",
+            "Evidence F1",
+            "Local LAVA score",
+        )
+    )
     complete = sum(r["complete"] for r in runs)
     headline = (
         "Reader execution is verified.<br>Full evaluation comes next."
@@ -374,13 +480,16 @@ details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-
         + f"""<div class="cards"><div class="card"><strong>{len(runs)}</strong><span>Verified runs in this report</span></div>
 <div class="card"><strong>{complete}</strong><span>Complete 16-question pilots</span></div>
 <div class="card"><strong>16 / 5</strong><span>Frozen questions / documents</span></div></div>
-<div class="notice"><strong>Read the coverage before the score.</strong> One-question smoke tests verify execution.
-They cannot establish a winning reader. Exact matching is a diagnostic; the pinned semantic judge remains a separate gate.</div>
+<section class="panel"><h2>Current model coverage and performance</h2><div class="table-wrap"><table><thead><tr>{coverage_head}</tr></thead><tbody>{"".join(coverage_rows)}</tbody></table></div>
+<p class="muted">Full pilots take precedence over historical smoke tests. Missing semantic scores mean not evaluated, never zero. Answer diagnostics use normalized matching and partial list credit.</p></section>
+<div class="notice"><strong>LAVA metric:</strong> mean across questions of (semantic VQA + evidence-page F1) / 2. The published answer judge is Gemma-3 1B.
+Correct evidence pages are supplied to these readers; evidence F1 measures their citations within that oracle input and does not measure full-document retrieval.
+<a href="https://lava-workshop.github.io/">Organizer metric specification</a></div>
 <section class="panel" style="margin-top:24px"><h2>Document-level comparisons</h2>{comparison_html}
 <p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></section>
 {pilot_details}<div class="charts">{panels}</div>
-<section class="panel"><h2>Observed results · every run retained</h2><div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
-<p class="muted">Generation time excludes model loading. Billable seconds include the training job's measured billable duration; they are not dollar costs. Hardware and quantization differ across readers.</p></section>
+<details class="panel"><summary>Run history · includes earlier one-question smoke tests</summary><div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
+<p class="muted">Generation time excludes model loading. Billable seconds include the training job's measured billable duration; they are not dollar costs. Hardware and quantization differ across readers.</p></details>
 <section class="panel" style="margin-top:24px"><h2>Coverage and interpretation</h2><p>The frozen set has 15 Japanese questions and one Vietnamese question. Language is confounded with document identity. The Vietnamese result is a single example, not a language-level estimate.</p>
 <p>These are frozen-model descriptive evaluations. The existence of nested fold manifests does not mean nested training, tuning, or cross-validation has been performed. Retrieval is held at oracle evidence; overall oracle diagnostics contain a fixed grounding contribution.</p></section>
 <section class="panel" style="margin-top:24px"><h2>Audit trail</h2>{"".join(detail)}</section>

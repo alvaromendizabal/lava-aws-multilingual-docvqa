@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "model_id": "google/gemma-3-1b-it",
+  "model_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+  "tokenizer_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+  "device": "cpu",
+  "dtype": "float32",
+  "attention_implementation": "eager",
+  "threads": 4,
+  "seed": 20260902,
+  "max_input_tokens": 2048,
+  "max_new_tokens": 8,
+  "do_sample": false,
+  "torch_version": "2.10.0",
+  "transformers_version": "5.16.1",
+  "official_server_parity": false,
+  "metric_source": "https://lava-workshop.github.io/#evaluation",
+  "boundary": "Local implementation of published LAVA formulas with a pinned Gemma-3 1B judge. Organizer prompt and runtime are not published; this is not an official server score."
+}

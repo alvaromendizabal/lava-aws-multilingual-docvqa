@@ -72,12 +72,12 @@ log "repository=$(pwd)"
 log "branch=$(git branch --show-current)"
 log "commit=$(git rev-parse HEAD)"
 
-run_stage "frozen environment" uv sync --frozen
-run_stage "ruff format check" uv run --frozen ruff format --check src tests scripts pipelines notebooks
-run_stage "ruff lint" uv run --frozen ruff check src tests scripts pipelines notebooks
-run_stage "mypy" uv run --frozen mypy src scripts
+run_stage "frozen environment" uv sync --frozen --group judge
+run_stage "ruff format check" uv run --frozen --group judge ruff format --check src tests scripts pipelines notebooks
+run_stage "ruff lint" uv run --frozen --group judge ruff check src tests scripts pipelines notebooks
+run_stage "mypy" uv run --frozen --group judge mypy src scripts
 run_stage "bash syntax" bash -n scripts/quality_gate.sh scripts/freeze_evaluation_protocol.sh
-run_stage "pytest" uv run --frozen pytest -q
-run_stage "compileall" uv run --frozen python -m compileall -q src tests scripts pipelines
-run_stage "notebook hygiene" uv run --frozen python scripts/validate_public_notebooks.py
+run_stage "pytest" uv run --frozen --group judge pytest -q
+run_stage "compileall" uv run --frozen --group judge python -m compileall -q src tests scripts pipelines
+run_stage "notebook hygiene" uv run --frozen --group judge python scripts/validate_public_notebooks.py
 run_stage "git diff check" git diff --check

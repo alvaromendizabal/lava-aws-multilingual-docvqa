@@ -27,6 +27,11 @@ target-version = "py312"
 testpaths = ["tests"]
 
 [dependency-groups]
+judge = [
+    "torch==2.10.0",
+    "transformers==5.16.1",
+    "httpx[socks]==0.28.1",
+]
 dev = [
     "boto3-stubs[boto3,s3,sagemaker,service-quotas,sts]==1.43.86",
     "ipykernel==7.3.0",
@@ -43,6 +48,17 @@ dev = [
     "sagemaker[train]==3.21.0",
     "types-pyyaml==6.0.12.20260815",
 ]
+
+[tool.uv]
+default-groups = ["dev", "judge"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [[tool.mypy.overrides]]
 module = ["transformers", "transformers.*"]

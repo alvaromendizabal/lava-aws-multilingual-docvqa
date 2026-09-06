@@ -59,3 +59,13 @@ benchmark-resume:
 	@test -n "$(JOB)" || (echo "JOB is required." >&2; exit 2)
 	@test "$(CHARGES)" = "YES" || (echo "Refusing paid compute. Re-run with CHARGES=YES." >&2; exit 2)
 	uv run --frozen python scripts/run_oracle_reader.py --mode benchmark --model-key $(MODEL) --resume-job $(JOB) --submit --wait --acknowledge-charges YES
+
+.PHONY: evaluation-preview metrics evaluate
+evaluation-preview:
+	uv run --frozen python scripts/evaluate_oracle_reader.py --mode preview $(if $(JOB),--job-name $(JOB),)
+
+metrics:
+	uv run --frozen python scripts/evaluate_oracle_reader.py --mode diagnostics $(if $(JOB),--job-name $(JOB),)
+
+evaluate:
+	uv run --frozen --group judge python scripts/evaluate_oracle_reader.py --mode semantic $(if $(JOB),--job-name $(JOB),)

@@ -8,11 +8,13 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
+#       jupytext_version: 1.19.5
 #   kernelspec:
 #     display_name: Python (lava)
 #     language: python
 #     name: lava
 # ---
+
 # %% [markdown]
 # # 02 — Verified GPU execution
 #
@@ -20,38 +22,47 @@
 # %%
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pandas as pd
 from IPython.display import display
 
-ROOT = Path.cwd()
-run_root = ROOT / "reports/oracle_reader/runs"
-rows = []
-if run_root.exists():
-    for manifest_path in sorted(run_root.glob("*/sync_manifest.json")):
-        manifest = json.loads(manifest_path.read_text())
-        gate = manifest.get("artifact_gate", {})
+from lava.evaluation.reporting import load_report
+from lava.notebook_support import find_repo_root
+from lava.readers.runtime_logging import RuntimeEventLogger
+
+ROOT = find_repo_root(Path.cwd())
+logger = RuntimeEventLogger("notebook.verified_execution")
+with logger.stage("coverage_and_performance", heartbeat_seconds=15):
+    report = load_report(ROOT)
+    rows = []
+    for run in report["current_models"]:
+        summary = run["summary"]
+        semantic = run["semantic_summary"]
         rows.append(
             {
-                "job_name": manifest.get("job_name"),
-                "model_key": manifest.get("model_key"),
-                "instance_type": manifest.get("instance_type"),
-                "training_seconds": manifest.get("training_time_seconds"),
-                "billable_seconds": manifest.get("billable_time_seconds"),
-                "raw_response_count": gate.get("raw_response_count"),
-                "schema_valid_rate": gate.get("schema_valid_rate"),
-                "parser_error_counts": gate.get("parser_error_counts"),
+                "reader": run["label"],
+                "coverage": f"{summary['record_count']} / {report['expected_questions']}",
+                "status": "Full pilot verified" if run["complete"] else "Smoke only",
+                "answer_diagnostic": summary["normalized_exact_answer_micro"]
+                if run["complete"]
+                else None,
+                "evidence_f1": summary["self_grounding_f1_micro"] if run["complete"] else None,
+                "local_lava_score": semantic["metrics"]["question_micro"]["overall"]
+                if semantic and semantic["contract_current"]
+                else "Not evaluated",
+                "valid_output": summary["schema_valid_rate"],
+                "billable_seconds": run["billable_seconds"],
+                "instance": run["instance_type"],
             }
         )
-
-results = pd.DataFrame(rows)
-display(
-    results
-    if not results.empty
-    else pd.DataFrame({"status": ["Sync verified runs with `make sync JOB=...`."]})
-)
+    display(pd.DataFrame(rows))
+# %% [markdown]
+# Full pilots take precedence over historical smoke tests. 4B and 9B each have
+# 16-question results; 27B currently has a one-question smoke. The official formula
+# averages semantic VQA and evidence-page F1. A missing Gemma score is not zero.
+# These readers receive oracle evidence, so their citation F1 is not a retrieval score.
+# Notebook 03 contains the complete metrics, document comparisons, and run history.
 # %% [markdown]
 # ## Canonical operational commands
 #

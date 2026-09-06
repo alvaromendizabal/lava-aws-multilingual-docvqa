@@ -8,11 +8,13 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
+#       jupytext_version: 1.19.5
 #   kernelspec:
 #     display_name: Python (lava)
 #     language: python
 #     name: lava
 # ---
+
 # %% [markdown]
 # # 01 — Oracle-reader benchmark design
 #
@@ -26,7 +28,9 @@ from pathlib import Path
 import pandas as pd
 from IPython.display import display
 
-ROOT = Path.cwd()
+from lava.notebook_support import find_repo_root
+
+ROOT = find_repo_root(Path.cwd())
 lock = json.loads((ROOT / "configs/oracle_reader_models.lock.json").read_text())
 models = pd.DataFrame(lock["resolved_models"])
 # %% [markdown]
@@ -51,6 +55,6 @@ display(
 # 2. image-only and text-only modality controls;
 # 3. bounded thinking-mode ablation;
 # 4. 9B capacity challenger on the verified G6e path;
-# 5. 27B high-memory challenger;
+# 5. 27B NF4 challenger on the verified G5 path; full precision is a separate candidate;
 # 6. multilingual slices, error taxonomy, latency/throughput/VRAM, and cost-quality Pareto analysis;
 # 7. retrieval and reranking only after reader selection.

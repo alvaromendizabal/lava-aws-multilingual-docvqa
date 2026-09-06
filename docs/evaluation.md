@@ -8,6 +8,10 @@ normalized-exact diagnostics are:
 | --- | ---: | ---: |
 | Question-average answer score | 38.125% | 45.774% |
 | Document-average answer score | 43.833% | 39.714% |
+| Evidence-page F1 (oracle pages supplied) | 97.024% | 93.899% |
+| Exact evidence-page set | 87.50% | 81.25% |
+| Normalized-exact full-credit answers | 18.75% | 31.25% |
+| Generation p50 / p95 | 5.286 / 8.910 s | 3.422 / 5.157 s |
 | Mean generation time | 5.517 s | 3.610 s |
 | Peak allocated GPU memory | 10.951 GiB | 20.149 GiB |
 | AWS billable time | 6m 20s | 6m 35s |
@@ -38,6 +42,11 @@ both weighting schemes, and uncertainty directly.
 
 ## Next experiment
 
+First finish the semantic evaluation of the **already saved** 4B and 9B answers.
+Their GPU inference is complete. The missing score is an evaluation-stage gap.
+Notebook 02 and the report show 16/16 coverage for both, separate from historical
+one-question smoke runs. No reader rerun is required to add semantic scores.
+
 One deployed reader is sufficient. The model sizes are comparison candidates, not
 three required production models or three training stages. The 4B and 9B candidates
 are Qwen3.5 models; the configured 27B candidate is Qwen3.8 with NF4 quantization.
@@ -56,6 +65,12 @@ with a held-out evaluation split before selecting one reader.
 on the same frozen pilot. Its one-question smoke is already verified; a complete
 16-question run has not yet been submitted. None of these pilot results alone
 establishes state-of-the-art performance.
+
+Use **one** `qwen38_27b_nf4_g5_fused_direct` full pilot on `ml.g5.2xlarge`, the exact
+27B path that passed its smoke. G6e was verified for 9B, not this 27B configuration.
+Duplicating 27B across G5 and G6e would test hardware, not add another reader
+candidate. A controlled hardware experiment can follow if latency/cost is the
+research question. Do not assume that similarly named G6 and G6e have the same GPU.
 
 From the project checkout in SageMaker Studio:
 
@@ -82,6 +97,76 @@ compute limit, a separate 24-hour capacity-acquisition limit, and no endpoint.
 The cost check uses a supplied hourly ceiling and contingency; it is not a live
 price quote or guaranteed invoice cap. Existing one-question execution proves the
 model can load; it does not guarantee capacity or memory fit for every pilot input.
+
+## Published metric and saved-answer evaluation
+
+The [LAVA organizers](https://lava-workshop.github.io/#evaluation) define:
+
+- String/number answers: binary semantic equivalence judged by Gemma-3 1B.
+- Unordered lists: F1 after semantic item matching without double-counting.
+- Ordered lists: semantic longest-common-subsequence length divided by the longer list.
+- Grounding: exact F1 between predicted and reference evidence-page sets.
+- Overall: average `(answer score + grounding F1) / 2` over questions.
+
+Document averages and language/format slices supplement the question-average score.
+The report also includes evidence precision, recall and exact page-set rate;
+normalized-exact full/zero-credit answer rates; schema validity and abstention;
+generation p50/p95, throughput, GPU memory, provisioning wait and billable duration.
+These are distinct measurements, not interchangeable definitions of accuracy.
+
+`scripts/evaluate_oracle_reader.py` audits each completed job, then scores the exact
+saved private records and pinned reference manifest. Its snapshot prevents scoring
+different bytes from those verified. Evidence comes from the reader's **predicted
+pages**, never the constant gold-page contribution used by the old oracle-fixed
+diagnostic. Since the reader receives oracle pages, this still does not evaluate
+retrieval or establish end-to-end challenge performance.
+
+```bash
+make evaluation-preview
+make metrics
+```
+
+Preview creates no compute and reads no private predictions. Diagnostics read
+existing S3 results and update public aggregate metrics. `make evaluate` runs the
+pinned Gemma-3 1B judge on the current machine's CPU; it creates no SageMaker job.
+S3 requests and the existing host retain their normal costs. The `judge`
+dependency group uses the official PyTorch CPU wheel index and is included in the
+default development environment so ordinary commands do not remove its packages.
+GPU container dependencies remain unchanged.
+
+Google requires accepting the [Gemma terms](https://huggingface.co/google/gemma-3-1b-it)
+and authenticating an authorized Hugging Face account. Configure access locally;
+never paste a token into ChatGPT, a notebook, or Git:
+
+```bash
+uv run --frozen --group judge hf auth login
+make evaluate
+```
+
+On 2026-09-06 this editing environment received HTTP 401 `GatedRepoError` for the
+pinned model. No pretrained Gemma judgments or semantic scores have been produced
+here. Acceptance probes and full scoring must pass in an authorized environment.
+Eight public synthetic probes are independent of the private pilot answers; they
+are a minimum acceptance gate, not proof of broad judge quality. The exact
+organizer prompt and decoding runtime are not published. The dashboard labels
+results **local published-formula scores**, with `official_server_score: null`.
+An organizer-server score requires an actual organizer evaluation result.
+
+The judge contract fingerprints the model/tokenizer revisions, prompt, probes,
+runtime lock and metric sources. Every YES/NO decision is checksummed and stored
+privately with S3 conditional writes before progress is reported. Cache keys bind
+the contract, language and exact answer pair. Both positive and negative decisions
+are reusable across model candidates; ambiguous output, corruption and conflicting
+writes fail closed. Re-running `make evaluate` reuses completed decisions and
+continues only missing work. Changed contracts use a separate cache; old results
+remain in S3 and are labeled stale locally until rescored. No reader inference is
+repeated. The same original reader summary hashes remain unchanged.
+
+Evaluation emits UTC timestamps, stage and total elapsed time, 15-second
+heartbeats, and new/reused decision counts. CPU evaluation runs in the current
+process: shutting down that host stops it. Rerun the command to resume from S3.
+Accepted SageMaker GPU jobs have the separate session-independent behavior below.
+After scoring, review and commit aggregate result files and the rebuilt report.
 
 ## Durable recovery
 
@@ -179,16 +264,23 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the canonical gate passed all 234 tests and Mypy across 59 source
+On 2026-09-06, the canonical gate passed all 268 tests and Mypy across 62 source
 files. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
 interruption during restoration, corrupt or incompatible checkpoints, rejected
 writes, immutable idempotent writes, parser failures, and complete artifact audits.
 Tests use injected model and cloud adapters; they do not claim GPU execution.
-Eight additional checks cover UTC lifecycle arithmetic and invalid timestamps,
+Checks also cover UTC lifecycle arithmetic and invalid timestamps,
 missing historical telemetry, the verified mixed 4B/9B result, accessible signed
-chart geometry, and HTML escaping. The quality gate completed in seven seconds.
+chart geometry, and HTML escaping. The quality gate completed in 52 seconds.
+The semantic evaluation stage adds 34 tests covering immutable decision reuse,
+negative decisions, rejected writes, ambiguous output, corruption, stale contracts,
+source hashes, actual predicted-page scoring, missing access, metric denominators,
+latency percentiles, and notebook execution from its own directory. A tiny Gemma
+model with synthetic weights exercises the real pinned CPU generation path; it
+does not validate pretrained semantic judgment quality. No gated weights are
+downloaded in CI.
 
 The 4B and 9B runs are real AWS evidence. Each was independently checked against all
 16 downloaded raw generations and the pinned manifest before synchronizing its

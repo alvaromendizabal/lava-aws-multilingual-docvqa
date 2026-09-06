@@ -12,10 +12,25 @@ LAVA is a research-grade multilingual document-intelligence system built to sepa
 | Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **395** |
 | Qwen3.8-27B NF4 fused direct | `ml.g5.2xlarge` | One-question smoke | 783 |
 
-| Complete pilot | Question-average score | Document-average score | Mean generation | Peak allocated GPU memory |
-| --- | ---: | ---: | ---: | ---: |
-| 4B | 38.13% | 43.83% | 5.52 s | 10.95 GiB |
-| 9B | 45.77% | 39.71% | 3.61 s | 20.15 GiB |
+| Complete pilot | Question-average diagnostic | Document-average diagnostic | Evidence-page F1 | Mean generation | Peak GPU memory |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 4B | 38.13% | 43.83% | 97.02% | 5.52 s | 10.95 GiB |
+| 9B | 45.77% | 39.71% | 93.90% | 3.61 s | 20.15 GiB |
+
+These are **full 16-question pilots**, not just smoke tests. Notebook 02 and the
+dashboard now prioritize current coverage; historical smokes appear in run history.
+The [published LAVA metric](https://lava-workshop.github.io/#evaluation) averages
+semantic answer credit and predicted evidence-page F1 per question. Semantic credit
+uses a Gemma-3 1B judge. The saved runs used normalized-exact diagnostics, so their
+semantic and combined LAVA scores remain **not evaluated**, never zero or inferred.
+
+The canonical evaluator now reuses verified saved answers, writes immutable judge
+decisions to S3, and resumes without repeating accepted decisions. It pins the
+Gemma checkpoint, prompt, dependencies, and independent acceptance probes. Google
+requires authorized access to [Gemma](https://huggingface.co/google/gemma-3-1b-it).
+The organizer's exact judge prompt/runtime is unpublished; local formula-based
+scores are explicitly distinct from organizer-server results. Oracle citation F1
+does not measure retrieval quality.
 
 Both complete pilots have **100% valid output** and no parser errors. Answer scores
 are normalized-exact diagnostics with partial list credit. Every raw generation,
@@ -62,6 +77,12 @@ make quality
 
 # Rebuild the offline public dashboard
 make report
+
+# Inspect the saved-answer scoring plan; no GPU is launched
+make evaluation-preview
+
+# Once Gemma access is configured, judge saved complete pilots on the current CPU
+make evaluate
 
 # Optional 27B plan review; no GPU is launched
 make benchmark-preview MODEL=qwen38_27b_nf4_g5_fused_direct
@@ -111,7 +132,7 @@ The notebooks are paired with Jupytext so the `.ipynb` files remain convenient f
 
 1. `00_reproducibility_and_protocol` — frozen protocol, model registry, deterministic experiment contract.
 2. `01_oracle_reader_benchmark_design` — controlled reader ladder and ablation design.
-3. `02_verified_gpu_execution` — verified SageMaker run lineage and artifact-gate results.
+3. `02_verified_gpu_execution` — current full-pilot coverage, performance metrics, and verified SageMaker lineage.
 4. `03_model_scaling_and_cost` — checksum-verified offline dashboard with coverage, latency, VRAM, billable time, document comparisons, and lineage.
 
 ## Research program

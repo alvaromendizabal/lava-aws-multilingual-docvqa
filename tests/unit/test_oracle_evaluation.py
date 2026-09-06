@@ -264,6 +264,63 @@ def verify(pilot):
     )
 
 
+def test_saved_prediction_metrics_preserve_failures_and_verified_coverage(pilot, monkeypatch):
+    from lava.evaluation import saved_predictions
+
+    s3, sm, summary, _, contract, _ = pilot
+    monkeypatch.setattr(saved_predictions, "load_evaluation_contract", lambda _: contract)
+    run = saved_predictions.load_saved_run(ROOT, sm, s3, "job")
+    metrics = saved_predictions.supporting_metrics(run)
+    assert len(run.references) == len(run.predictions) == metrics["question_count"] == 16
+    assert metrics["answer"]["schema_valid_rate"] == 15 / 16
+    assert metrics["answer"]["abstention_rate"] == 1 / 16
+    assert metrics["answer"]["full_credit_rate"] == 15 / 16
+    assert metrics["answer"]["zero_credit_rate"] == 1 / 16
+    assert metrics["grounding"]["question_average_f1"] == summary["self_grounding_f1_micro"]
+    assert metrics["grounding"]["question_average_precision"] == 15 / 16
+    assert metrics["grounding"]["question_average_recall"] == 15 / 16
+    assert metrics["latency"]["generation_p50_seconds"] == 2
+    assert metrics["latency"]["generation_p95_seconds"] == 2
+    assert metrics["latency"]["generation_tokens_per_second"] == 10
+    assert metrics["semantic_vqa_score"] is None
+    assert metrics["official_server_score"] is None
+
+
+def test_saved_evaluation_rejects_smoke_before_loading_objects(pilot):
+    from lava.evaluation.saved_predictions import load_saved_run
+
+    s3, sm, *_ = pilot
+    sm.describe_training_job()["HyperParameters"]["mode"] = "smoke"
+    with pytest.raises(ValueError, match="complete benchmark"):
+        load_saved_run(ROOT, sm, s3, "job")
+
+
+def test_latency_percentiles_and_zero_duration_are_explicit(pilot, monkeypatch):
+    from dataclasses import replace
+
+    from lava.evaluation import saved_predictions
+
+    s3, sm, _, _, contract, _ = pilot
+    monkeypatch.setattr(saved_predictions, "load_evaluation_contract", lambda _: contract)
+    run = saved_predictions.load_saved_run(ROOT, sm, s3, "job")
+    record = run.records[1]
+    records = tuple(
+        record.model_copy(
+            update={
+                "telemetry": record.telemetry.model_copy(update={"generation_seconds": seconds})
+            }
+        )
+        for seconds in (0.0, 10.0)
+    )
+    measured = saved_predictions.supporting_metrics(replace(run, records=records))
+    assert measured["latency"]["generation_p50_seconds"] == 5
+    assert measured["latency"]["generation_p95_seconds"] == 9.5
+    zero = saved_predictions.supporting_metrics(replace(run, records=records[:1]))
+    assert zero["latency"]["generation_tokens_per_second"] is None
+    with pytest.raises(ValueError, match="empty"):
+        saved_predictions.supporting_metrics(replace(run, records=()))
+
+
 def test_full_pilot_preserves_failed_outputs_and_verifies_every_question(pilot):
     gate = verify(pilot)
     s3, _, summary, _, _, tmp_path = pilot
