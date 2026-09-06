@@ -49,3 +49,13 @@ benchmark-submit:
 
 report:
 	uv run --frozen python scripts/report_oracle_reader.py
+
+.PHONY: benchmark-resume-preview benchmark-resume
+benchmark-resume-preview:
+	@test -n "$(JOB)" || (echo "JOB is required." >&2; exit 2)
+	uv run --frozen python scripts/run_oracle_reader.py --mode benchmark --model-key $(MODEL) --resume-job $(JOB)
+
+benchmark-resume:
+	@test -n "$(JOB)" || (echo "JOB is required." >&2; exit 2)
+	@test "$(CHARGES)" = "YES" || (echo "Refusing paid compute. Re-run with CHARGES=YES." >&2; exit 2)
+	uv run --frozen python scripts/run_oracle_reader.py --mode benchmark --model-key $(MODEL) --resume-job $(JOB) --submit --wait --acknowledge-charges YES

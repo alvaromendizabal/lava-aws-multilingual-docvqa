@@ -142,7 +142,7 @@ def test_event_logger_calls_are_mypy_safe() -> None:
 
     assert "**snapshot.as_dict()" not in runner
     assert "**failure_snapshot.as_dict()" not in runner
-    assert 'logger.emit("smoke.submit.complete", snapshot=snapshot.as_dict())' in runner
+    assert 'logger.emit(f"{args.mode}.submit.complete", snapshot=snapshot.as_dict())' in runner
     assert "snapshot=failure_snapshot.as_dict()" in runner
     assert "**snapshot.as_dict()" not in monitor
     assert 'logger.emit("monitor.reconnect.complete", snapshot=snapshot.as_dict())' in monitor
@@ -151,7 +151,7 @@ def test_event_logger_calls_are_mypy_safe() -> None:
 
 def test_smoke_main_has_explicit_terminal_guard() -> None:
     source = (_root() / "scripts" / "run_oracle_reader.py").read_text(encoding="utf-8")
-    assert "Smoke command exited its telemetry stage without a terminal result." in source
+    assert "Reader command exited its telemetry stage without a terminal result." in source
 
 
 def test_model_specific_qwen_wrapper_is_retired() -> None:

@@ -17,7 +17,9 @@ from pathlib import Path
 from types import TracebackType
 from typing import Literal, Self, TextIO
 
-_ACCOUNT_ID = re.compile(r"(?<!\d)\d{12}(?!\d)")
+_ACCOUNT_ID = re.compile(
+    r"(?P<digest>\b(?:[0-9a-f]{40}|[0-9a-f]{64})\b)|(?P<account>(?<!\d)\d{12}(?!\d))"
+)
 _S3_URI = re.compile(r"s3://[^/\s]+")
 _SECRET_LIKE = re.compile(
     r"(?i)(bearer\s+[a-z0-9._~+/=-]+|aws_secret_access_key\s*[=:]\s*\S+|"
@@ -61,7 +63,7 @@ def format_utc(value: datetime) -> str:
 
 def redact_string(value: str) -> str:
     """Redact account IDs, bucket names, and credential-like substrings."""
-    redacted = _ACCOUNT_ID.sub("<redacted-account>", value)
+    redacted = _ACCOUNT_ID.sub(lambda match: match.group("digest") or "<redacted-account>", value)
     redacted = _S3_URI.sub("s3://<redacted-bucket>", redacted)
     return _SECRET_LIKE.sub("<redacted-secret>", redacted)
 

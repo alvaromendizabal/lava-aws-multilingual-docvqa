@@ -625,18 +625,15 @@ def _verify_benchmark_artifact(
     expected_output_s3_prefix: str | None,
 ) -> ArtifactGateReport:
     """Audit every frozen question, raw generation, parsed result, score, and aggregate."""
-    from lava.evaluation.judges import NormalizedExactJudge
-    from lava.evaluation.metric import score_question, set_f1
-    from lava.evaluation.schemas import PredictionRecord, ReferenceRecord
     from lava.readers.benchmark import _summary
     from lava.readers.evaluation_contract import (
         load_evaluation_contract,
         validate_evaluation_manifest,
     )
     from lava.readers.model_registry import load_resolved_model
-    from lava.readers.parsing import ReaderOutputError, parse_reader_response
+    from lava.readers.records import verify_benchmark_record
     from lava.readers.sagemaker_artifacts import canonical_output_s3_prefix
-    from lava.readers.schemas import BenchmarkRecord, ReaderPrediction
+    from lava.readers.schemas import BenchmarkRecord
 
     root = Path(__file__).resolve().parents[3]
     contract = load_evaluation_contract(root)
@@ -731,58 +728,7 @@ def _verify_benchmark_artifact(
         if summary.get(key) != value or any(getattr(r, key) != value for r in records):
             raise RuntimeError(f"Benchmark lineage mismatch: {key}")
     for record in records:
-        example = expected[record.question_id]
-        for key in ("document_alias", "language", "answer_format"):
-            if getattr(record, key) != getattr(example, key):
-                raise RuntimeError(f"Benchmark question alignment mismatch: {key}")
-        if record.gold_evidence_pages != example.evidence_pages:
-            raise RuntimeError("Benchmark evidence alignment mismatch")
-        raw_text = raw_by_id[record.question_id]
-        try:
-            prediction = parse_reader_response(
-                question_id=example.question_id,
-                answer_format=example.answer_format,
-                raw_response=raw_text,
-                allowed_pages=example.evidence_pages,
-            )
-        except ReaderOutputError as error:
-            prediction = ReaderPrediction(
-                question_id=example.question_id,
-                answer_format=example.answer_format,
-                answer="",
-                evidence_pages=(),
-                confidence=0.0,
-                abstain=True,
-                schema_valid=False,
-                parser_error_code=error.code,
-                raw_response_sha256=hashlib.sha256(raw_text.encode()).hexdigest(),
-            )
-        if record.prediction != prediction:
-            raise RuntimeError("Benchmark parsed prediction differs from raw generation")
-        reference = ReferenceRecord(
-            question_id=example.question_id,
-            document_id=example.document_id,
-            question=example.question,
-            answer_format=example.answer_format,
-            answer=example.answer,
-            evidence_pages=example.evidence_pages,
-            language=example.language,
-        )
-        score = score_question(
-            reference,
-            PredictionRecord(
-                question_id=example.question_id,
-                answer=prediction.answer,
-                evidence_pages=example.evidence_pages,
-            ),
-            judge=NormalizedExactJudge(),
-        )
-        if (
-            record.normalized_exact_answer_score != score.answer_score
-            or record.self_grounding_f1 != set_f1(example.evidence_pages, prediction.evidence_pages)
-            or record.oracle_fixed_overall_diagnostic != (score.answer_score + 1.0) / 2.0
-        ):
-            raise RuntimeError("Benchmark score differs from independently recomputed score")
+        verify_benchmark_record(record, expected[record.question_id], raw_by_id[record.question_id])
     if (
         summary.get("run_kind") != "benchmark"
         or summary.get("coverage_status") != "complete_frozen_pilot"
@@ -799,6 +745,40 @@ def _verify_benchmark_artifact(
     }.items():
         if summary.get(key) != value:
             raise RuntimeError(f"Benchmark model contract mismatch: {key}")
+    if params.get("checkpoint_schema_version") == "1":
+        from lava.readers.checkpoints import CheckpointStore, checkpoint_contract
+
+        spec = checkpoint_contract(
+            model=model,
+            git_sha=lineage["git_commit_sha"],
+            manifest_sha=contract["private_manifest_sha256"],
+            protocol_lock_id=contract["protocol_lock_id"],
+            experiment_id=params["experiment_id"],
+            limit=len(examples),
+        )
+        retained = CheckpointStore(s3_client, bucket=bucket, prefix=prefix, contract=spec).load(
+            examples
+        )
+        if set(retained) != set(expected) or any(
+            retained[r.question_id].record != r for r in records
+        ):
+            raise RuntimeError("Benchmark durable checkpoints differ from final records")
+        reused_count = 0
+        if params.get("resume_s3_prefix"):
+            source_bucket, source_prefix = _split_s3_uri(params["resume_s3_prefix"])
+            if source_bucket != bucket:
+                raise RuntimeError("Benchmark resume bucket mismatch")
+            inherited = CheckpointStore(
+                s3_client, bucket=bucket, prefix=source_prefix, contract=spec
+            ).load(examples)
+            if any(retained[key] != saved for key, saved in inherited.items()):
+                raise RuntimeError("Benchmark resumed answers differ from their source")
+            reused_count = len(inherited)
+        if summary.get("resume") != {
+            "reused_question_count": reused_count,
+            "new_question_count": len(records) - reused_count,
+        }:
+            raise RuntimeError("Benchmark resume accounting mismatch")
     return ArtifactGateReport(
         raw_response_count=len(records),
         schema_valid_rate=summary["schema_valid_rate"],

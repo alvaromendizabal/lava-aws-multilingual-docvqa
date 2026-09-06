@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import pytest
+from botocore.exceptions import ClientError
 
 from lava.evaluation.reporting import load_report, render_report
 from lava.readers import benchmark, evaluation_contract
@@ -62,13 +63,33 @@ class MemoryS3:
     def __init__(self, objects):
         self.objects = objects
         self.version_requests = []
+        self.metadata = {}
 
     def get_object(self, **kwargs):
         self.version_requests.append(kwargs.get("VersionId"))
-        return {"Body": io.BytesIO(self.objects[kwargs["Key"]])}
+        return {
+            "Body": io.BytesIO(self.objects[kwargs["Key"]]),
+            "Metadata": self.metadata.get(kwargs["Key"], {}),
+        }
 
     def put_object(self, **kwargs):
+        if kwargs.get("IfNoneMatch") == "*" and kwargs["Key"] in self.objects:
+            raise ClientError({"Error": {"Code": "PreconditionFailed"}}, "PutObject")
         self.objects[kwargs["Key"]] = kwargs["Body"]
+        self.metadata[kwargs["Key"]] = kwargs.get("Metadata", {})
+
+    def get_paginator(self, operation):
+        assert operation == "list_objects_v2"
+        outer = self
+
+        class Paginator:
+            def paginate(self, **kwargs):
+                # Deliberately exercise multiple listing pages.
+                items = outer.list_objects_v2(**kwargs)["Contents"]
+                for start in range(0, len(items), 3):
+                    yield {"Contents": items[start : start + 3]}
+
+        return Paginator()
 
     def list_objects_v2(self, **kwargs):
         return {"Contents": [{"Key": k} for k in self.objects if k.startswith(kwargs["Prefix"])]}
@@ -216,6 +237,7 @@ def pilot(tmp_path, monkeypatch, capsys, request):
         },
         "HyperParameters": {
             "mode": "benchmark",
+            "checkpoint_schema_version": "1",
             "limit": "16",
             "model_key": model.model_key,
             "experiment_id": "pilot",
@@ -404,3 +426,324 @@ def test_report_complete_pairs_require_compatible_protocol_and_generation(pilot,
     manifest["public_summary_sha256"] = hashlib.sha256(payload).hexdigest()
     path.write_text(json.dumps(manifest))
     assert load_report(root)["paired_document_comparisons"] == []
+
+
+def run_again(pilot, *, prefix="retry", source="run"):
+    _, _, summary, _, _, _ = pilot
+    model = load_resolved_model(
+        ROOT / "configs/oracle_reader_models.lock.json", summary["model_key"]
+    )
+    return benchmark.run_oracle_benchmark(
+        bucket="test-bucket",
+        region="us-west-2",
+        manifest_s3_uri="s3://test-bucket/manifest.jsonl",
+        output_s3_prefix="s3://test-bucket/" + prefix,
+        protocol_lock_id=summary["protocol_lock_id"],
+        model_spec=model,
+        experiment_id="pilot",
+        limit=16,
+        evaluation_root=ROOT,
+        resume_s3_prefix="s3://test-bucket/" + source,
+    )
+
+
+def test_resume_reuses_all_answers_without_constructing_model(pilot, monkeypatch, capsys):
+    import shutil
+
+    s3, sm, original, _, _, tmp_path = pilot
+    # Simulate losing the entire instance disk. Only S3 objects survive.
+    shutil.rmtree(tmp_path / "model")
+    monkeypatch.setattr(benchmark, "build_reader", lambda *a, **kw: pytest.fail("Model was loaded"))
+    resumed = run_again(pilot)
+    assert resumed["resume"] == {"reused_question_count": 16, "new_question_count": 0}
+    for key in benchmark._summary(()):
+        assert resumed[key] == original[key]
+    assert len(list((tmp_path / "model/private/raw_responses").glob("*.txt"))) == 16
+    events = capsys.readouterr().out
+    assert events.count('"event": "question.reused"') == 16
+    assert '"timestamp_utc"' in events and '"elapsed_seconds"' in events
+    # Include the malformed response; reuse must not cherry-pick valid answers.
+    assert resumed["schema_valid_rate"] == 15 / 16
+    description = sm.describe_training_job()
+    description["HyperParameters"]["resume_s3_prefix"] = "s3://test-bucket/run"
+    description["OutputDataConfig"]["S3OutputPath"] = "s3://test-bucket/retry/sagemaker-output"
+    artifact = "retry/sagemaker-output/job/output/model"
+    description["ModelArtifacts"]["S3ModelArtifacts"] = "s3://test-bucket/" + artifact
+    for file in (tmp_path / "model").rglob("*"):
+        if file.is_file():
+            s3.objects[artifact + "/" + file.relative_to(tmp_path / "model").as_posix()] = (
+                file.read_bytes()
+            )
+    gate = verify_training_model_artifact(
+        s3_client=s3,
+        sagemaker_client=sm,
+        job_name="job",
+        expected_output_s3_prefix="s3://test-bucket/retry",
+    )
+    assert gate.raw_response_count == 16
+
+
+def test_multiple_interruptions_keep_completed_questions(pilot, monkeypatch):
+    from lava.readers.private_artifacts import read_raw_response
+
+    s3, _, _, _, _, _ = pilot
+    # Preserve first three completed answers, including a parser failure.
+    checkpoints = sorted(k for k in s3.objects if k.startswith("run/checkpoints/"))
+    for key in checkpoints:
+        if json.loads(s3.objects[key])["record"]["question_id"] not in {"q00", "q01", "q02"}:
+            del s3.objects[key]
+    real_factory = benchmark.build_reader
+    calls = []
+
+    class InterruptingReader:
+        def predict(self, example):
+            calls.append(example.question_id)
+            if len(calls) == 3:
+                raise TimeoutError("Synthetic interruption")
+            return real_factory().predict(example)
+
+    monkeypatch.setattr(benchmark, "build_reader", lambda *a, **kw: InterruptingReader())
+    with pytest.raises(TimeoutError, match="Synthetic"):
+        run_again(pilot, prefix="attempt1")
+    assert calls == ["q03", "q04", "q05"]
+    assert "attempt1/public_summary.json" not in s3.objects
+    first_raw = read_raw_response("q00")
+    completed = [k for k in s3.objects if k.startswith("attempt1/checkpoints/questions/")]
+    assert len(completed) == 5
+    calls.clear()
+
+    class CompletingReader:
+        def predict(self, example):
+            calls.append(example.question_id)
+            return real_factory().predict(example)
+
+    monkeypatch.setattr(benchmark, "build_reader", lambda *a, **kw: CompletingReader())
+    resumed = run_again(pilot, prefix="attempt2", source="attempt1")
+    assert calls == [f"q{i:02d}" for i in range(5, 16)]
+    assert resumed["resume"] == {"reused_question_count": 5, "new_question_count": 11}
+    assert first_raw == read_raw_response("q00")
+    records = [
+        json.loads(line) for line in s3.objects["attempt2/private_records.jsonl"].splitlines()
+    ]
+    assert len({r["question_id"] for r in records}) == 16
+
+
+@pytest.mark.parametrize(
+    "mutation", ["checksum", "code", "model", "prompt", "manifest", "record", "raw", "extra"]
+)
+def test_resume_rejects_corruption_before_loading_model(pilot, monkeypatch, mutation):
+    s3 = pilot[0]
+    key = next(k for k in s3.objects if k.startswith("run/checkpoints/"))
+    data = json.loads(s3.objects[key])
+    if mutation == "code":
+        data["contract"]["git_commit_sha"] = "d" * 40
+    elif mutation == "model":
+        data["contract"]["model"]["revision"] = "d" * 40
+    elif mutation == "prompt":
+        data["contract"]["prompt_version"] = "different"
+    elif mutation == "manifest":
+        data["contract"]["asset_manifest_sha256"] = "a" * 64
+    elif mutation == "record":
+        data["record"]["normalized_exact_answer_score"] = 1
+    elif mutation == "raw":
+        data["raw_response"] = "changed"
+    elif mutation == "extra":
+        data["record"]["question_id"] = "outside-pilot"
+    s3.objects[key] = json.dumps(data).encode()
+    if mutation != "checksum":
+        s3.metadata[key]["sha256"] = hashlib.sha256(s3.objects[key]).hexdigest()
+    monkeypatch.setattr(
+        benchmark, "build_reader", lambda *a, **kw: pytest.fail("Loaded incompatible model")
+    )
+    with pytest.raises((RuntimeError, ValueError)):
+        run_again(pilot)
+    assert "retry/public_summary.json" not in s3.objects
+
+
+def test_checkpoint_upload_failure_does_not_claim_completion(pilot, monkeypatch, capsys):
+    s3 = pilot[0]
+    original = s3.put_object
+
+    def fail_upload(**kwargs):
+        if kwargs["Key"].startswith("retry/checkpoints/"):
+            raise ClientError({"Error": {"Code": "AccessDenied"}}, "PutObject")
+        return original(**kwargs)
+
+    monkeypatch.setattr(s3, "put_object", fail_upload)
+    with pytest.raises(ClientError, match="AccessDenied"):
+        run_again(pilot)
+    assert '"event": "question.completed"' not in capsys.readouterr().out
+    assert "retry/public_summary.json" not in s3.objects
+
+
+def test_checkpoint_put_is_idempotent_and_refuses_overwrite(pilot):
+    from lava.readers.checkpoints import CheckpointStore, QuestionCheckpoint
+    from lava.readers.schemas import BenchmarkRecord
+
+    s3 = pilot[0]
+    key = next(k for k in s3.objects if k.startswith("run/checkpoints/"))
+    payload = json.loads(s3.objects[key])
+    store = CheckpointStore(s3, bucket="test-bucket", prefix="run", contract=payload["contract"])
+    saved = QuestionCheckpoint(
+        BenchmarkRecord.model_validate(payload["record"]), payload["raw_response"]
+    )
+    before = s3.objects[key]
+    store.save(saved)
+    assert s3.objects[key] == before
+    with pytest.raises(RuntimeError, match="overwrite"):
+        store.save(QuestionCheckpoint(saved.record, "different generation"))
+    assert s3.objects[key] == before
+
+
+def test_interruption_during_checkpoint_copy_retains_parent_work(pilot, monkeypatch):
+    s3 = pilot[0]
+    original = s3.put_object
+    calls = 0
+
+    def interrupt(**kwargs):
+        nonlocal calls
+        if kwargs["Key"].startswith("attempt1/checkpoints/questions/"):
+            calls += 1
+            if calls == 2:
+                raise TimeoutError("Interrupted while restoring saved work")
+        return original(**kwargs)
+
+    monkeypatch.setattr(s3, "put_object", interrupt)
+    with pytest.raises(TimeoutError):
+        run_again(pilot, prefix="attempt1")
+    assert len([k for k in s3.objects if k.startswith("attempt1/checkpoints/questions/")]) == 1
+    monkeypatch.setattr(s3, "put_object", original)
+    monkeypatch.setattr(
+        benchmark, "build_reader", lambda *a, **kw: pytest.fail("Lost parent checkpoint")
+    )
+    resumed = run_again(pilot, prefix="attempt2", source="attempt1")
+    assert resumed["resume"]["reused_question_count"] == 16
+
+
+def test_checkpoint_ancestry_cycles_fail_before_inference(pilot, monkeypatch):
+    s3 = pilot[0]
+    key = next(k for k in s3.objects if k.startswith("run/checkpoints/questions/"))
+    contract = json.loads(s3.objects[key])["contract"]
+    from lava.readers.checkpoints import CheckpointStore
+
+    CheckpointStore(s3, bucket="test-bucket", prefix="run", contract=contract).link_parent("other")
+    CheckpointStore(s3, bucket="test-bucket", prefix="other", contract=contract).link_parent("run")
+    monkeypatch.setattr(benchmark, "build_reader", lambda *a, **kw: pytest.fail("Loaded model"))
+    with pytest.raises(RuntimeError, match="cyclic"):
+        run_again(pilot)
+
+
+@pytest.mark.parametrize("status", ["Failed", "Stopped", "Completed", "InProgress"])
+def test_resume_preflight_checks_terminal_status_and_immutable_plan(pilot, monkeypatch, status):
+    from lava.readers.checkpoints import prepare_resume_plan
+
+    s3, _, _, payload, _contract, _ = pilot
+    monkeypatch.setattr("lava.readers.sagemaker._git_sha", lambda _: "c" * 40)
+    plan = build_job_plan(
+        repo_root=ROOT,
+        config_path=ROOT / "configs/oracle_reader_benchmark.yaml",
+        model_lock_path=ROOT / "configs/oracle_reader_models.lock.json",
+        bucket="test-bucket",
+        model_key="qwen35_4b_fused_direct",
+        limit=16,
+        mode="benchmark",
+    )
+    manifest_key = plan.manifest_s3_uri.split("test-bucket/")[1]
+    s3.objects[manifest_key] = payload
+    description = {
+        "TrainingJobName": "failed-job",
+        "TrainingJobStatus": status,
+        "ResourceConfig": {"InstanceType": plan.instance_type},
+        "Environment": {"LAVA_GIT_COMMIT_SHA": plan.git_commit_sha},
+        "HyperParameters": {
+            "checkpoint_schema_version": "1",
+            "mode": "benchmark",
+            "limit": "16",
+            "model_key": plan.model_key,
+            "manifest_s3_uri": plan.manifest_s3_uri,
+            "protocol_lock_id": plan.protocol_lock_id,
+            "experiment_id": f"benchmark-{plan.model_key}-{plan.git_commit_sha[:8]}",
+            "output_s3_prefix": plan.output_s3_prefix,
+        },
+        "OutputDataConfig": {"S3OutputPath": plan.output_s3_prefix + "/sagemaker-output"},
+    }
+    if status in {"Completed", "InProgress"}:
+        with pytest.raises(ValueError, match="Failed or Stopped"):
+            prepare_resume_plan(
+                plan=plan, description=description, s3=s3, repo_root=ROOT, attempt_id="test"
+            )
+        return
+    updated, count = prepare_resume_plan(
+        plan=plan, description=description, s3=s3, repo_root=ROOT, attempt_id="test"
+    )
+    assert count == 0  # A failure before any answer can restart at the same code revision.
+    assert updated.output_s3_prefix == plan.output_s3_prefix + "/attempts/test"
+    assert updated.resume_s3_prefix == plan.output_s3_prefix
+    assert plan.resume_s3_prefix is None
+    for change, expected in [("code", "same Git"), ("legacy", "predates"), ("model", "mismatch")]:
+        import copy
+
+        changed = copy.deepcopy(description)
+        if change == "code":
+            changed["Environment"]["LAVA_GIT_COMMIT_SHA"] = "d" * 40
+        elif change == "legacy":
+            del changed["HyperParameters"]["checkpoint_schema_version"]
+        else:
+            changed["HyperParameters"]["model_key"] = "qwen35_9b_fused_direct"
+        with pytest.raises(ValueError, match=expected):
+            prepare_resume_plan(
+                plan=plan, description=changed, s3=s3, repo_root=ROOT, attempt_id="test"
+            )
+
+
+def test_durable_checkpoint_request_matches_pinned_s3_sdk(pilot):
+    import base64
+
+    import boto3
+    from botocore.stub import Stubber
+
+    from lava.readers.checkpoints import CheckpointStore, QuestionCheckpoint
+    from lava.readers.schemas import BenchmarkRecord
+
+    memory = pilot[0]
+    key = next(k for k in memory.objects if k.startswith("run/checkpoints/questions/"))
+    payload = memory.objects[key]
+    data = json.loads(payload)
+    client = boto3.session.Session().client(
+        "s3",
+        region_name="us-west-2",
+        aws_access_key_id="testing",
+        aws_secret_access_key="testing",
+    )
+    with Stubber(client) as stub:
+        stub.add_response(
+            "put_object",
+            {},
+            {
+                "Bucket": "test-bucket",
+                "Key": key,
+                "Body": payload,
+                "ContentType": "application/json",
+                "IfNoneMatch": "*",
+                "Metadata": {"sha256": hashlib.sha256(payload).hexdigest()},
+                "ChecksumSHA256": base64.b64encode(hashlib.sha256(payload).digest()).decode(),
+            },
+        )
+        CheckpointStore(client, bucket="test-bucket", prefix="run", contract=data["contract"]).save(
+            QuestionCheckpoint(BenchmarkRecord.model_validate(data["record"]), data["raw_response"])
+        )
+        stub.assert_no_pending_responses()
+
+
+def test_artifact_gate_rejects_false_resume_accounting(pilot):
+    s3 = pilot[0]
+    for key in [
+        "run/public_summary.json",
+        "run/sagemaker-output/job/output/model/public_summary.json",
+    ]:
+        data = json.loads(s3.objects[key])
+        data["resume"]["reused_question_count"] = 16
+        data["resume"]["new_question_count"] = 0
+        s3.objects[key] = json.dumps(data).encode()
+    with pytest.raises(RuntimeError, match="resume accounting"):
+        verify(pilot)

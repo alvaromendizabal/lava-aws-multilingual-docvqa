@@ -348,6 +348,7 @@ class SageMakerJobPlan(FrozenModel):
     bucket: str
     manifest_s3_uri: str = Field(pattern=r"^s3://")
     output_s3_prefix: str = Field(pattern=r"^s3://")
+    resume_s3_prefix: str | None = Field(default=None, pattern=r"^s3://")
     training_image: str
     training_image_digest: str
     instance_type: str = Field(pattern=r"^ml\.[a-z0-9]+(?:[.-][a-z0-9]+)*$")

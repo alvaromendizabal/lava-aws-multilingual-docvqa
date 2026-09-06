@@ -34,6 +34,8 @@ def main() -> None:
     parser.add_argument("--experiment-id", "--experiment_id", dest="experiment_id", required=True)
     parser.add_argument("--limit", type=int, required=True)
     parser.add_argument("--mode", choices=("smoke", "benchmark"), default="smoke")
+    parser.add_argument("--resume-s3-prefix", "--resume_s3_prefix", dest="resume_s3_prefix")
+    parser.add_argument("--checkpoint_schema_version", choices=("1",))
     args = parser.parse_args()
 
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -63,6 +65,7 @@ def main() -> None:
             experiment_id=args.experiment_id,
             limit=args.limit,
             evaluation_root=ROOT if args.mode == "benchmark" else None,
+            resume_s3_prefix=args.resume_s3_prefix,
         )
     logger.emit(
         "job.summary",

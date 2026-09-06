@@ -15,7 +15,7 @@ from typing import Any, cast
 import boto3
 from dotenv import load_dotenv
 
-from lava.notebook_support import find_repo_root
+from lava.notebook_support import find_repo_root, public_metadata
 from lava.readers.artifact_gate import verify_training_model_artifact
 from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.sagemaker_artifacts import (
@@ -53,10 +53,13 @@ def _latest_completed_oracle_job(client: Any) -> str:
 def _read_body(response: Mapping[str, object], *, label: str) -> bytes:
     body = response.get("Body")
 
-    if body is None or not hasattr(body, "read"):
+    if body is None or not hasattr(body, "read") or not hasattr(body, "close"):
         raise RuntimeError(f"{label} returned no readable body")
 
-    payload = body.read()
+    try:
+        payload = body.read()
+    finally:
+        body.close()
 
     if not isinstance(payload, bytes) or not payload:
         raise RuntimeError(f"{label} is empty or malformed")
@@ -182,7 +185,7 @@ def _sync() -> int:
         "training_time_seconds": description_mapping.get("TrainingTimeInSeconds"),
         "billable_time_seconds": description_mapping.get("BillableTimeInSeconds"),
         "public_summary_sha256": observed_sha256,
-        "artifact_gate": gate.as_dict(),
+        "artifact_gate": public_metadata(gate.as_dict()),
     }
     manifest_bytes = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode("utf-8")
     _write_atomic(run_dir / "sync_manifest.json", manifest_bytes)

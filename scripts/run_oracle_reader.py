@@ -28,6 +28,7 @@ from lava.observability import (
 )
 from lava.observability.events import format_utc
 from lava.readers.artifact_gate import verify_training_model_artifact
+from lava.readers.checkpoints import prepare_resume_plan
 from lava.readers.evaluation_contract import (
     load_evaluation_contract,
     validate_evaluation_manifest,
@@ -46,6 +47,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--instance-type")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--mode", choices=("smoke", "benchmark"), default="smoke")
+    parser.add_argument(
+        "--resume-job", help="Reuse durable answers from a Failed or Stopped benchmark"
+    )
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--wait", action="store_true")
     parser.add_argument("--acknowledge-charges", default="NO")
@@ -69,8 +73,8 @@ def _assert_output_prefix_empty(*, s3_client: object, bucket: str, prefix: str) 
     response = s3_client.list_objects_v2(Bucket=bucket, Prefix=key_prefix, MaxKeys=1)  # type: ignore[attr-defined]
     if int(response.get("KeyCount", 0)) > 0:
         message = (
-            "The immutable output prefix already contains objects. Commit a new code revision before "
-            "submitting another reader job."
+            "The immutable output prefix already contains objects. Sync completed jobs, "
+            "or use --resume-job for a failed/stopped benchmark with durable checkpoints."
         )
         raise RuntimeError(message)
 
@@ -158,6 +162,25 @@ def main() -> int:
             limit=args.limit if args.limit is not None else (16 if args.mode == "benchmark" else 1),
             mode=args.mode,
         )
+        if args.resume_job:
+            resume_session = boto3.session.Session(region_name=region)
+            description = resume_session.client("sagemaker").describe_training_job(
+                TrainingJobName=args.resume_job
+            )
+            with logger.stage("resume.preflight", heartbeat_seconds=args.heartbeat_seconds):
+                plan_model, reusable_count = prepare_resume_plan(
+                    plan=plan_model,
+                    description=dict(description),
+                    s3=resume_session.client("s3"),
+                    repo_root=root,
+                    attempt_id=run_id,
+                )
+            logger.emit(
+                "resume.verified",
+                source_job=args.resume_job,
+                reusable_count=reusable_count,
+                remaining_count=plan_model.limit - reusable_count,
+            )
         plan = plan_model.model_dump(mode="json")
         if args.mode == "benchmark":
             validate_evaluation_plan(plan_model, root)
@@ -177,7 +200,7 @@ def main() -> int:
         )
         enforce_cost_cap(estimate, maximum_allowed_usd=args.maximum_total_usd)
         logger.emit(
-            "smoke.plan.verified",
+            f"{args.mode}.plan.verified",
             cost_guard=estimate.as_dict(),
             plan=public_metadata(plan),
             git=git_snapshot(root),
@@ -222,7 +245,7 @@ def main() -> int:
             instance_count=plan_model.instance_count,
             managed_spot=plan_model.managed_spot,
         )
-        logger.emit("smoke.quota.verified", quota=quota)
+        logger.emit(f"{args.mode}.quota.verified", quota=quota)
 
         active = sorted(
             name
@@ -349,7 +372,7 @@ def main() -> int:
             created_at=created_at,
         )
         if snapshot.status != "Completed":
-            message = f"SageMaker smoke ended with non-success status {snapshot.status!r}."
+            message = f"SageMaker {args.mode} ended with non-success status {snapshot.status!r}."
             raise RuntimeError(message)
 
         artifact_gate = verify_training_model_artifact(
@@ -358,8 +381,8 @@ def main() -> int:
             job_name=job_name,
             expected_output_s3_prefix=plan_model.output_s3_prefix,
         )
-        logger.emit("smoke.artifact.verified", artifact_gate=artifact_gate.as_dict())
-        logger.emit("smoke.submit.complete", snapshot=snapshot.as_dict())
+        logger.emit(f"{args.mode}.artifact.verified", artifact_gate=artifact_gate.as_dict())
+        logger.emit(f"{args.mode}.submit.complete", snapshot=snapshot.as_dict())
         if args.mode == "benchmark":
             print("ORACLE_READER_BENCHMARK_COMPLETED")
             print("ORACLE_READER_BENCHMARK_VERIFIED")
@@ -371,7 +394,7 @@ def main() -> int:
     # EventLogger.Stage never suppresses exceptions at runtime, but its generic context-manager
     # return type is intentionally broad. Keep an explicit terminal guard so static analysis and
     # future refactors cannot create an implicit None return from this command.
-    raise RuntimeError("Smoke command exited its telemetry stage without a terminal result.")
+    raise RuntimeError("Reader command exited its telemetry stage without a terminal result.")
 
 
 if __name__ == "__main__":

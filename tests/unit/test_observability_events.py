@@ -109,3 +109,13 @@ def test_redaction_and_hash_are_deterministic() -> None:
     """Sanitized hashes must be stable and independent of private bucket names."""
     assert redact_string("s3://one-private-bucket/a") == "s3://<redacted-bucket>/a"
     assert stable_hash({"b": 2, "a": 1}) == stable_hash({"a": 1, "b": 2})
+
+
+def test_redaction_preserves_public_revision_hashes_containing_twelve_digits() -> None:
+    """Public model lineage must survive alongside real account-ID redaction."""
+    revision = "c123456789012" + "a" * 27
+    assert len(revision) == 40
+    value = f"revision={revision} image=123456789012.dkr.ecr.us-west-2.amazonaws.com/model"
+    assert redact_string(value) == (
+        f"revision={revision} image=<redacted-account>.dkr.ecr.us-west-2.amazonaws.com/model"
+    )

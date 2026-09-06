@@ -125,7 +125,7 @@ def load_report(root: Path) -> dict[str, Any]:
 
 def _chart(runs: list[dict[str, Any]], key: str, title: str, unit: str, divisor: float = 1) -> str:
     values = [float(r["summary"][key]) / divisor for r in runs]
-    maximum = max(values, default=1) or 1
+    maximum = max([float(r.get("axis_maximum", 0)) for r in runs] + values, default=1) or 1
     bars = []
     for index, (run, value) in enumerate(zip(runs, values, strict=True)):
         y = 28 + index * 58
@@ -142,6 +142,51 @@ def _chart(runs: list[dict[str, Any]], key: str, title: str, unit: str, divisor:
         f'<svg role="img" aria-label="{html.escape(title)}" viewBox="0 0 455 {height}">'
         + "".join(bars)
         + "</svg></section>"
+    )
+
+
+def _pilot_detail(run: dict[str, Any]) -> str:
+    """Make full-pilot quality and uncertainty directly readable without opening JSON."""
+    s = run["summary"]
+    cards = (
+        (f"{s['normalized_exact_answer_micro']:.1%}", "Question-average answer score"),
+        (f"{s['normalized_exact_answer_document_macro']:.1%}", "Document-average answer score"),
+        (f"{s['schema_valid_rate']:.1%}", "Valid output format"),
+    )
+    card_html = "".join(
+        f'<div class="card"><strong>{value}</strong><span>{label}</span></div>'
+        for value, label in cards
+    )
+    slices = [
+        {
+            "label": key.replace("_", " ").title() + f" · n={value['question_count']}",
+            "summary": {"score": 100 * value["normalized_exact_answer_micro"]},
+        }
+        for key, value in s["by_answer_format"].items()
+    ]
+    documents = [
+        {
+            "label": key + f" · n={s['document_question_counts'][key]}",
+            "summary": {"score": 100 * value},
+        }
+        for key, value in s["document_scores"].items()
+    ]
+    # Anchor answer-score axes at 100%, including all-zero slices.
+    for rows in (slices, documents):
+        for row in rows:
+            row["axis_maximum"] = 100
+    charts = _chart(slices, "score", "Answer quality by format", "%")
+    charts += _chart(documents, "score", "Answer quality by document", "%")
+    return (
+        f'<section class="pilot"><h2>{html.escape(run["label"])} · complete frozen pilot</h2>'
+        f'<div class="cards">{card_html}</div><p class="muted">'
+        "Answer scores award partial credit for lists. Valid formatting does not establish answer correctness. "
+        f"All {s['record_count']} questions remain in the denominator.</p>"
+        f'<div class="charts">{charts}</div><p class="muted">'
+        f"{s['mean_generation_seconds']:.2f} s mean generation · "
+        f"{s['max_peak_cuda_memory_allocated_mib'] / 1024:.2f} GiB peak allocated memory · "
+        f"{run['billable_seconds']} billable seconds · {html.escape(run['instance_type'])}"
+        "</p></section>"
     )
 
 
@@ -179,15 +224,19 @@ def render_report(report: dict[str, Any]) -> str:
         "Billable s",
     ]
     head = "".join(f'<th scope="col">{h}</th>' for h in headers)
-    panels = _chart(runs, "mean_generation_seconds", "Generation time per question", "s")
+    chart_runs = [r for r in runs if r["complete"]] or runs
+    panels = _chart(chart_runs, "mean_generation_seconds", "Generation time per question", "s")
     panels += _chart(
-        runs, "max_peak_cuda_memory_allocated_mib", "Peak allocated GPU memory", "GiB", 1024
+        chart_runs, "max_peak_cuda_memory_allocated_mib", "Peak allocated GPU memory", "GiB", 1024
     )
+    if len(chart_runs) == 1:
+        panels = ""
+    pilot_details = "".join(_pilot_detail(r) for r in runs if r["complete"])
     detail = []
     for run in runs:
         s = run["summary"]
         detail.append(
-            f"<details><summary>{html.escape(run['label'])} · lineage and slices</summary>"
+            f"<details><summary>{html.escape(run['label'])} · {'Full pilot' if run['complete'] else 'Smoke only'} · lineage and slices</summary>"
             f"<p>{html.escape(run['job_name'])}</p><pre>"
             + html.escape(
                 json.dumps(
@@ -231,7 +280,7 @@ p{max-width:920px}.lead{font-size:18px;color:#506477}.cards,.charts{display:grid
 .table-wrap{overflow-x:auto}table{border-collapse:collapse;min-width:950px;width:100%;font-size:13px}th{text-align:left;color:#607181;font-weight:600}td,th{padding:14px 12px;border-bottom:1px solid #e2e8ed}td:nth-child(5){font-variant-numeric:tabular-nums}
 svg{width:100%;display:block}.label{font:13px system-ui;fill:#243f50}.value{font:12px system-ui;fill:#506477}
 pre{overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;background:#f4f6f8;padding:18px;border-radius:8px}
-details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-weight:600}.muted,footer{color:#607181;font-size:13px}footer{margin-top:28px}
+details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-weight:600}.pilot{margin:36px 0}.pilot>.cards{margin:18px 0}.muted,footer{color:#607181;font-size:13px}footer{margin-top:28px}
 @media(max-width:700px){main{padding:28px 18px}h1{font-size:35px}.cards,.charts{grid-template-columns:1fr}.panel{padding:18px}}
 </style></head><body><main><div class="eyebrow">LAVA / DOCUMENT INTELLIGENCE / AWS</div>
 <h1>HEADLINE_PLACEHOLDER</h1>
@@ -242,7 +291,7 @@ details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-
 <div class="card"><strong>16 / 5</strong><span>Frozen questions / documents</span></div></div>
 <div class="notice"><strong>Read the coverage before the score.</strong> One-question smoke tests verify execution.
 They cannot establish a winning reader. Exact matching is a diagnostic; the pinned semantic judge remains a separate gate.</div>
-<div class="charts">{panels}</div>
+{pilot_details}<div class="charts">{panels}</div>
 <section class="panel"><h2>Observed results · every run retained</h2><div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
 <p class="muted">Generation time excludes model loading. Billable seconds include the training job's measured billable duration; they are not dollar costs. Hardware and quantization differ across readers.</p></section>
 <section class="panel" style="margin-top:24px"><h2>Document-level comparisons</h2>{comparison_html}

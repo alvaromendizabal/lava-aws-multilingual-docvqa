@@ -4,23 +4,24 @@
 
 LAVA is a research-grade multilingual document-intelligence system built to separate **reader quality**, **retrieval quality**, and **systems cost** under a frozen, leakage-resistant evaluation protocol. The project combines open vision-language models, immutable model/data lineage, AWS SageMaker GPU execution, structured artifact verification, and reproducible public analysis notebooks.
 
-## Current verified reader ladder
+## Current verified results
 
 | Reader | SageMaker target | Verified scope | Billable seconds |
 | --- | --- | --- | --- |
-| Qwen3.5-4B fused direct | `ml.g5.2xlarge` | One-question smoke | 336 |
+| Qwen3.5-4B fused direct | `ml.g5.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **380** |
 | Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | One-question smoke | 350 |
 | Qwen3.8-27B NF4 fused direct | `ml.g5.2xlarge` | One-question smoke | 783 |
 
-These three synchronized runs passed structured-output and artifact checks. Their
-one-question exact scores are diagnostic results, not evidence of model superiority.
-The completed 27B path uses NF4 quantization. The unquantized high-memory candidate
-is a separate configuration and is not required for this pilot.
+The complete 4B pilot has **38.1% question-average** and **43.8% document-average**
+normalized-exact answer diagnostics, **100% valid output**, and no parser errors.
+Valid formatting does not imply a correct answer. Every raw generation, question,
+score, and aggregate was independently verified against the frozen manifest.
 
-The next stage is a descriptive evaluation on **all 16 frozen questions across five
-documents**. The complete-pilot command verifies manifest version, checksum, question
-identity, and coverage. It preserves parsing failures and abstentions, then independently
-recomputes every score during artifact verification.
+Only one reader is needed for deployment. The next optional comparison is 9B;
+27B can wait until the results justify another experiment. These are frozen-model
+evaluations, not three required training jobs. The configured 27B candidate uses a
+different model generation and NF4 quantization, so the comparison also changes
+precision and model family version. This small pilot does not establish SOTA quality.
 
 [View the report source](reports/oracle_reader/evaluation/index.html) ·
 [Evaluation workflow](docs/evaluation.md) · [Aggregate results](reports/oracle_reader/evaluation/summary.json)
@@ -47,23 +48,17 @@ The public interface is intentionally small. Historical phase-specific wrappers 
 # Local quality and reproducibility gate
 make quality
 
-# No-cost AWS/data/quota/cost preflight for the already-verified 9B path
-make preflight MODEL=qwen35_9b_fused_direct
+# Preview the next complete-pilot comparison; no GPU is launched
+make benchmark-preview MODEL=qwen35_9b_fused_direct
 
-# Preview a one-question plan; creates no paid GPU resource
-make preview MODEL=qwen35_9b_fused_direct
-
-# Paid submission is explicitly locked
-make submit MODEL=qwen35_9b_fused_direct CHARGES=YES
-
-# Complete-pilot preview; no GPU is launched
-make benchmark-preview MODEL=qwen35_4b_fused_direct
+# Optional paid 9B comparison, explicitly gated
+make benchmark-submit MODEL=qwen35_9b_fused_direct CHARGES=YES
 
 # Rebuild the offline public dashboard
 make report
 ```
 
-Completed jobs are reconnectable and independently verifiable:
+Reconnect to active jobs; independently verify and synchronize completed jobs:
 
 ```bash
 make monitor JOB=<sagemaker-job-name>
@@ -72,6 +67,19 @@ make sync JOB=<sagemaker-job-name>
 make stop JOB=<sagemaker-job-name> CONFIRM=YES
 ```
 
+For a Failed or Stopped benchmark, preserve the source Git checkout and resume
+validated S3 checkpoints instead of recomputing completed answers:
+
+```bash
+make benchmark-resume-preview MODEL=qwen35_9b_fused_direct JOB=<failed-job-name>
+make benchmark-resume MODEL=qwen35_9b_fused_direct JOB=<failed-job-name> CHARGES=YES
+```
+
+This applies to new jobs created with durable checkpoint support. Replacement jobs
+are billed; instance provisioning and any necessary model loading recur. An
+interrupted question without a durable checkpoint may be repeated. See the
+[evaluation and recovery guide](docs/evaluation.md) for the complete contract.
+
 ## Engineering controls
 
 - Python 3.12 environment locked with `uv.lock` and `uv sync --frozen`.
@@ -79,7 +87,8 @@ make stop JOB=<sagemaker-job-name> CONFIRM=YES
 - GitHub Actions runs that same quality gate instead of maintaining a second CI implementation.
 - Model repositories and revisions are pinned; benchmark protocol and oracle assets carry immutable lineage identifiers.
 - Paid SageMaker runs require explicit operator acknowledgement and conservative cost ceilings.
-- Runtime events include UTC timestamps, stage timings, and heartbeats for long operations.
+- Runtime events include UTC timestamps, stage timings, total elapsed time, progress, and heartbeats.
+- Immutable S3 question checkpoints preserve exact generations and scored records; compatibility checks and interruption tests enforce safe reuse across attempts.
 - Public reports contain sanitized aggregate metadata; private questions, answers, page images, raw model responses, bucket names, and identifiers remain outside Git.
 
 ## Notebooks
@@ -93,7 +102,7 @@ The notebooks are paired with Jupytext so the `.ipynb` files remain convenient f
 
 ## Research program
 
-The current milestone isolates reader capability with oracle evidence. The next benchmark layer evaluates 4B → 9B → 27B scaling, modality ablations, multilingual slices, error taxonomy, latency/throughput/VRAM, and cost-quality Pareto behavior. Retrieval and reranking are then introduced under the same frozen document-isolated protocol so retrieval failures cannot be confused with reader failures.
+The current milestone isolates reader capability with oracle evidence. Further experiments can compare model candidates, modality ablations, multilingual slices, error categories, runtime, memory, and cost. A validated semantic judge and a larger representative evaluation set are required before broad quality claims. Retrieval and reranking are then introduced under the same frozen document-isolated protocol so retrieval failures cannot be confused with reader failures.
 
 ## Repository layout
 

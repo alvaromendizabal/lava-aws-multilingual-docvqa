@@ -352,6 +352,10 @@ def create_model_trainer(*, plan: SageMakerJobPlan, repo_root: Path, region: str
         "limit": str(plan.limit),
         "experiment_id": experiment_id,
     }
+    if plan.mode == "benchmark":
+        hyperparameters["checkpoint_schema_version"] = "1"
+    if plan.resume_s3_prefix:
+        hyperparameters["resume_s3_prefix"] = plan.resume_s3_prefix
     return ModelTrainer(
         training_image=plan.training_image,
         source_code=source,

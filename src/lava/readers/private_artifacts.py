@@ -110,3 +110,10 @@ def persist_raw_response(
         byte_count=len(encoded),
         saved_at_utc=saved_at,
     )
+
+
+def read_raw_response(question_id: str) -> str:
+    """Read the exact locally retained generation for durable checkpointing."""
+    root = Path(os.environ.get("LAVA_PRIVATE_MODEL_DIR", "/opt/ml/model/private"))
+    path = root / "raw_responses" / f"{_safe_identifier(question_id, 0)}.txt"
+    return path.read_bytes().decode("utf-8")
