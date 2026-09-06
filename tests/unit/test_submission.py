@@ -321,3 +321,37 @@ def test_cli_persists_terminal_events_and_totals(example, tmp_path, monkeypatch,
     assert all("timestamp_utc" in event and "elapsed_seconds" in event for event in events)
     if not fail:
         assert events[-1]["total_elapsed_seconds"] >= 0
+
+
+@pytest.mark.parametrize("source_corrupt", [False, True])
+def test_cli_records_log_upload_failure_without_masking_input_error(
+    example, tmp_path, monkeypatch, source_corrupt
+):
+    (tmp_path / "configs").mkdir()
+    (tmp_path / "configs/submission.json").write_bytes(encode(example.contract))
+    s3 = Store()
+    s3.objects.update({"test.csv": example.test, "sample_submission.csv": example.template})
+    if source_corrupt:
+        s3.objects["test.csv"] = b"corrupt"
+
+    def denied_upload(**kwargs):
+        raise ClientError({"Error": {"Code": "AccessDenied"}}, "PutObject")
+
+    monkeypatch.setattr(s3, "put_object", denied_upload)
+    module = runpy.run_path(str(ROOT / "scripts/prepare_submission.py"))
+    main = module["main"]
+    monkeypatch.setitem(main.__globals__, "find_repo_root", lambda _: tmp_path)
+    monkeypatch.setattr(module["boto3"], "client", lambda *a, **k: s3)
+    monkeypatch.setenv("S3_BUCKET", "bucket")
+    monkeypatch.setattr("sys.argv", ["prepare_submission.py", "--mode", "check"])
+    with pytest.raises(
+        ValueError if source_corrupt else ClientError,
+        match="checksum" if source_corrupt else "AccessDenied",
+    ):
+        main()
+    path = next((tmp_path / "artifacts/submission/logs").glob("*.jsonl"))
+    events = [json.loads(line) for line in path.read_text().splitlines()]
+    assert events[-1]["event"] == "submission.log.persistence_failed"
+    assert events[-1]["level"] == "ERROR"
+    assert events[-1]["timestamp_utc"] and events[-1]["elapsed_seconds"] >= 0
+    assert any(event["event"] == "submission.failed" for event in events) == source_corrupt

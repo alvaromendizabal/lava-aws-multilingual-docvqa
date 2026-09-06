@@ -154,6 +154,12 @@ tested runner capability; the current submission guard allows one active LAVA jo
 
 ## Engineering controls
 
+The submission-preparation branch passes 371 tests. Its real Studio check verified
+all 624 test IDs and reused both cached inputs; notebook 03 ran in 1.080 seconds
+without the progress-widget warning. S3 submission log archival is awaiting a
+narrow IAM permission approval. See the [submission guide](docs/submission.md)
+and [validation record](reports/submission/validation.json) before running it.
+
 - Python 3.12 environment locked with `uv.lock` and `uv sync --frozen`.
 - Ruff formatting/linting, repo-wide Mypy, Pytest, compile checks, shell syntax checks, notebook hygiene, and Git diff validation run through one fail-closed quality gate.
 - GitHub Actions runs that same quality gate instead of maintaining a second CI implementation.

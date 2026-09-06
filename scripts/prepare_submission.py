@@ -144,9 +144,9 @@ def main() -> int:
                     IfNoneMatch="*",
                 )
             except Exception:
+                logger.emit("submission.log.persistence_failed", level="ERROR")
                 if failure is None:
                     raise
-                logger.emit("submission.log.persistence_failed", level="ERROR")
     print(
         "SUBMISSION_INPUTS_VERIFIED" if args.mode == "check" else "SUBMISSION_PREPARATION_COMPLETE"
     )

@@ -439,8 +439,11 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the canonical gate passed all 369 tests and Mypy across 67 source
-files in 45 seconds. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
+On 2026-09-06, the submission gate passed all 371 tests and Mypy across 67 source
+files in 45 seconds locally. The initial 369-test branch passed CI in 93 seconds;
+two additional regressions cover log-upload failures and preservation of an earlier
+input error. The canonical
+`make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
 interruption during restoration, corrupt or incompatible checkpoints, rejected

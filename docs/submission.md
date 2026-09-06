@@ -48,6 +48,39 @@ organizer-hardware verification and an accepted submission are not yet completed
 
 ## Inspect and verify the submission inputs
 
+The September 6 live check verified both pinned source files and all 624 IDs,
+then failed while archiving its log: the Studio execution role lacks write access
+to `experiments/submissions/*`. Input caching succeeded and remains reusable.
+The IAM change is pending explicit approval; do not run the full check/build
+expecting successful archival until it is applied and verified.
+
+The reviewable policy is
+[`infra/iam/submission.template.json`](../infra/iam/submission.template.json).
+Replace the literal `${S3_BUCKET}` placeholder with the configured project bucket
+before applying it as `LavaSubmissionS3Access` on the existing Studio execution
+role. Its only statement permits `s3:GetObject` and `s3:PutObject` for that
+bucket's `experiments/submissions/*` objects. It adds no delete, public-access,
+raw-data write, compute, or unrelated-bucket permission. Existing source-read
+permissions remain in place. No trust policy change is proposed.
+
+The rendered policy passed AWS Access Analyzer with no findings. IAM simulation
+allowed its two intended object actions and denied deletion and access to raw
+inputs or an unrelated bucket under this policy. Automatic approval review
+rejected applying the new permission without explicit user approval; the role
+has not been changed. A failed log upload now produces a local error event and
+a nonzero exit, while preserving an earlier input error if one occurred.
+
+The IAM policy generator could not be installed through the available network.
+The minimal action mapping was checked against the
+[AWS S3 permission reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-with-s3-policy-actions.html),
+then validated and simulated through AWS before proposing it.
+
+The unaffected Studio validation completed: both cached inputs were reused with
+zero S3 downloads, and notebook 03 executed in 1.080 seconds with no progress-widget
+warning. Its executed copy and validation logs remain on the Studio EBS volume.
+The [public validation record](../reports/submission/validation.json) distinguishes
+these completed checks from the blocked S3 log-archival check.
+
 From the repository root:
 
 ```bash
