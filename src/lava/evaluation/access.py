@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from huggingface_hub import HfApi, get_hf_file_metadata, hf_hub_url
-from huggingface_hub.errors import GatedRepoError, HfHubHTTPError, LocalTokenNotFoundError
 
 from lava.readers.runtime_logging import RuntimeEventLogger
 
@@ -75,6 +73,8 @@ def check_cpu_memory(
 @contextmanager
 def hub_access_errors() -> Iterator[None]:
     """Translate expected Hub failures without exposing request headers or token details."""
+    from huggingface_hub.errors import GatedRepoError, HfHubHTTPError, LocalTokenNotFoundError
+
     try:
         yield
     except LocalTokenNotFoundError:
@@ -137,6 +137,8 @@ def check_judge_access(
     metadata: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     """Verify terminal identity and pinned-file access without downloading weights or using AWS."""
+    from huggingface_hub import HfApi, get_hf_file_metadata, hf_hub_url
+
     with logger.stage("judge.access", heartbeat_seconds=15), hub_access_errors():
         account = (api if api is not None else HfApi()).whoami(token=True)
         username = account.get("name")

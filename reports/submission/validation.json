@@ -1,0 +1,53 @@
+{
+  "checks": [
+    {
+      "attempt": 1,
+      "inputs_downloaded": 0,
+      "inputs_reused": 2,
+      "log_filename": "20260906T230113Z-cefe2deb.jsonl",
+      "s3_log_readback_verified": true,
+      "total_elapsed_seconds": 0.425
+    },
+    {
+      "attempt": 2,
+      "inputs_downloaded": 0,
+      "inputs_reused": 2,
+      "log_filename": "20260906T230114Z-d5369a55.jsonl",
+      "s3_log_readback_verified": true,
+      "total_elapsed_seconds": 0.426
+    }
+  ],
+  "code_commit": "d77de3eff425c59bce90e371f49f52c5e0602034",
+  "environment": "SageMaker Studio CPU",
+  "iam_change_applied": true,
+  "kernel_regression_tests_passed": 2,
+  "new_gpu_jobs": 0,
+  "notebooks": [
+    {
+      "executed_copy_s3_readback_verified": true,
+      "execution_succeeded": true,
+      "path": "notebooks/02_verified_gpu_execution.ipynb",
+      "progress_widget_warnings": 0,
+      "total_elapsed_seconds": 1.308,
+      "transport": "ipc"
+    },
+    {
+      "executed_copy_s3_readback_verified": true,
+      "execution_succeeded": true,
+      "path": "notebooks/03_model_scaling_and_cost.ipynb",
+      "progress_widget_warnings": 0,
+      "total_elapsed_seconds": 0.944,
+      "transport": "ipc"
+    }
+  ],
+  "prior_attempt_logs_archived": 1,
+  "reader_inference_rerun": false,
+  "schema_version": 2,
+  "submission_created": false,
+  "submission_log_archival_verified": true,
+  "test_document_count": 200,
+  "test_question_count": 624,
+  "timestamp_utc": "2026-09-06T23:01:18.705653+00:00",
+  "total_elapsed_seconds": 5.234,
+  "uploaded_to_kaggle": false
+}

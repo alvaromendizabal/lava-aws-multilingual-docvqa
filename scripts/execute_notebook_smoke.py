@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import nbformat
 from nbclient import NotebookClient
@@ -19,6 +21,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("notebooks", nargs="+")
     parser.add_argument("--timeout-seconds", type=int, default=300)
     return parser.parse_args()
+
+
+def execute_notebook(
+    path: Path, root: Path, timeout_seconds: int, *, kernel_name: str = "lava"
+) -> nbformat.NotebookNode:
+    """Run a fresh kernel; Linux IPC avoids unencrypted TCP and cleans up on failure."""
+    notebook = nbformat.read(path, as_version=4)
+    with TemporaryDirectory(prefix="lava-kernel-") as socket_directory:
+        client = NotebookClient(
+            notebook,
+            timeout=timeout_seconds,
+            kernel_name=kernel_name,
+            resources={"metadata": {"path": str(root)}},
+            allow_errors=False,
+        )
+        if os.name == "posix":
+            manager = client.create_kernel_manager()
+            manager.transport = "ipc"
+            manager.ip = str(Path(socket_directory) / "kernel")
+        client.execute()
+    return notebook
 
 
 def main() -> int:
@@ -38,15 +61,7 @@ def main() -> int:
             message = f"Notebook path escapes repository root: {path}"
             raise ValueError(message)
         with logger.stage("notebook_execute", heartbeat_seconds=15.0, notebook=path.name):
-            notebook = nbformat.read(path, as_version=4)
-            client = NotebookClient(
-                notebook,
-                timeout=args.timeout_seconds,
-                kernel_name="lava",
-                resources={"metadata": {"path": str(root)}},
-                allow_errors=False,
-            )
-            client.execute()
+            execute_notebook(path, root, args.timeout_seconds)
         progress.advance(notebook=path.name)
     logger.emit(
         "notebook_smoke.completed",

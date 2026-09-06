@@ -72,3 +72,10 @@ metrics:
 
 evaluate:
 	uv run --frozen --group judge python scripts/evaluate_oracle_reader.py --mode semantic $(if $(JOB),--job-name $(JOB),)
+
+.PHONY: submission-preview submission-check
+submission-preview:
+	uv run --frozen python scripts/prepare_submission.py --mode preview
+
+submission-check:
+	uv run --frozen python scripts/prepare_submission.py --mode check

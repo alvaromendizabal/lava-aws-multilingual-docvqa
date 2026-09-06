@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "competition": "lava-challenge-2026",
+  "expected_question_count": 624,
+  "expected_document_count": 200,
+  "answer_format_counts": {"string": 286, "number": 204, "unordered_list": 121, "ordered_list": 13},
+  "language_counts": {"ja": 587, "vi": 37},
+  "source_files": {
+    "test.csv": {
+      "key": "raw/kaggle/test.csv",
+      "sha256": "2ac749f466d2e8e88e08fbb14739759edc17dd97b91049a2a8a25e7113b81181",
+      "version_id": "sGRCxzfn3dnmiVg.X9r6WzkJSuumncfE"
+    },
+    "sample_submission.csv": {
+      "key": "raw/kaggle/sample_submission.csv",
+      "sha256": "66133e202046123135ad4a130107880390947a63824380f8d06cf3463497d25e",
+      "version_id": "B5S46EZlFMO3HPiu3huwITl85NsPRLVa"
+    }
+  },
+  "maximum_inference_seconds": 7200,
+  "maximum_gpu_memory_gib": 40,
+  "reference_gpu": "NVIDIA A100 40GB",
+  "metric_source": "https://lava-workshop.github.io/#evaluation"
+}
