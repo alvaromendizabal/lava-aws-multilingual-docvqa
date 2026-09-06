@@ -8,13 +8,14 @@ import re
 import subprocess
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import boto3
 import yaml
 from botocore.exceptions import ClientError
 from mypy_boto3_service_quotas.type_defs import ServiceQuotaTypeDef
 
+from lava.readers.evaluation_contract import validate_evaluation_plan
 from lava.readers.hardware import validate_hardware_fit
 from lava.readers.model_registry import load_resolved_model
 from lava.readers.schemas import SageMakerJobPlan
@@ -196,6 +197,7 @@ def build_job_plan(
     bucket: str,
     limit: int,
     instance_type: str | None = None,
+    mode: Literal["smoke", "benchmark"] = "smoke",
 ) -> SageMakerJobPlan:
     """Build a fully specified, non-submitting SageMaker job plan."""
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -218,7 +220,10 @@ def build_job_plan(
         f"s3://{bucket}/{config['benchmark']['results_prefix']}/"
         f"{config['protocol_lock_id']}/{model_key}/{git_sha}{hardware_suffix}"
     )
+    if mode == "benchmark":
+        output_prefix += "/benchmark"
     plan = SageMakerJobPlan(
+        mode=mode,
         sdk_version=runtime["sdk_version"],
         model_key=model_key,
         model_id=model.model_id,
@@ -253,6 +258,8 @@ def build_job_plan(
     )
 
     validate_hardware_fit(plan)
+    if mode == "benchmark":
+        validate_evaluation_plan(plan, repo_root)
 
     return plan
 
@@ -269,7 +276,9 @@ def validate_submission_guardrails(plan: SageMakerJobPlan, *, repo_root: Path) -
         raise ValueError("Smoke jobs are capped at one hour of compute")
     if plan.max_pending_seconds != 86400:
         raise ValueError("The first smoke must use the 24-hour cloud pending cap")
-    if plan.limit != 1:
+    if plan.mode == "benchmark":
+        validate_evaluation_plan(plan, repo_root)
+    elif plan.limit != 1:
         raise ValueError("The first paid smoke job must run exactly one question")
     if plan.creates_endpoint:
         raise ValueError("Oracle reader jobs must never create a persistent endpoint")
@@ -331,8 +340,9 @@ def create_model_trainer(*, plan: SageMakerJobPlan, repo_root: Path, region: str
         s3_output_path=f"{plan.output_s3_prefix}/sagemaker-output",
         compression_type="NONE",
     )
-    experiment_id = f"smoke-{plan.model_key}-{plan.git_commit_sha[:8]}"
+    experiment_id = f"{plan.mode}-{plan.model_key}-{plan.git_commit_sha[:8]}"
     hyperparameters = {
+        "mode": plan.mode,
         "bucket": plan.bucket,
         "region": region,
         "manifest_s3_uri": plan.manifest_s3_uri,

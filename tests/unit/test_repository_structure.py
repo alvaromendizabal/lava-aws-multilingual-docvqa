@@ -34,7 +34,7 @@ def test_public_workflow_has_one_canonical_interface() -> None:
         "Makefile",
         "scripts/quality_gate.sh",
         "scripts/preflight.py",
-        "scripts/run_oracle_reader_smoke.py",
+        "scripts/run_oracle_reader.py",
         "scripts/monitor_oracle_reader_job.py",
         "scripts/inspect_oracle_reader_artifact.py",
         "scripts/sync_oracle_reader_results.py",

@@ -39,7 +39,7 @@ def test_gpu_dependency_set_pins_compatible_cachetools() -> None:
 
 
 def test_smoke_script_uses_artifact_gate() -> None:
-    text = Path("scripts/run_oracle_reader_smoke.py").read_text(encoding="utf-8")
+    text = Path("scripts/run_oracle_reader.py").read_text(encoding="utf-8")
     assert "verify_training_model_artifact" in text
     assert "ORACLE_READER_ONE_QUESTION_SMOKE_VERIFIED" in text
 

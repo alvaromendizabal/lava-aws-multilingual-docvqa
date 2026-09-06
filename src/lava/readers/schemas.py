@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import re
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -338,6 +339,7 @@ class SageMakerJobPlan(FrozenModel):
     """Charge-bounded SageMaker job plan shown before submission."""
 
     sdk_version: str
+    mode: Literal["smoke", "benchmark"] = "smoke"
     model_key: str
     model_id: str
     model_revision: str

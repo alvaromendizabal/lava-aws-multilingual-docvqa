@@ -1,4 +1,4 @@
-"""Preview or submit one charge-bounded, capacity-safe oracle-reader GPU smoke job."""
+"""Preview or submit a bounded oracle-reader smoke test or complete frozen pilot."""
 
 from __future__ import annotations
 
@@ -28,7 +28,13 @@ from lava.observability import (
 )
 from lava.observability.events import format_utc
 from lava.readers.artifact_gate import verify_training_model_artifact
+from lava.readers.evaluation_contract import (
+    load_evaluation_contract,
+    validate_evaluation_manifest,
+    validate_evaluation_plan,
+)
 from lava.readers.sagemaker import build_job_plan, submit_or_preview_job
+from lava.readers.sagemaker_artifacts import split_s3_uri
 
 _MONITOR_SAFETY_MARGIN_SECONDS = 900.0
 
@@ -38,7 +44,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-key", default="qwen35_4b_fused_direct")
     parser.add_argument("--instance-type")
-    parser.add_argument("--limit", type=int, default=1)
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--mode", choices=("smoke", "benchmark"), default="smoke")
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--wait", action="store_true")
     parser.add_argument("--acknowledge-charges", default="NO")
@@ -63,7 +70,7 @@ def _assert_output_prefix_empty(*, s3_client: object, bucket: str, prefix: str) 
     if int(response.get("KeyCount", 0)) > 0:
         message = (
             "The immutable output prefix already contains objects. Commit a new code revision before "
-            "submitting another smoke job."
+            "submitting another reader job."
         )
         raise RuntimeError(message)
 
@@ -132,15 +139,15 @@ def main() -> int:
         message = "S3_BUCKET is missing from the project environment."
         raise RuntimeError(message)
 
-    run_id = f"oracle-smoke-{datetime.now(tz=UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:8]}"
+    run_id = f"oracle-reader-{datetime.now(tz=UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:8]}"
     logger = EventLogger.to_stdout(
         run_id=run_id,
-        component="oracle_reader.smoke",
+        component=f"oracle_reader.{args.mode}",
         jsonl_path=root / "artifacts" / "oracle_reader" / "runtime" / run_id / "events.jsonl",
         static_context={"model_key": args.model_key},
     )
 
-    with logger.stage("smoke_command", heartbeat_seconds=args.heartbeat_seconds):
+    with logger.stage("reader_command", heartbeat_seconds=args.heartbeat_seconds):
         plan_model = build_job_plan(
             repo_root=root,
             config_path=root / "configs" / "oracle_reader_benchmark.yaml",
@@ -148,10 +155,14 @@ def main() -> int:
             model_key=args.model_key,
             instance_type=args.instance_type,
             bucket=bucket,
-            limit=args.limit,
+            limit=args.limit if args.limit is not None else (16 if args.mode == "benchmark" else 1),
+            mode=args.mode,
         )
         plan = plan_model.model_dump(mode="json")
-        validate_first_smoke_plan(plan)
+        if args.mode == "benchmark":
+            validate_evaluation_plan(plan_model, root)
+        else:
+            validate_first_smoke_plan(plan)
 
         monitor_ceiling = _monitor_ceiling_seconds(
             requested=args.max_monitor_seconds,
@@ -175,8 +186,10 @@ def main() -> int:
         print(json.dumps(public_metadata(plan), indent=2, sort_keys=True))
 
         if not args.submit:
-            logger.emit("smoke.preview.complete", paid_resource_created=False)
-            print("SMOKE_PLAN_PREVIEWED")
+            logger.emit(f"{args.mode}.preview.complete", paid_resource_created=False)
+            print(
+                "BENCHMARK_PLAN_PREVIEWED" if args.mode == "benchmark" else "SMOKE_PLAN_PREVIEWED"
+            )
             print("NO_PAID_SAGEMAKER_RESOURCE_WAS_CREATED")
             return 0
         if not args.wait:
@@ -192,6 +205,16 @@ def main() -> int:
         session = boto3.session.Session(region_name=region)
         sagemaker_client = session.client("sagemaker")
         s3_client = session.client("s3")
+        if args.mode == "benchmark":
+            contract = load_evaluation_contract(root)
+            manifest_bucket, manifest_key = split_s3_uri(plan_model.manifest_s3_uri)
+            with s3_client.get_object(
+                Bucket=manifest_bucket,
+                Key=manifest_key,
+                VersionId=contract["private_manifest_version_id"],
+            )["Body"] as body:
+                validate_evaluation_manifest(body.read(), contract)
+            logger.emit("benchmark.manifest.verified", question_count=16, document_count=5)
         service_quotas = session.client("service-quotas")
         quota = verify_training_quota(
             service_quotas=service_quotas,
@@ -337,8 +360,12 @@ def main() -> int:
         )
         logger.emit("smoke.artifact.verified", artifact_gate=artifact_gate.as_dict())
         logger.emit("smoke.submit.complete", snapshot=snapshot.as_dict())
-        print("ORACLE_READER_ONE_QUESTION_SMOKE_COMPLETED")
-        print("ORACLE_READER_ONE_QUESTION_SMOKE_VERIFIED")
+        if args.mode == "benchmark":
+            print("ORACLE_READER_BENCHMARK_COMPLETED")
+            print("ORACLE_READER_BENCHMARK_VERIFIED")
+        else:
+            print("ORACLE_READER_ONE_QUESTION_SMOKE_COMPLETED")
+            print("ORACLE_READER_ONE_QUESTION_SMOKE_VERIFIED")
         return 0
 
     # EventLogger.Stage never suppresses exceptions at runtime, but its generic context-manager

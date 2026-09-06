@@ -13,11 +13,11 @@ preflight:
 	uv run --frozen python scripts/preflight.py --model-key $(MODEL) --limit $(LIMIT)
 
 preview:
-	uv run --frozen python scripts/run_oracle_reader_smoke.py --model-key $(MODEL) --limit $(LIMIT)
+	uv run --frozen python scripts/run_oracle_reader.py --model-key $(MODEL) --limit $(LIMIT)
 
 submit:
 	@test "$(CHARGES)" = "YES" || (echo "Refusing paid compute. Re-run with CHARGES=YES." >&2; exit 2)
-	uv run --frozen python scripts/run_oracle_reader_smoke.py --model-key $(MODEL) --limit $(LIMIT) --submit --wait --acknowledge-charges YES
+	uv run --frozen python scripts/run_oracle_reader.py --model-key $(MODEL) --limit $(LIMIT) --submit --wait --acknowledge-charges YES
 
 monitor:
 	@test -n "$(JOB)" || (echo "JOB is required." >&2; exit 2)
@@ -38,3 +38,14 @@ stop:
 
 notebooks:
 	uv run --frozen jupytext --sync notebooks/*.py
+
+.PHONY: benchmark-preview benchmark-submit report
+benchmark-preview:
+	uv run --frozen python scripts/run_oracle_reader.py --mode benchmark --model-key $(MODEL)
+
+benchmark-submit:
+	@test "$(CHARGES)" = "YES" || (echo "Refusing paid compute. Re-run with CHARGES=YES." >&2; exit 2)
+	uv run --frozen python scripts/run_oracle_reader.py --mode benchmark --model-key $(MODEL) --submit --wait --acknowledge-charges YES
+
+report:
+	uv run --frozen python scripts/report_oracle_reader.py

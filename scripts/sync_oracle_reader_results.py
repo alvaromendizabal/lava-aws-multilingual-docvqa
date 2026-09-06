@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 from lava.notebook_support import find_repo_root
 from lava.readers.artifact_gate import verify_training_model_artifact
+from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.sagemaker_artifacts import (
     canonical_output_s3_prefix,
     split_s3_uri,
@@ -70,7 +71,7 @@ def _write_atomic(path: Path, payload: bytes) -> None:
     temporary.replace(path)
 
 
-def main() -> int:
+def _sync() -> int:
     """Sync one verified public summary without shell-exported bucket state."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--job-name")
@@ -199,6 +200,13 @@ def main() -> int:
     print(latest_summary)
     print("ORACLE_READER_RESULTS_SYNCED")
     return 0
+
+
+def main() -> int:
+    """Keep artifact verification and S3 reads observable throughout synchronization."""
+    logger = RuntimeEventLogger("oracle_reader.sync")
+    with logger.stage("sync", heartbeat_seconds=15.0):
+        return _sync()
 
 
 if __name__ == "__main__":

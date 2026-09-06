@@ -446,7 +446,7 @@ class Qwen35Reader:
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )[0]
-        persist_raw_response(raw_response)
+        persist_raw_response(raw_response, question_id=example.question_id)
         try:
             prediction = parse_reader_response(
                 question_id=example.question_id,

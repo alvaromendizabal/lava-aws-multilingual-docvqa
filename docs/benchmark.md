@@ -16,7 +16,7 @@ The benchmark is tied to the immutable evaluation protocol and pinned model revi
 2. Qwen3.5-4B image-only and text-only modality controls.
 3. Qwen3.5-4B bounded thinking-mode ablation.
 4. Qwen3.5-9B fused direct challenger on the **verified LAVA `ml.g6e.2xlarge` path**.
-5. Qwen3.8-27B fused direct challenger on `ml.g7e.12xlarge`, whose frozen contract requires at least 80 GiB of CUDA memory on one device.
+5. Qwen3.8-27B NF4 fused direct challenger on its verified `ml.g5.2xlarge` path. The unquantized high-memory variant remains a separate research candidate.
 6. Multilingual slices, repeated-run stability, error taxonomy, latency, throughput, peak VRAM, and cost-quality Pareto analysis.
 7. Retrieval and reranking only after the reader ladder is characterized.
 
@@ -27,3 +27,7 @@ A SageMaker job reaching `Completed` is not enough. A run is accepted only after
 ## Claims discipline
 
 Model size, GPU size, and code complexity are not treated as evidence of benchmark leadership. Strong claims are reserved for results produced under the frozen protocol and, where relevant, an external benchmark.
+
+## Complete descriptive pilot
+
+See [evaluation.md](evaluation.md) for the 16-question workflow and reporting boundaries. A malformed answer is a measured reader failure and remains in the full-pilot denominator. Missing records or inconsistent hashes fail artifact verification.

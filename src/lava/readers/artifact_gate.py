@@ -122,6 +122,7 @@ def _read_s3_bytes(
     s3_client: Any,
     bucket: str,
     key: str,
+    allow_empty: bool = False,
 ) -> bytes:
     response = s3_client.get_object(
         Bucket=bucket,
@@ -133,9 +134,12 @@ def _read_s3_bytes(
     if body is None or not hasattr(body, "read"):
         raise RuntimeError(f"S3 object s3://{bucket}/{key} returned no readable body")
 
-    data = body.read()
+    try:
+        data = body.read()
+    finally:
+        body.close()
 
-    if not isinstance(data, bytes) or not data:
+    if not isinstance(data, bytes) or (not data and not allow_empty):
         raise RuntimeError(f"S3 object s3://{bucket}/{key} is empty or malformed")
 
     return data
@@ -518,6 +522,14 @@ def verify_training_model_artifact(
     if description.get("TrainingJobStatus") != "Completed":
         raise RuntimeError("Artifact verification requires a Completed SageMaker training job")
 
+    if description.get("HyperParameters", {}).get("mode") == "benchmark":
+        return _verify_benchmark_artifact(
+            s3_client=s3_client,
+            description=description,
+            job_name=job_name,
+            expected_output_s3_prefix=expected_output_s3_prefix,
+        )
+
     artifact_uri = description.get("ModelArtifacts", {}).get("S3ModelArtifacts")
 
     if not isinstance(artifact_uri, str) or not artifact_uri.startswith("s3://"):
@@ -603,3 +615,195 @@ def inspect_local_model_artifact(path: Path) -> dict[str, object]:
         "verified": True,
         **report.as_dict(),
     }
+
+
+def _verify_benchmark_artifact(
+    *,
+    s3_client: Any,
+    description: dict[str, Any],
+    job_name: str,
+    expected_output_s3_prefix: str | None,
+) -> ArtifactGateReport:
+    """Audit every frozen question, raw generation, parsed result, score, and aggregate."""
+    from lava.evaluation.judges import NormalizedExactJudge
+    from lava.evaluation.metric import score_question, set_f1
+    from lava.evaluation.schemas import PredictionRecord, ReferenceRecord
+    from lava.readers.benchmark import _summary
+    from lava.readers.evaluation_contract import (
+        load_evaluation_contract,
+        validate_evaluation_manifest,
+    )
+    from lava.readers.model_registry import load_resolved_model
+    from lava.readers.parsing import ReaderOutputError, parse_reader_response
+    from lava.readers.sagemaker_artifacts import canonical_output_s3_prefix
+    from lava.readers.schemas import BenchmarkRecord, ReaderPrediction
+
+    root = Path(__file__).resolve().parents[3]
+    contract = load_evaluation_contract(root)
+    params = description.get("HyperParameters", {})
+    if params.get("limit") != str(contract["question_count"]):
+        raise RuntimeError("Benchmark job has an unexpected question limit")
+    canonical = canonical_output_s3_prefix(description, job_name=job_name)
+    if canonical is None or (expected_output_s3_prefix and canonical != expected_output_s3_prefix):
+        raise RuntimeError("Benchmark output prefix mismatch")
+    bucket, prefix = _split_s3_uri(canonical)
+    artifact_uri = description["ModelArtifacts"]["S3ModelArtifacts"]
+    if artifact_uri != f"{canonical}/sagemaker-output/{job_name}/output/model":
+        raise RuntimeError("Benchmark artifact URI does not belong to this job")
+    artifact_bucket, artifact_prefix = _split_s3_uri(artifact_uri)
+    if (
+        artifact_bucket != bucket
+        or description["OutputDataConfig"].get("CompressionType") != "NONE"
+    ):
+        raise RuntimeError("Benchmark requires uncompressed artifacts in the project bucket")
+    model = load_resolved_model(
+        root / "configs/oracle_reader_models.lock.json", params["model_key"]
+    )
+    if contract["models"].get(model.model_key) != description["ResourceConfig"]["InstanceType"]:
+        raise RuntimeError("Benchmark hardware differs from the verified model path")
+    manifest_bucket, manifest_key = _split_s3_uri(params["manifest_s3_uri"])
+    if manifest_bucket != bucket:
+        raise RuntimeError("Benchmark manifest bucket mismatch")
+    with s3_client.get_object(
+        Bucket=bucket, Key=manifest_key, VersionId=contract["private_manifest_version_id"]
+    )["Body"] as body:
+        examples = validate_evaluation_manifest(body.read(), contract)
+    expected = {e.question_id: e for e in examples}
+
+    def read(key: str) -> bytes:
+        return _read_s3_bytes(s3_client=s3_client, bucket=bucket, key=key)
+
+    summary = _json_object(read(f"{prefix}/public_summary.json"), label="public_summary")
+    artifact_summary = _json_object(
+        read(f"{artifact_prefix}/public_summary.json"), label="artifact_summary"
+    )
+    if summary != artifact_summary:
+        raise RuntimeError("Benchmark canonical and artifact summaries differ")
+    records = tuple(
+        BenchmarkRecord.model_validate_json(line)
+        for line in read(f"{prefix}/private_records.jsonl").splitlines()
+        if line.strip()
+    )
+    if len(records) != len(expected) or {r.question_id for r in records} != set(expected):
+        raise RuntimeError("Benchmark records have missing, extra, or duplicate questions")
+    raw_prefix = f"{artifact_prefix}/private/raw_responses/"
+    keys = _list_s3_keys(s3_client=s3_client, bucket=bucket, prefix=raw_prefix)
+    metadata_keys = [k for k in keys if k.endswith(".json")]
+    text_keys = {k for k in keys if k.endswith(".txt")}
+    if len(metadata_keys) != len(expected) or len(text_keys) != len(expected):
+        raise RuntimeError("Benchmark raw-response count mismatch")
+    raw_by_id: dict[str, str] = {}
+    used_keys: set[str] = set()
+    for key in metadata_keys:
+        metadata = _json_object(read(key), label="raw_metadata")
+        question_id = metadata.get("question_id")
+        filename = metadata.get("response_filename")
+        if (
+            not isinstance(filename, str)
+            or PurePosixPath(filename).name != filename
+            or question_id not in expected
+            or question_id in raw_by_id
+        ):
+            raise RuntimeError("Benchmark raw metadata has invalid or duplicate identity")
+        text_key = raw_prefix + filename
+        if text_key not in text_keys or text_key in used_keys:
+            raise RuntimeError("Benchmark raw metadata references a missing or reused response")
+        raw = _read_s3_bytes(s3_client=s3_client, bucket=bucket, key=text_key, allow_empty=True)
+        if hashlib.sha256(raw).hexdigest() != metadata.get("sha256") or len(raw) != metadata.get(
+            "byte_count"
+        ):
+            raise RuntimeError("Benchmark raw-response checksum or byte count mismatch")
+        raw_by_id[question_id] = raw.decode("utf-8")
+        used_keys.add(text_key)
+    lineage = {
+        "protocol_lock_id": contract["protocol_lock_id"],
+        "asset_manifest_sha256": contract["private_manifest_sha256"],
+        "model_key": model.model_key,
+        "model_id": model.model_id,
+        "model_revision": model.revision,
+        "experiment_id": params["experiment_id"],
+        "git_commit_sha": description["Environment"]["LAVA_GIT_COMMIT_SHA"],
+    }
+    from lava.readers.prompts import PROMPT_VERSION
+
+    lineage["prompt_version"] = PROMPT_VERSION
+    for key, value in lineage.items():
+        if summary.get(key) != value or any(getattr(r, key) != value for r in records):
+            raise RuntimeError(f"Benchmark lineage mismatch: {key}")
+    for record in records:
+        example = expected[record.question_id]
+        for key in ("document_alias", "language", "answer_format"):
+            if getattr(record, key) != getattr(example, key):
+                raise RuntimeError(f"Benchmark question alignment mismatch: {key}")
+        if record.gold_evidence_pages != example.evidence_pages:
+            raise RuntimeError("Benchmark evidence alignment mismatch")
+        raw_text = raw_by_id[record.question_id]
+        try:
+            prediction = parse_reader_response(
+                question_id=example.question_id,
+                answer_format=example.answer_format,
+                raw_response=raw_text,
+                allowed_pages=example.evidence_pages,
+            )
+        except ReaderOutputError as error:
+            prediction = ReaderPrediction(
+                question_id=example.question_id,
+                answer_format=example.answer_format,
+                answer="",
+                evidence_pages=(),
+                confidence=0.0,
+                abstain=True,
+                schema_valid=False,
+                parser_error_code=error.code,
+                raw_response_sha256=hashlib.sha256(raw_text.encode()).hexdigest(),
+            )
+        if record.prediction != prediction:
+            raise RuntimeError("Benchmark parsed prediction differs from raw generation")
+        reference = ReferenceRecord(
+            question_id=example.question_id,
+            document_id=example.document_id,
+            question=example.question,
+            answer_format=example.answer_format,
+            answer=example.answer,
+            evidence_pages=example.evidence_pages,
+            language=example.language,
+        )
+        score = score_question(
+            reference,
+            PredictionRecord(
+                question_id=example.question_id,
+                answer=prediction.answer,
+                evidence_pages=example.evidence_pages,
+            ),
+            judge=NormalizedExactJudge(),
+        )
+        if (
+            record.normalized_exact_answer_score != score.answer_score
+            or record.self_grounding_f1 != set_f1(example.evidence_pages, prediction.evidence_pages)
+            or record.oracle_fixed_overall_diagnostic != (score.answer_score + 1.0) / 2.0
+        ):
+            raise RuntimeError("Benchmark score differs from independently recomputed score")
+    if (
+        summary.get("run_kind") != "benchmark"
+        or summary.get("coverage_status") != "complete_frozen_pilot"
+    ):
+        raise RuntimeError("Benchmark summary lacks explicit complete-pilot status")
+    for key, value in _summary(records).items():
+        if summary.get(key) != value:
+            raise RuntimeError(f"Benchmark aggregate mismatch: {key}")
+    for key, value in {
+        "generation": model.generation.model_dump(mode="json"),
+        "input_mode": model.input_mode.value,
+        "dtype": model.dtype,
+        "quantization": model.quantization.value,
+    }.items():
+        if summary.get(key) != value:
+            raise RuntimeError(f"Benchmark model contract mismatch: {key}")
+    return ArtifactGateReport(
+        raw_response_count=len(records),
+        schema_valid_rate=summary["schema_valid_rate"],
+        parser_error_counts={
+            k: v for k, v in summary["parser_error_counts"].items() if k != "none"
+        },
+        model_artifact_uri=artifact_uri,
+    )

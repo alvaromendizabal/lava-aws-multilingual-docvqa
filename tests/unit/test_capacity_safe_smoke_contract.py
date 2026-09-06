@@ -25,7 +25,7 @@ def _load_script(name: str, relative_path: str) -> ModuleType:
 
 
 def test_smoke_submits_directly_without_launcher_process_race() -> None:
-    source = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
+    source = (_root() / "scripts" / "run_oracle_reader.py").read_text(encoding="utf-8")
     assert "submit_or_preview_job(" in source
     assert "wait=False" in source
     assert "subprocess.Popen" not in source
@@ -40,7 +40,7 @@ def test_smoke_uses_server_side_pending_limit() -> None:
     schema_source = (_root() / "src" / "lava" / "readers" / "schemas.py").read_text(
         encoding="utf-8"
     )
-    smoke_source = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
+    smoke_source = (_root() / "scripts" / "run_oracle_reader.py").read_text(encoding="utf-8")
     assert '"max_pending_time_in_seconds"' in sagemaker_source
     assert '"max_pending_time_in_seconds": plan.max_pending_seconds' in sagemaker_source
     assert "ge=7200, le=2419200" in schema_source
@@ -51,7 +51,7 @@ def test_smoke_uses_server_side_pending_limit() -> None:
 def test_local_monitor_cannot_undercut_cloud_bounds() -> None:
     module = _load_script(
         "capacity_safe_smoke_runner",
-        "scripts/run_oracle_reader_smoke.py",
+        "scripts/run_oracle_reader.py",
     )
     calculate = module._monitor_ceiling_seconds
 
@@ -118,7 +118,7 @@ def test_entrypoint_modes_are_lint_safe() -> None:
     root = _root()
     for relative in (
         "scripts/monitor_oracle_reader_job.py",
-        "scripts/run_oracle_reader_smoke.py",
+        "scripts/run_oracle_reader.py",
         "scripts/stop_oracle_reader_job.py",
         "scripts/preflight.py",
     ):
@@ -130,13 +130,13 @@ def test_entrypoint_modes_are_lint_safe() -> None:
 
 
 def test_monitor_failure_fallback_catches_only_expected_failures() -> None:
-    source = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
+    source = (_root() / "scripts" / "run_oracle_reader.py").read_text(encoding="utf-8")
     assert "except (BotoCoreError, ClientError, TypeError) as describe_error:" in source
     assert "except Exception as describe_error:" not in source
 
 
 def test_event_logger_calls_are_mypy_safe() -> None:
-    runner = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
+    runner = (_root() / "scripts" / "run_oracle_reader.py").read_text(encoding="utf-8")
     monitor = (_root() / "scripts" / "monitor_oracle_reader_job.py").read_text(encoding="utf-8")
     preflight = (_root() / "scripts" / "preflight.py").read_text(encoding="utf-8")
 
@@ -150,7 +150,7 @@ def test_event_logger_calls_are_mypy_safe() -> None:
 
 
 def test_smoke_main_has_explicit_terminal_guard() -> None:
-    source = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
+    source = (_root() / "scripts" / "run_oracle_reader.py").read_text(encoding="utf-8")
     assert "Smoke command exited its telemetry stage without a terminal result." in source
 
 

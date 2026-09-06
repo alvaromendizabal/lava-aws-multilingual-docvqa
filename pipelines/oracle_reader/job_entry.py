@@ -33,6 +33,7 @@ def main() -> None:
     parser.add_argument("--model-key", "--model_key", dest="model_key", required=True)
     parser.add_argument("--experiment-id", "--experiment_id", dest="experiment_id", required=True)
     parser.add_argument("--limit", type=int, required=True)
+    parser.add_argument("--mode", choices=("smoke", "benchmark"), default="smoke")
     args = parser.parse_args()
 
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -61,6 +62,7 @@ def main() -> None:
             model_spec=model_spec,
             experiment_id=args.experiment_id,
             limit=args.limit,
+            evaluation_root=ROOT if args.mode == "benchmark" else None,
         )
     logger.emit(
         "job.summary",

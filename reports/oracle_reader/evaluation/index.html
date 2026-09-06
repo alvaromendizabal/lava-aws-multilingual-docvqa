@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>LAVA | Reader evaluation</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#192e40;font:15px/1.65 system-ui,sans-serif}
+main{max-width:1240px;margin:auto;padding:52px 32px}.eyebrow{letter-spacing:.19em;font-size:12px;font-weight:700;color:#147d92}
+h1{font-size:48px;letter-spacing:-.045em;line-height:1.13;margin:16px 0}h2{font-size:19px;line-height:1.4;margin:0 0 18px}
+p{max-width:920px}.lead{font-size:18px;color:#506477}.cards,.charts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:30px 0}
+.card,.panel{background:white;border:1px solid #dce4e9;border-radius:14px;padding:24px}.card strong{font-size:34px;display:block;line-height:1.3}
+.card span{color:#506477}.charts{grid-template-columns:1fr 1fr}.notice{border-left:4px solid #d9a344;background:#fff8e9;padding:17px 22px;border-radius:0 9px 9px 0}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;min-width:950px;width:100%;font-size:13px}th{text-align:left;color:#607181;font-weight:600}td,th{padding:14px 12px;border-bottom:1px solid #e2e8ed}td:nth-child(5){font-variant-numeric:tabular-nums}
+svg{width:100%;display:block}.label{font:13px system-ui;fill:#243f50}.value{font:12px system-ui;fill:#506477}
+pre{overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;background:#f4f6f8;padding:18px;border-radius:8px}
+details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-weight:600}.muted,footer{color:#607181;font-size:13px}footer{margin-top:28px}
+@media(max-width:700px){main{padding:28px 18px}h1{font-size:35px}.cards,.charts{grid-template-columns:1fr}.panel{padding:18px}}
+</style></head><body><main><div class="eyebrow">LAVA / DOCUMENT INTELLIGENCE / AWS</div>
+<h1>Reader execution is verified.<br>Full evaluation comes next.</h1>
+<p class="lead">A traceable comparison of open vision-language readers with the correct evidence pages held fixed.</p>
+<div class="cards"><div class="card"><strong>3</strong><span>Verified runs in this report</span></div>
+<div class="card"><strong>0</strong><span>Complete 16-question pilots</span></div>
+<div class="card"><strong>16 / 5</strong><span>Frozen questions / documents</span></div></div>
+<div class="notice"><strong>Read the coverage before the score.</strong> One-question smoke tests verify execution.
+They cannot establish a winning reader. Exact matching is a diagnostic; the pinned semantic judge remains a separate gate.</div>
+<div class="charts"><section class="panel"><h2>Generation time per question</h2><svg role="img" aria-label="Generation time per question" viewBox="0 0 455 204"><text x="0" y="28" class="label">Qwen3.5 · 4B</text><rect x="0" y="38" width="182.39" height="10" rx="5" fill="#147d92"/><text x="192.39" y="48" class="value">7.50 s</text><text x="0" y="86" class="label">Qwen3.5 · 9B</text><rect x="0" y="96" width="106.34" height="10" rx="5" fill="#147d92"/><text x="116.34" y="106" class="value">4.37 s</text><text x="0" y="144" class="label">Qwen3.8 · 27B NF4</text><rect x="0" y="154" width="330.00" height="10" rx="5" fill="#147d92"/><text x="340.00" y="164" class="value">13.56 s</text></svg></section><section class="panel"><h2>Peak allocated GPU memory</h2><svg role="img" aria-label="Peak allocated GPU memory" viewBox="0 0 455 204"><text x="0" y="28" class="label">Qwen3.5 · 4B</text><rect x="0" y="38" width="170.93" height="10" rx="5" fill="#147d92"/><text x="180.93" y="48" class="value">9.81 GiB</text><text x="0" y="86" class="label">Qwen3.5 · 9B</text><rect x="0" y="96" width="330.00" height="10" rx="5" fill="#147d92"/><text x="340.00" y="106" class="value">18.95 GiB</text><text x="0" y="144" class="label">Qwen3.8 · 27B NF4</text><rect x="0" y="154" width="328.45" height="10" rx="5" fill="#147d92"/><text x="338.45" y="164" class="value">18.86 GiB</text></svg></section></div>
+<section class="panel"><h2>Observed results · every run retained</h2><div class="table-wrap"><table><thead><tr><th scope="col">Reader</th><th scope="col">GPU instance</th><th scope="col">Coverage</th><th scope="col">Questions</th><th scope="col">Exact diagnostic</th><th scope="col">Valid output</th><th scope="col">Abstain</th><th scope="col">Billable s</th></tr></thead><tbody><tr><td>Qwen3.5 · 4B</td><td>ml.g5.2xlarge</td><td>Smoke only</td><td>1</td><td>1.000</td><td>100.0%</td><td>0.0%</td><td>336</td></tr><tr><td>Qwen3.5 · 9B</td><td>ml.g6e.2xlarge</td><td>Smoke only</td><td>1</td><td>0.000</td><td>100.0%</td><td>0.0%</td><td>350</td></tr><tr><td>Qwen3.8 · 27B NF4</td><td>ml.g5.2xlarge</td><td>Smoke only</td><td>1</td><td>0.000</td><td>100.0%</td><td>0.0%</td><td>783</td></tr></tbody></table></div>
+<p class="muted">Generation time excludes model loading. Billable seconds include the training job's measured billable duration; they are not dollar costs. Hardware and quantization differ across readers.</p></section>
+<section class="panel" style="margin-top:24px"><h2>Document-level comparisons</h2><p>Pending: at least two complete, compatible 16-question runs are required.</p>
+<p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></section>
+<section class="panel" style="margin-top:24px"><h2>Coverage and interpretation</h2><p>The frozen set has 15 Japanese questions and one Vietnamese question. Language is confounded with document identity. The Vietnamese result is a single example, not a language-level estimate.</p>
+<p>These are frozen-model descriptive evaluations. The existence of nested fold manifests does not mean nested training, tuning, or cross-validation has been performed. Retrieval is held at oracle evidence; overall oracle diagnostics contain a fixed grounding contribution.</p></section>
+<section class="panel" style="margin-top:24px"><h2>Audit trail</h2><details><summary>Qwen3.5 · 4B · lineage and slices</summary><p>lava-oracle-qwen35-4b-fused-direct-20260904193156</p><pre>{
+  &quot;model_revision&quot;: &quot;851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a&quot;,
+  &quot;code_revision&quot;: &quot;a773e824e1f8457e9c3eb74ef9af9428c403cb1c&quot;,
+  &quot;summary_sha256&quot;: &quot;9db43adf97587441f3ada2859b9b0efa383c79d44636a4931b94a9ef6f9115b7&quot;,
+  &quot;document_scores&quot;: {
+    &quot;doc-01&quot;: 1.0
+  },
+  &quot;by_language&quot;: {
+    &quot;coverage_only&quot;: {
+      &quot;ja&quot;: 1
+    }
+  },
+  &quot;by_answer_format&quot;: {
+    &quot;coverage_only&quot;: {
+      &quot;string&quot;: 1
+    }
+  },
+  &quot;parser_errors&quot;: {
+    &quot;none&quot;: 1
+  }
+}</pre></details><details><summary>Qwen3.5 · 9B · lineage and slices</summary><p>lava-oracle-qwen35-9b-fused-direct-20260904203547</p><pre>{
+  &quot;model_revision&quot;: &quot;c202236235762e1c871ad0ccb60c8ee5ba337b9a&quot;,
+  &quot;code_revision&quot;: &quot;a773e824e1f8457e9c3eb74ef9af9428c403cb1c&quot;,
+  &quot;summary_sha256&quot;: &quot;6984264c68d1b38f119654e2cb68c49c48dcdf92db17f859039fa7523344f324&quot;,
+  &quot;document_scores&quot;: {
+    &quot;doc-01&quot;: 0.0
+  },
+  &quot;by_language&quot;: {
+    &quot;coverage_only&quot;: {
+      &quot;ja&quot;: 1
+    }
+  },
+  &quot;by_answer_format&quot;: {
+    &quot;coverage_only&quot;: {
+      &quot;string&quot;: 1
+    }
+  },
+  &quot;parser_errors&quot;: {
+    &quot;none&quot;: 1
+  }
+}</pre></details><details><summary>Qwen3.8 · 27B NF4 · lineage and slices</summary><p>lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906044426</p><pre>{
+  &quot;model_revision&quot;: &quot;1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0&quot;,
+  &quot;code_revision&quot;: &quot;9cf5e16eedc9d0dc4aa8a1548afa3dc1e2d3268a&quot;,
+  &quot;summary_sha256&quot;: &quot;3c95d7e188ef9d0013ef4a9661c56f311e3a68597dd4e759d0ab43bd85160433&quot;,
+  &quot;document_scores&quot;: {
+    &quot;doc-01&quot;: 0.0
+  },
+  &quot;by_language&quot;: {
+    &quot;coverage_only&quot;: {
+      &quot;ja&quot;: 1
+    }
+  },
+  &quot;by_answer_format&quot;: {
+    &quot;coverage_only&quot;: {
+      &quot;string&quot;: 1
+    }
+  },
+  &quot;parser_errors&quot;: {
+    &quot;none&quot;: 1
+  }
+}</pre></details></section>
+<footer>Alvaro Mendizabal · LAVA · Rebuild with make report · Protocol 23cf9a605fcdc553</footer></main></body></html>

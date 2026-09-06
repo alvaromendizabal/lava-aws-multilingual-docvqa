@@ -18,9 +18,12 @@ import boto3
 from lava.evaluation.judges import NormalizedExactJudge
 from lava.evaluation.metric import score_question, set_f1
 from lava.evaluation.schemas import PredictionRecord, ReferenceRecord
+from lava.readers.evaluation_contract import load_evaluation_contract, validate_evaluation_manifest
 from lava.readers.oracle_assets import load_oracle_examples
+from lava.readers.private_artifacts import _atomic_private_write
 from lava.readers.prompts import PROMPT_VERSION
 from lava.readers.reader_factory import build_reader
+from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.schemas import BenchmarkRecord, ResolvedModel
 
 
@@ -51,6 +54,12 @@ def _summary(records: tuple[BenchmarkRecord, ...]) -> dict[str, Any]:
         by_document[record.document_alias].append(record.normalized_exact_answer_score)
     return {
         "record_count": len(records),
+        "document_count": len(by_document),
+        "document_question_counts": dict(
+            sorted(Counter(r.document_alias for r in records).items())
+        ),
+        "by_language": _slice_scores(records, "language"),
+        "by_answer_format": _slice_scores(records, "answer_format"),
         "normalized_exact_answer_micro": _safe_mean(
             [record.normalized_exact_answer_score for record in records]
         ),
@@ -107,6 +116,22 @@ def _summary(records: tuple[BenchmarkRecord, ...]) -> dict[str, Any]:
     }
 
 
+def _slice_scores(records: tuple[BenchmarkRecord, ...], field: str) -> dict[str, Any]:
+    groups: dict[str, list[BenchmarkRecord]] = defaultdict(list)
+    for record in records:
+        groups[str(getattr(record, field))].append(record)
+    return {
+        key: {
+            "question_count": len(group),
+            "document_count": len({r.document_alias for r in group}),
+            "normalized_exact_answer_micro": fmean(r.normalized_exact_answer_score for r in group),
+            "self_grounding_f1_micro": fmean(r.self_grounding_f1 for r in group),
+            "schema_valid_rate": fmean(float(r.prediction.schema_valid) for r in group),
+        }
+        for key, group in sorted(groups.items())
+    }
+
+
 def _put_json(s3: Any, *, bucket: str, key: str, payload: bytes, content_type: str) -> None:
     s3.put_object(
         Bucket=bucket,
@@ -128,6 +153,7 @@ def run_oracle_benchmark(
     model_spec: ResolvedModel,
     experiment_id: str,
     limit: int,
+    evaluation_root: Path | None = None,
 ) -> dict[str, Any]:
     """Run a bounded oracle benchmark and upload private and public artifacts."""
     s3 = boto3.client("s3", region_name=region)
@@ -135,13 +161,27 @@ def run_oracle_benchmark(
     if not manifest_s3_uri.startswith(bucket_prefix):
         raise ValueError("Oracle manifest must be in the configured private project bucket")
     manifest_key = manifest_s3_uri.removeprefix(bucket_prefix)
-    manifest_response = s3.get_object(Bucket=bucket, Key=manifest_key)
-    manifest_payload = manifest_response["Body"].read()
+    if limit < 1 or limit > 16:
+        raise ValueError("Question limit must be between 1 and 16")
+    contract = load_evaluation_contract(evaluation_root) if evaluation_root else None
+    request: dict[str, Any] = {"Bucket": bucket, "Key": manifest_key}
+    if contract:
+        request["VersionId"] = contract["private_manifest_version_id"]
+    manifest_response = s3.get_object(**request)
+    with manifest_response["Body"] as body:
+        manifest_payload = body.read()
     manifest_sha = _sha256(manifest_payload)
     metadata_sha = manifest_response.get("Metadata", {}).get("sha256")
     if metadata_sha and metadata_sha != manifest_sha:
         raise ValueError("Oracle manifest SHA-256 metadata does not match its bytes")
-    examples = load_oracle_examples(manifest_payload)[:limit]
+    if contract:
+        if limit != contract["question_count"]:
+            raise ValueError("Benchmark limit must equal the frozen question count")
+        examples = validate_evaluation_manifest(manifest_payload, contract)
+    else:
+        examples = load_oracle_examples(manifest_payload)[:limit]
+    if len(examples) != limit:
+        raise ValueError("Oracle manifest cannot satisfy the requested question count")
     if not examples:
         raise ValueError("Oracle manifest contained no examples")
     if any(example.protocol_lock_id != protocol_lock_id for example in examples):
@@ -150,8 +190,12 @@ def run_oracle_benchmark(
     judge = NormalizedExactJudge()
     git_sha = os.environ.get("LAVA_GIT_COMMIT_SHA") or _git_sha()
     records: list[BenchmarkRecord] = []
-    for example in examples:
-        prediction, telemetry = reader.predict(example)
+    logger = RuntimeEventLogger("oracle_reader.evaluation")
+    logger.emit("evaluation.started", question_count=len(examples))
+    for index, example in enumerate(examples, start=1):
+        logger.emit("question.started", question_index=index, question_count=len(examples))
+        with logger.stage("question.inference", heartbeat_seconds=15.0):
+            prediction, telemetry = reader.predict(example)
         reference = ReferenceRecord(
             question_id=example.question_id,
             document_id=example.document_id,
@@ -192,6 +236,19 @@ def run_oracle_benchmark(
                 oracle_fixed_overall_diagnostic=(score.answer_score + 1.0) / 2.0,
             )
         )
+        checkpoint = ("\n".join(r.model_dump_json() for r in records) + "\n").encode()
+        _atomic_private_write(
+            Path(os.environ.get("SM_MODEL_DIR", "/opt/ml/model")) / "private" / "records.jsonl",
+            checkpoint,
+        )
+        logger.emit(
+            "question.completed",
+            completed=index,
+            total=len(examples),
+            schema_valid=prediction.schema_valid,
+            parser_error_code=prediction.parser_error_code,
+            generation_seconds=telemetry.generation_seconds,
+        )
     frozen_records = tuple(records)
     private_payload = (
         "\n".join(
@@ -202,6 +259,8 @@ def run_oracle_benchmark(
     ).encode()
     public_summary = {
         "schema_version": 2,
+        "run_kind": "benchmark" if contract else "smoke",
+        "coverage_status": "complete_frozen_pilot" if contract else "smoke_only",
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "experiment_id": experiment_id,
         "protocol_lock_id": protocol_lock_id,
@@ -236,4 +295,5 @@ def run_oracle_benchmark(
     model_dir = Path(os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
     model_dir.mkdir(parents=True, exist_ok=True)
     (model_dir / "public_summary.json").write_bytes(summary_payload)
+    logger.emit("evaluation.completed", completed=len(records), total=len(examples))
     return public_summary

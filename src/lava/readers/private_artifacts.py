@@ -44,7 +44,8 @@ def _safe_identifier(value: str | None, sequence: int) -> str:
     if value:
         cleaned = _SAFE_ID.sub("-", value).strip("-._")
         if cleaned:
-            return cleaned[:80]
+            digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+            return f"{cleaned[:60]}-{digest}"
     return f"response-{sequence:06d}"
 
 

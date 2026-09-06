@@ -8,62 +8,40 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
+#       jupytext_version: 1.19.5
 #   kernelspec:
 #     display_name: Python (lava)
 #     language: python
 #     name: lava
 # ---
-# %% [markdown]
-# # 03 — Model scaling and systems dashboard
-#
-# This notebook reads only sanitized committed run manifests. It becomes the public dashboard for model-size scaling, reliability, runtime, and cost-facing comparisons as 4B, 9B, and 27B benchmark runs accumulate.
-# %%
-from __future__ import annotations
 
-import json
-import re
+# %% [markdown]
+# # 03 — Reader evaluation and systems cost
+#
+# This notebook regenerates an offline report from checksum-verified public artifacts.
+# Smoke tests and complete 16-question pilots have distinct coverage labels.
+# Every complete pilot retains parsing failures and abstentions in its denominator.
+# %%
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import pandas as pd
-from IPython.display import display
+from IPython.display import HTML, display
 
-ROOT = Path.cwd()
-run_root = ROOT / "reports/oracle_reader/runs"
-rows = []
-if run_root.exists():
-    for manifest_path in sorted(run_root.glob("*/sync_manifest.json")):
-        manifest = json.loads(manifest_path.read_text())
-        gate = manifest.get("artifact_gate", {})
-        model_key = str(manifest.get("model_key") or "")
-        match = re.search(r"_(\d+)b_", model_key)
-        rows.append(
-            {
-                "model_key": model_key,
-                "parameters_billion": float(match.group(1)) if match else None,
-                "instance_type": manifest.get("instance_type"),
-                "billable_seconds": manifest.get("billable_time_seconds"),
-                "schema_valid_rate": gate.get("schema_valid_rate"),
-                "raw_response_count": gate.get("raw_response_count"),
-            }
-        )
-results = pd.DataFrame(rows)
-display(results)
+from lava.evaluation.reporting import load_report, render_report
+from lava.notebook_support import find_repo_root
+from lava.readers.runtime_logging import RuntimeEventLogger
+
+ROOT = find_repo_root(Path.cwd())
+logger = RuntimeEventLogger("notebook.reader_evaluation")
+with logger.stage("report", heartbeat_seconds=15):
+    report = load_report(ROOT)
+    display(HTML(render_report(report)))
 # %% [markdown]
-# ## Billable runtime versus model size
-# %%
-if len(results) >= 2 and results["parameters_billion"].notna().all():
-    plot_data = results.dropna(subset=["parameters_billion", "billable_seconds"]).sort_values(
-        "parameters_billion"
-    )
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(plot_data["parameters_billion"], plot_data["billable_seconds"], marker="o")
-    ax.set_xlabel("Model parameters (billions)")
-    ax.set_ylabel("SageMaker billable seconds")
-    ax.set_title("Reader scaling: model size vs. billable runtime")
-    ax.grid(alpha=0.25)
-    plt.show()
-else:
-    print("At least two synchronized runs are required for a scaling curve.")
-# %% [markdown]
-# Future benchmark cells add answer-quality metrics, multilingual slices, latency, throughput, peak VRAM, and cost-quality Pareto fronts. The notebook intentionally does not invent metrics that have not yet been produced by the frozen evaluator.
+# ## Interpretation
+#
+# The pilot has 16 questions from five documents (15 Japanese, one Vietnamese).
+# It cannot establish language-general performance. Exact scores are diagnostics;
+# semantic judging remains a separate milestone. Fold manifests describe a protocol,
+# not completed nested training or tuning. Document-paired comparisons appear only
+# after two compatible full pilots have passed the artifact gate.
+#
+# `make report` writes the same standalone HTML and aggregate JSON for sharing.

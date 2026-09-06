@@ -6,27 +6,35 @@ LAVA is a research-grade multilingual document-intelligence system built to sepa
 
 ## Current verified reader ladder
 
-| Reader | SageMaker target | Status | Smoke verification |
+| Reader | SageMaker target | Verified scope | Billable seconds |
 | --- | --- | --- | --- |
-| Qwen3.5-4B fused direct | `ml.g5.2xlarge` | Verified | Schema-valid response and artifact gate passed |
-| Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | Verified | 350 billable seconds, 1/1 raw response, schema-valid rate 1.0, zero parser errors |
-| Qwen3.8-27B fused direct | `ml.g7e.12xlarge` | Next | High-memory single-GPU contract; smoke benchmark pending |
+| Qwen3.5-4B fused direct | `ml.g5.2xlarge` | One-question smoke | 336 |
+| Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | One-question smoke | 350 |
+| Qwen3.8-27B NF4 fused direct | `ml.g5.2xlarge` | One-question smoke | 783 |
 
-Hardware is part of the frozen model contract. The 9B reader stays on the **known-good LAVA `ml.g6e.2xlarge` path**. The 27B reader is not forced onto a smaller G6 instance: its contract requires at least 80 GiB of CUDA memory on one device and therefore targets `ml.g7e.12xlarge`.
+These three synchronized runs passed structured-output and artifact checks. Their
+one-question exact scores are diagnostic results, not evidence of model superiority.
+The completed 27B path uses NF4 quantization. The unquantized high-memory candidate
+is a separate configuration and is not required for this pilot.
+
+The next stage is a descriptive evaluation on **all 16 frozen questions across five
+documents**. The complete-pilot command verifies manifest version, checksum, question
+identity, and coverage. It preserves parsing failures and abstentions, then independently
+recomputes every score during artifact verification.
+
+[View the report source](reports/oracle_reader/evaluation/index.html) ·
+[Evaluation workflow](docs/evaluation.md) · [Aggregate results](reports/oracle_reader/evaluation/summary.json)
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    A[Frozen multilingual evaluation protocol] --> B[Oracle evidence assets]
-    B --> C[Reader benchmark]
-    C --> D[4B / 9B / 27B VLM ladder]
-    D --> E[SageMaker GPU jobs]
-    E --> F[Private raw responses in S3]
-    F --> G[Fail-closed artifact gate]
-    G --> H[Sanitized public summaries]
-    H --> I[Notebooks / metrics / figures]
-    I --> J[Retrieval + reranking benchmark]
+flowchart TD
+    A["Frozen protocol and model revisions"] --> B["Oracle evidence assets"]
+    B --> C["Bounded SageMaker reader job"]
+    C --> D["Private responses and checkpoints"]
+    D --> E["Independent artifact and score checks"]
+    E --> F["Public reports and notebooks"]
+    F --> G["Semantic judge, then retrieval experiments"]
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for the execution and lineage model.
@@ -48,9 +56,11 @@ make preview MODEL=qwen35_9b_fused_direct
 # Paid submission is explicitly locked
 make submit MODEL=qwen35_9b_fused_direct CHARGES=YES
 
-# 27B preview uses the frozen ml.g7e.12xlarge model contract
-make preflight MODEL=qwen38_27b_fused_direct
-make preview MODEL=qwen38_27b_fused_direct
+# Complete-pilot preview; no GPU is launched
+make benchmark-preview MODEL=qwen35_4b_fused_direct
+
+# Rebuild the offline public dashboard
+make report
 ```
 
 Completed jobs are reconnectable and independently verifiable:
@@ -62,7 +72,7 @@ make sync JOB=<sagemaker-job-name>
 make stop JOB=<sagemaker-job-name> CONFIRM=YES
 ```
 
-## Engineering guarantees
+## Engineering controls
 
 - Python 3.12 environment locked with `uv.lock` and `uv sync --frozen`.
 - Ruff formatting/linting, repo-wide Mypy, Pytest, compile checks, shell syntax checks, notebook hygiene, and Git diff validation run through one fail-closed quality gate.
@@ -79,7 +89,7 @@ The notebooks are paired with Jupytext so the `.ipynb` files remain convenient f
 1. `00_reproducibility_and_protocol` — frozen protocol, model registry, deterministic experiment contract.
 2. `01_oracle_reader_benchmark_design` — controlled reader ladder and ablation design.
 3. `02_verified_gpu_execution` — verified SageMaker run lineage and artifact-gate results.
-4. `03_model_scaling_and_cost` — sanitized model-size, latency/billable-time, reliability, and cost-facing dashboard as benchmark results accumulate.
+4. `03_model_scaling_and_cost` — checksum-verified offline dashboard with coverage, latency, VRAM, billable time, document comparisons, and lineage.
 
 ## Research program
 
