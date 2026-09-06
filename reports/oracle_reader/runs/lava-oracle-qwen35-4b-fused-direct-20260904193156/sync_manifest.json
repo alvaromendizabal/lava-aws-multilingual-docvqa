@@ -1,0 +1,20 @@
+{
+  "artifact_gate": {
+    "model_artifact_uri": "s3://lava-docvqa-560403859723-us-west-2/experiments/oracle-reader/v3/23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61/qwen35_4b_fused_direct/a773e824e1f8457e9c3eb74ef9af9428c403cb1c/sagemaker-output/lava-oracle-qwen35-4b-fused-direct-20260904193156/output/model",
+    "parser_error_counts": {},
+    "raw_response_count": 1,
+    "schema_valid_rate": 1.0
+  },
+  "billable_time_seconds": 336,
+  "git_commit_sha": "a773e824e1f8457e9c3eb74ef9af9428c403cb1c",
+  "instance_type": "ml.g5.2xlarge",
+  "job_name": "lava-oracle-qwen35-4b-fused-direct-20260904193156",
+  "model_id": "Qwen/Qwen3.5-4B",
+  "model_key": "qwen35_4b_fused_direct",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "public_summary_sha256": "9db43adf97587441f3ada2859b9b0efa383c79d44636a4931b94a9ef6f9115b7",
+  "schema_version": 1,
+  "synced_at_utc": "2026-09-06T05:16:06+00:00",
+  "training_time_seconds": 336
+}
