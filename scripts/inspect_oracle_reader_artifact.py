@@ -1,20 +1,25 @@
-"""Inspect a completed oracle-reader SageMaker model artifact without creating compute."""
+"""Inspect a completed oracle-reader SageMaker artifact without creating compute."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
-import tempfile
 import time
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, cast
 
 import boto3
 from dotenv import load_dotenv
 
 from lava.notebook_support import find_repo_root
-from lava.readers.artifact_gate import inspect_local_model_artifact
+from lava.readers.artifact_gate import verify_training_model_artifact
+from lava.readers.sagemaker_artifacts import (
+    canonical_output_s3_prefix,
+    model_artifact_uri,
+)
 
 
 def _log(event: str, started: float, **fields: object) -> None:
@@ -27,8 +32,8 @@ def _log(event: str, started: float, **fields: object) -> None:
     print(json.dumps(payload, sort_keys=True))
 
 
-def _latest_oracle_job(client: object) -> str:
-    response = client.list_training_jobs(  # type: ignore[attr-defined]
+def _latest_oracle_job(client: Any) -> str:
+    response = client.list_training_jobs(
         SortBy="CreationTime",
         SortOrder="Descending",
         MaxResults=20,
@@ -37,41 +42,75 @@ def _latest_oracle_job(client: object) -> str:
         name = item.get("TrainingJobName", "")
         if isinstance(name, str) and "lava-oracle" in name:
             return name
+
     raise RuntimeError("No LAVA oracle-reader SageMaker training job was found")
 
 
 def main() -> int:
-    """Download only the model artifact and inspect private raw-response evidence."""
+    """Verify a completed job using its actual compressed or uncompressed layout."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--job-name")
     args = parser.parse_args()
+
     started = time.monotonic()
     root = find_repo_root(Path(__file__).resolve())
     load_dotenv(root / ".env", override=False)
+
     region = os.environ.get("AWS_REGION", "us-west-2")
     session = boto3.session.Session(region_name=region)
-    sm = session.client("sagemaker")
+    sagemaker = session.client("sagemaker")
     s3 = session.client("s3")
-    job_name = args.job_name or _latest_oracle_job(sm)
-    _log("artifact.inspect.started", started, job_name=job_name)
-    description = sm.describe_training_job(TrainingJobName=job_name)
-    artifact_uri = description.get("ModelArtifacts", {}).get("S3ModelArtifacts")
-    if not isinstance(artifact_uri, str) or not artifact_uri.startswith("s3://"):
-        raise RuntimeError("Training job has no model artifact URI")
-    bucket_key = artifact_uri.removeprefix("s3://")
-    bucket, _, key = bucket_key.partition("/")
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as handle:
-        _log("artifact.download.started", started, job_name=job_name)
-        s3.download_file(bucket, key, handle.name)
-        report = inspect_local_model_artifact(Path(handle.name))
-    _log("artifact.inspect.completed", started, job_name=job_name, report=report)
-    print(json.dumps(report, indent=2, sort_keys=True))
-    if not report.get("verified") and "found 0" in str(report.get("error")):
-        print("RAW_RESPONSE_NOT_AVAILABLE_FOR_LEGACY_RUN")
-        return 0
-    if not report.get("verified"):
-        print("ORACLE_READER_ARTIFACT_NOT_VERIFIED")
-        return 2
+
+    job_name = args.job_name or _latest_oracle_job(sagemaker)
+    _log("artifact.inspect.started", started, job_name=job_name, region=region)
+
+    description = sagemaker.describe_training_job(TrainingJobName=job_name)
+    description_mapping = cast(Mapping[str, object], description)
+    status = description_mapping.get("TrainingJobStatus")
+
+    if status != "Completed":
+        raise RuntimeError(
+            "Artifact inspection requires a Completed SageMaker training job; "
+            f"observed status={status!r}."
+        )
+
+    artifact_uri = model_artifact_uri(description_mapping)
+    output_config = description_mapping.get("OutputDataConfig", {})
+
+    if not isinstance(output_config, Mapping):
+        raise TypeError("Training job returned malformed OutputDataConfig")
+
+    compression_type = output_config.get("CompressionType")
+    expected_output_s3_prefix = canonical_output_s3_prefix(
+        description_mapping,
+        job_name=job_name,
+    )
+
+    _log(
+        "artifact.verify.started",
+        started,
+        job_name=job_name,
+        artifact_uri=artifact_uri,
+        compression_type=compression_type,
+        expected_output_s3_prefix=expected_output_s3_prefix,
+    )
+
+    report = verify_training_model_artifact(
+        sagemaker_client=sagemaker,
+        s3_client=s3,
+        job_name=job_name,
+        expected_output_s3_prefix=expected_output_s3_prefix,
+    )
+
+    payload = report.as_dict()
+    _log(
+        "artifact.inspect.completed",
+        started,
+        job_name=job_name,
+        report=payload,
+        verified=True,
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
     print("ORACLE_READER_ARTIFACT_VERIFIED")
     return 0
 

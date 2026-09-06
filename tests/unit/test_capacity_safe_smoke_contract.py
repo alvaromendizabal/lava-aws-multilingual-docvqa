@@ -1,4 +1,4 @@
-"""Regression contracts for the capacity-safe paid smoke path."""
+"""Regression contracts for the capacity-safe SageMaker reader workflow."""
 
 from __future__ import annotations
 
@@ -49,16 +49,33 @@ def test_smoke_uses_server_side_pending_limit() -> None:
 
 
 def test_local_monitor_cannot_undercut_cloud_bounds() -> None:
-    module = _load_script("capacity_safe_smoke_runner", "scripts/run_oracle_reader_smoke.py")
+    module = _load_script(
+        "capacity_safe_smoke_runner",
+        "scripts/run_oracle_reader_smoke.py",
+    )
     calculate = module._monitor_ceiling_seconds
 
-    assert calculate(requested=None, cloud_pending_seconds=86400, runtime_seconds=3600) == 90900.0
+    assert (
+        calculate(
+            requested=None,
+            cloud_pending_seconds=86400,
+            runtime_seconds=3600,
+        )
+        == 90900.0
+    )
     with pytest.raises(ValueError, match="too short"):
-        calculate(requested=90899.0, cloud_pending_seconds=86400, runtime_seconds=3600)
+        calculate(
+            requested=90899.0,
+            cloud_pending_seconds=86400,
+            runtime_seconds=3600,
+        )
 
 
 def test_reconnect_monitor_derives_actual_server_bounds() -> None:
-    module = _load_script("capacity_safe_reconnect", "scripts/monitor_oracle_reader_job.py")
+    module = _load_script(
+        "capacity_safe_reconnect",
+        "scripts/monitor_oracle_reader_job.py",
+    )
     calculate = module._derived_monitor_ceiling
     description = {
         "StoppingCondition": {
@@ -66,24 +83,29 @@ def test_reconnect_monitor_derives_actual_server_bounds() -> None:
             "MaxRuntimeInSeconds": 3600,
         }
     }
-
     assert calculate(description, requested=None) == 90900.0
     with pytest.raises(ValueError, match="shorter"):
         calculate(description, requested=3900.0)
 
 
-def test_qwen38_wrapper_cannot_request_an_oversized_override() -> None:
-    source = (_root() / "scripts" / "run_qwen38_smoke.sh").read_text(encoding="utf-8")
+def test_canonical_makefile_has_no_instance_override() -> None:
+    source = (_root() / "Makefile").read_text(encoding="utf-8")
     assert "--instance-type" not in source
-    assert "LAVA_ACKNOWLEDGE_CHARGES=YES" in source
-    assert "qwen38_27b_fused_direct" in source
+    assert "INSTANCE ?=" not in source
+    assert "--model-key $(MODEL)" in source
+    assert "CHARGES ?= NO" in source
+    assert 'test "$(CHARGES)" = "YES"' in source
 
 
-def test_qwen38_wrapper_has_guarded_single_command_stop() -> None:
-    source = (_root() / "scripts" / "run_qwen38_smoke.sh").read_text(encoding="utf-8")
-    stopper = (_root() / "scripts" / "stop_oracle_reader_job.py").read_text(encoding="utf-8")
-    assert "LAVA_CONFIRM_STOP=YES" in source
-    assert "--confirm YES" in source
+def test_canonical_stop_command_is_explicitly_guarded() -> None:
+    root = _root()
+    makefile = (root / "Makefile").read_text(encoding="utf-8")
+    stopper = (root / "scripts" / "stop_oracle_reader_job.py").read_text(encoding="utf-8")
+
+    assert "stop:" in makefile
+    assert "CONFIRM ?= NO" in makefile
+    assert 'test "$(CONFIRM)" = "YES"' in makefile
+    assert "--confirm YES" in makefile
     assert "stop_training_job" in stopper
     assert 'job_name.startswith("lava-oracle-")' in stopper
     assert '"timestamp_utc"' in stopper
@@ -98,12 +120,13 @@ def test_entrypoint_modes_are_lint_safe() -> None:
         "scripts/monitor_oracle_reader_job.py",
         "scripts/run_oracle_reader_smoke.py",
         "scripts/stop_oracle_reader_job.py",
+        "scripts/preflight.py",
     ):
         assert stat.S_IMODE((root / relative).stat().st_mode) == 0o644, relative
 
-    wrapper = root / "scripts/run_qwen38_smoke.sh"
-    assert stat.S_IMODE(wrapper.stat().st_mode) == 0o755
-    assert wrapper.read_text(encoding="utf-8").startswith("#!/usr/bin/env bash\n")
+    quality_gate = root / "scripts" / "quality_gate.sh"
+    assert stat.S_IMODE(quality_gate.stat().st_mode) == 0o755
+    assert quality_gate.read_text(encoding="utf-8").startswith("#!/usr/bin/env bash\n")
 
 
 def test_monitor_failure_fallback_catches_only_expected_failures() -> None:
@@ -115,6 +138,7 @@ def test_monitor_failure_fallback_catches_only_expected_failures() -> None:
 def test_event_logger_calls_are_mypy_safe() -> None:
     runner = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
     monitor = (_root() / "scripts" / "monitor_oracle_reader_job.py").read_text(encoding="utf-8")
+    preflight = (_root() / "scripts" / "preflight.py").read_text(encoding="utf-8")
 
     assert "**snapshot.as_dict()" not in runner
     assert "**failure_snapshot.as_dict()" not in runner
@@ -122,8 +146,13 @@ def test_event_logger_calls_are_mypy_safe() -> None:
     assert "snapshot=failure_snapshot.as_dict()" in runner
     assert "**snapshot.as_dict()" not in monitor
     assert 'logger.emit("monitor.reconnect.complete", snapshot=snapshot.as_dict())' in monitor
+    assert 'logger.emit("preflight.verified", event_fields=snapshot)' in preflight
 
 
 def test_smoke_main_has_explicit_terminal_guard() -> None:
     source = (_root() / "scripts" / "run_oracle_reader_smoke.py").read_text(encoding="utf-8")
     assert "Smoke command exited its telemetry stage without a terminal result." in source
+
+
+def test_model_specific_qwen_wrapper_is_retired() -> None:
+    assert not (_root() / "scripts" / "run_qwen38_smoke.sh").exists()

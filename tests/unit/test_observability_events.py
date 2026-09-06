@@ -38,18 +38,52 @@ def test_event_logger_redacts_private_values(tmp_path) -> None:
     assert parsed["uri"] == "s3://<redacted-bucket>/path/file.json"
 
 
+def test_event_logger_accepts_prebuilt_event_fields() -> None:
+    """Mappings should be emitted without unsafe ``**dict[str, object]`` expansion."""
+    stream = io.StringIO()
+    logger = EventLogger(run_id="run-fields", component="unit", stream=stream)
+
+    payload = logger.emit(
+        "test.mapping",
+        event_fields={"count": 3, "state": "ready"},
+    )
+
+    assert payload["count"] == 3
+    assert payload["state"] == "ready"
+    assert "count=3" in stream.getvalue()
+
+
 def test_stage_emits_heartbeat_and_completion() -> None:
     """A long-enough stage must emit visible heartbeat and terminal events."""
     stream = io.StringIO()
     logger = EventLogger.to_stdout(run_id="run-2", component="unit")
     logger.stream = stream
-    with logger.stage("slow", heartbeat_seconds=0.01):
+    with logger.stage("slow", heartbeat_seconds=0.01, phase="unit"):
         time.sleep(0.035)
     output = stream.getvalue()
     assert "slow.started" in output
     assert "slow.heartbeat" in output
     assert "slow.completed" in output
     assert "stage_elapsed_seconds" in output
+    assert 'phase="unit"' in output
+
+
+def test_stage_does_not_swallow_exceptions() -> None:
+    """Stage must log failure while propagating the original exception."""
+    stream = io.StringIO()
+    logger = EventLogger(run_id="run-failure", component="unit", stream=stream)
+
+    try:
+        with logger.stage("failure", heartbeat_seconds=1.0):
+            raise ValueError("boom")
+    except ValueError as exc:
+        assert str(exc) == "boom"
+    else:
+        raise AssertionError("Stage unexpectedly swallowed the exception")
+
+    output = stream.getvalue()
+    assert "failure.failed" in output
+    assert 'exception_type="ValueError"' in output
 
 
 def test_progress_reporter_emits_percent_and_eta() -> None:
@@ -63,11 +97,12 @@ def test_progress_reporter_emits_percent_and_eta() -> None:
         monotonic=lambda: next(values),
     )
     reporter = ProgressReporter(logger=logger, total=4, event_prefix="items")
-    reporter.advance(increment=2)
+    reporter.advance(increment=2, shard="a")
     output = stream.getvalue()
     assert "completed=2" in output
     assert "percent=50.0" in output
     assert "eta_seconds=2.0" in output
+    assert 'shard="a"' in output
 
 
 def test_redaction_and_hash_are_deterministic() -> None:

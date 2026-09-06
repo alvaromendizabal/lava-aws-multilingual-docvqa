@@ -10,6 +10,7 @@ def test_qwen_source_has_direct_template_switch_and_no_legacy_kwarg() -> None:
     assert "chat_template_kwargs" not in text
     assert "append_strict_json_instruction" in text
     assert "persist_raw_response" in text
+
     tree = ast.parse(text)
     calls = [
         node
@@ -37,13 +38,13 @@ def test_gpu_dependency_set_pins_compatible_cachetools() -> None:
     assert "cachetools==6.2.4" in lines
 
 
-def test_existing_smoke_script_uses_artifact_gate() -> None:
+def test_smoke_script_uses_artifact_gate() -> None:
     text = Path("scripts/run_oracle_reader_smoke.py").read_text(encoding="utf-8")
     assert "verify_training_model_artifact" in text
     assert "ORACLE_READER_ONE_QUESTION_SMOKE_VERIFIED" in text
 
 
-def test_existing_prompt_regression_tracks_prompt_v3() -> None:
+def test_prompt_regression_tracks_prompt_v3() -> None:
     text = Path("tests/unit/test_reader_prompts.py").read_text(encoding="utf-8")
     assert 'PROMPT_VERSION == "oracle-reader-json-v3"' in text
     assert "oracle-reader-json-v2" not in text

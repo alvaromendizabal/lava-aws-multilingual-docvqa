@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import argparse
@@ -13,7 +12,7 @@ import tempfile
 import time
 import zipfile
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -70,7 +69,7 @@ def parse_page(text: str) -> tuple[list[dict[str, str]], str | None]:
 
 
 def list_files(kaggle: str, competition: str) -> list[dict[str, str]]:
-    found = {}
+    found: dict[str, dict[str, str]] = {}
     page_token = None
     seen_tokens = set()
     page = 0
@@ -117,7 +116,11 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def write_csv(path: Path, rows: list[dict[str, object]], fields: list[str]) -> None:
+def write_csv(
+    path: Path,
+    rows: Sequence[Mapping[str, object]],
+    fields: Sequence[str],
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(path.suffix + ".tmp")
     with temp.open("w", encoding="utf-8", newline="") as handle:
@@ -215,12 +218,9 @@ def download_payload(
                 timeout=1800,
             )
             files = [path for path in directory.rglob("*") if path.is_file()]
-            candidates = [
-                path for path in files if path.stat().st_size == expected_size
-            ]
+            candidates = [path for path in files if path.stat().st_size == expected_size]
             if len(candidates) == 1:
                 return candidates[0], temporary
-
             requested_basename = Path(name).name
             for archive_path in files:
                 if not zipfile.is_zipfile(archive_path):
@@ -246,14 +246,9 @@ def download_payload(
                         shutil.copyfileobj(source, destination)
                     if extracted.stat().st_size == expected_size:
                         return extracted, temporary
-
-            all_files = [
-                (str(path.relative_to(directory)), path.stat().st_size)
-                for path in files
-            ]
+            all_files = [(str(path.relative_to(directory)), path.stat().st_size) for path in files]
             raise RuntimeError(
-                f"Expected one {expected_size}-byte payload for {name}; "
-                f"found {all_files}"
+                f"Expected one {expected_size}-byte payload for {name}; found {all_files}"
             )
         except (
             OSError,
@@ -330,7 +325,6 @@ def sync_files(
                 "verified_at_utc": datetime.now(UTC).isoformat(),
             }
         )
-
     suffix = "" if complete else "_smoke"
     manifest_path = Path(f"reports/raw_data_manifest{suffix}.csv")
     fields = [
@@ -391,11 +385,9 @@ def main() -> None:
     args = parser.parse_args()
     if args.limit < 0:
         raise ValueError("--limit cannot be negative.")
-
     kaggle = shutil.which("kaggle")
     if kaggle is None:
         raise RuntimeError("Kaggle executable was not found.")
-
     with kaggle_auth(args.parameter, args.region):
         rows = list_files(kaggle, args.competition)
         inventory_summary = write_inventory(rows, args.competition)
@@ -425,4 +417,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

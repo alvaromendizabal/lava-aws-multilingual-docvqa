@@ -3,7 +3,9 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main]
+    branches:
+      - main
+      - "feat/**"
 
 permissions:
   contents: read
@@ -11,6 +13,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -21,17 +24,5 @@ jobs:
           python-version: "3.12"
           enable-cache: true
 
-      - name: Synchronize locked environment
-        run: uv sync --frozen
-
-      - name: Lint
-        run: uv run ruff check src tests scripts pipelines
-
-      - name: Test
-        run: uv run pytest -q
-
-      - name: Compile
-        run: uv run python -m compileall -q src tests scripts pipelines
-
-      - name: Validate notebooks are output-free
-        run: uv run pytest -q tests/unit/test_notebook_hygiene.py
+      - name: Run canonical quality gate
+        run: bash scripts/quality_gate.sh

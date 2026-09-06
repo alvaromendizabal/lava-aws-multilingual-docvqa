@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
-from typing import Self, TextIO
+from typing import Literal, Self, TextIO
 
 _ACCOUNT_ID = re.compile(r"(?<!\d)\d{12}(?!\d)")
 _S3_URI = re.compile(r"s3://[^/\s]+")
@@ -176,9 +176,15 @@ class EventLogger:
         *,
         level: str = "INFO",
         message: str | None = None,
+        event_fields: Mapping[str, object] | None = None,
         **fields: object,
     ) -> dict[str, object]:
-        """Emit one redacted structured event and return its payload."""
+        """Emit one redacted structured event and return its payload.
+
+        ``event_fields`` exists for callers that already hold structured data in a
+        mapping. Passing a mapping through a dedicated keyword keeps static typing
+        precise while preserving the existing flat event schema.
+        """
         payload: dict[str, object] = {
             "schema_version": 1,
             "timestamp_utc": format_utc(self.clock()),
@@ -191,7 +197,10 @@ class EventLogger:
         payload.update(self.static_context)
         if message is not None:
             payload["message"] = message
+        if event_fields is not None:
+            payload.update(event_fields)
         payload.update(fields)
+
         sanitized = sanitize_value(payload)
         if not isinstance(sanitized, dict):
             message_text = "Sanitized event payload must remain a mapping."
@@ -254,7 +263,7 @@ class Stage(contextlib.AbstractContextManager["Stage"]):
             message = "heartbeat_seconds must be greater than zero."
             raise ValueError(message)
         self._start = self.logger.monotonic()
-        self.logger.emit(f"{self.name}.started", **dict(self.fields))
+        self.logger.emit(f"{self.name}.started", event_fields=self.fields)
         self._thread = threading.Thread(
             target=self._heartbeat_loop,
             name=f"lava-heartbeat-{self.name}",
@@ -266,10 +275,13 @@ class Stage(contextlib.AbstractContextManager["Stage"]):
     def _heartbeat_loop(self) -> None:
         while not self._stop_event.wait(self.heartbeat_seconds):
             duration = max(0.0, self.logger.monotonic() - self._start)
+            heartbeat_fields = {
+                **self.fields,
+                "stage_elapsed_seconds": round(duration, 3),
+            }
             self.logger.emit(
                 f"{self.name}.heartbeat",
-                stage_elapsed_seconds=round(duration, 3),
-                **dict(self.fields),
+                event_fields=heartbeat_fields,
             )
 
     def __exit__(
@@ -277,26 +289,34 @@ class Stage(contextlib.AbstractContextManager["Stage"]):
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         """Stop heartbeats and emit a completion or failure event."""
         del traceback
         self._stop_event.set()
         if self._thread is not None:
             self._thread.join(timeout=max(1.0, self.heartbeat_seconds + 1.0))
+
         duration = max(0.0, self.logger.monotonic() - self._start)
-        terminal_fields = {
-            **dict(self.fields),
+        terminal_fields: dict[str, object] = {
+            **self.fields,
             "stage_elapsed_seconds": round(duration, 3),
         }
         if exc_type is None:
-            self.logger.emit(f"{self.name}.completed", **terminal_fields)
+            self.logger.emit(
+                f"{self.name}.completed",
+                event_fields=terminal_fields,
+            )
             return False
+
+        failure_fields: dict[str, object] = {
+            **terminal_fields,
+            "exception_type": exc_type.__name__,
+            "exception_message": str(exc_value) if exc_value is not None else None,
+        }
         self.logger.emit(
             f"{self.name}.failed",
             level="ERROR",
-            exception_type=exc_type.__name__,
-            exception_message=str(exc_value) if exc_value is not None else None,
-            **terminal_fields,
+            event_fields=failure_fields,
         )
         return False
 
@@ -330,19 +350,23 @@ class ProgressReporter:
         self._completed = min(self.total, self._completed + increment)
         if self._completed % self.emit_every != 0 and self._completed != self.total:
             return
+
         elapsed = max(0.0, self.logger.monotonic() - self._started)
         rate = self._completed / elapsed if elapsed > 0 else None
         remaining = self.total - self._completed
         eta = remaining / rate if rate and rate > 0 else None
+        progress_fields: dict[str, object] = {
+            "completed": self._completed,
+            "total": self.total,
+            "percent": round(100.0 * self._completed / self.total, 2),
+            "elapsed_seconds": round(elapsed, 3),
+            "rate_per_second": round(rate, 6) if rate is not None else None,
+            "eta_seconds": round(eta, 3) if eta is not None else None,
+            **fields,
+        }
         self.logger.emit(
             f"{self.event_prefix}.progress",
-            completed=self._completed,
-            total=self.total,
-            percent=round(100.0 * self._completed / self.total, 2),
-            elapsed_seconds=round(elapsed, 3),
-            rate_per_second=round(rate, 6) if rate is not None else None,
-            eta_seconds=round(eta, 3) if eta is not None else None,
-            **fields,
+            event_fields=progress_fields,
         )
 
 
