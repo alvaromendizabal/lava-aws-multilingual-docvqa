@@ -212,6 +212,8 @@ def run_oracle_benchmark(
         "model_id": model_spec.model_id,
         "model_revision": model_spec.revision,
         "input_mode": model_spec.input_mode.value,
+        "dtype": model_spec.dtype,
+        "quantization": model_spec.quantization.value,
         "generation": model_spec.generation.model_dump(mode="json"),
         **_summary(frozen_records),
     }

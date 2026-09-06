@@ -24,6 +24,7 @@ from lava.readers.schemas import (
     DevicePlacement,
     GenerationSpec,
     ModelCandidate,
+    QuantizationMode,
     ReaderFamily,
     ReaderInputMode,
     ResolvedModel,
@@ -115,6 +116,9 @@ def load_candidates(path: Path) -> tuple[ModelCandidate, ...]:
                 instance_type=values["instance_type"],
                 input_mode=ReaderInputMode(values["input_mode"]),
                 dtype=values["dtype"],
+                quantization=QuantizationMode(
+                    values.get("quantization", QuantizationMode.NONE.value)
+                ),
                 attention_implementation=values["attention_implementation"],
                 use_kernels=bool(
                     values.get(

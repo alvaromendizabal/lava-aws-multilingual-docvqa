@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import io
 import os
 import random
 import time
 from collections.abc import Mapping
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 from urllib.parse import urlparse
 
@@ -21,12 +23,70 @@ from lava.readers.prompts import SYSTEM_INSTRUCTION, build_reader_instruction
 from lava.readers.schemas import (
     DevicePlacement,
     OracleExample,
+    QuantizationMode,
     ReaderInputMode,
     ReaderPrediction,
     ReaderTelemetry,
     ResolvedModel,
 )
 from lava.readers.structured_output import append_strict_json_instruction
+
+_BITSANDBYTES_VERSION = "0.50.2"
+
+
+def _validate_quantization_runtime(mode: QuantizationMode) -> str | None:
+    """Import and version-check the pinned quantization backend before model download."""
+    if mode is QuantizationMode.NONE:
+        return None
+
+    try:
+        importlib.import_module("bitsandbytes")
+        observed = version("bitsandbytes")
+    except (ImportError, OSError, PackageNotFoundError) as error:
+        raise RuntimeError(
+            "Quantized reader requires a working bitsandbytes installation"
+        ) from error
+
+    if observed != _BITSANDBYTES_VERSION:
+        raise RuntimeError(
+            "Unexpected bitsandbytes version: "
+            f"expected={_BITSANDBYTES_VERSION}, observed={observed}"
+        )
+    return observed
+
+
+def _build_quantization_config(
+    model_spec: ResolvedModel,
+    *,
+    torch: Any,
+    transformers: Any,
+) -> Any | None:
+    """Build one explicit Transformers quantization configuration."""
+    mode = model_spec.quantization
+    if mode is QuantizationMode.NONE:
+        return None
+
+    config_class = getattr(transformers, "BitsAndBytesConfig", None)
+    if config_class is None:
+        raise RuntimeError("Installed Transformers does not expose BitsAndBytesConfig")
+
+    if mode is QuantizationMode.INT8:
+        return config_class(
+            load_in_8bit=True,
+            llm_int8_threshold=6.0,
+            llm_int8_enable_fp32_cpu_offload=False,
+        )
+
+    if mode is QuantizationMode.NF4:
+        compute_dtype = getattr(torch, model_spec.dtype)
+        return config_class(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+
+    raise RuntimeError(f"Unsupported quantization mode: {mode!r}")
 
 
 def _cuda_indices_from_device_map(
@@ -99,6 +159,7 @@ class Qwen35Reader:
         self._model: Any | None = None
         self._model_load_seconds = 0.0
         self._active_cuda_indices: tuple[int, ...] = ()
+        self._bitsandbytes_version: str | None = None
 
     @staticmethod
     def _split_s3_uri(uri: str) -> tuple[str, str]:
@@ -133,6 +194,8 @@ class Qwen35Reader:
         import torch
         import transformers
 
+        bitsandbytes_version = _validate_quantization_runtime(self.model_spec.quantization)
+
         if not torch.cuda.is_available():
             raise RuntimeError("Qwen oracle benchmark requires CUDA")
 
@@ -165,6 +228,11 @@ class Qwen35Reader:
         if model_class is None:
             model_class = transformers.AutoModelForMultimodalLM
         dtype = getattr(torch, self.model_spec.dtype)
+        quantization_config = _build_quantization_config(
+            self.model_spec,
+            torch=torch,
+            transformers=transformers,
+        )
         model_kwargs: dict[str, Any] = {
             "revision": self.model_spec.revision,
             "dtype": dtype,
@@ -172,6 +240,8 @@ class Qwen35Reader:
             "low_cpu_mem_usage": True,
             "attn_implementation": self.model_spec.attention_implementation,
         }
+        if quantization_config is not None:
+            model_kwargs["quantization_config"] = quantization_config
         if self.model_spec.use_kernels:
             model_kwargs["use_kernels"] = True
 
@@ -235,6 +305,7 @@ class Qwen35Reader:
         self._transformers = transformers
         self._processor = processor
         self._model = model
+        self._bitsandbytes_version = bitsandbytes_version
         self._model_load_seconds = time.perf_counter() - started
 
     def _messages(self, example: OracleExample) -> tuple[list[dict[str, Any]], int, int]:
@@ -431,6 +502,8 @@ class Qwen35Reader:
             torch_version=torch.__version__,
             transformers_version=transformers.__version__,
             dtype=self.model_spec.dtype,
+            quantization=self.model_spec.quantization,
+            bitsandbytes_version=self._bitsandbytes_version,
             attention_implementation=self.model_spec.attention_implementation,
             deterministic_algorithms_enabled=torch.are_deterministic_algorithms_enabled(),
             template_switch_supported=True,

@@ -43,6 +43,14 @@ class DevicePlacement(StrEnum):
     AUTO_SHARDED = "auto_sharded"
 
 
+class QuantizationMode(StrEnum):
+    """Explicit weight-quantization policy for one reader candidate."""
+
+    NONE = "none"
+    INT8 = "int8"
+    NF4 = "nf4"
+
+
 class DecodingMode(StrEnum):
     """Qwen response mode."""
 
@@ -106,6 +114,7 @@ class ModelCandidate(FrozenModel):
     instance_type: str = Field(pattern=r"^ml\.[a-z0-9]+(?:[.-][a-z0-9]+)*$")
     input_mode: ReaderInputMode
     dtype: str = Field(pattern=r"^(bfloat16|float16)$")
+    quantization: QuantizationMode = QuantizationMode.NONE
     attention_implementation: str = Field(pattern=r"^(sdpa|eager|flash_attention_2)$")
     use_kernels: bool = False
     processor_min_pixels: int = Field(ge=28 * 28)
@@ -295,6 +304,8 @@ class ReaderTelemetry(FrozenModel):
     torch_version: str
     transformers_version: str
     dtype: str
+    quantization: QuantizationMode = QuantizationMode.NONE
+    bitsandbytes_version: str | None = None
     attention_implementation: str
     deterministic_algorithms_enabled: bool
     template_switch_supported: bool
@@ -359,6 +370,8 @@ class SageMakerJobPlan(FrozenModel):
     managed_spot: bool
     limit: int = Field(ge=1, le=16)
     input_mode: ReaderInputMode
+    dtype: str = Field(default="bfloat16", pattern=r"^(bfloat16|float16)$")
+    quantization: QuantizationMode = QuantizationMode.NONE
     generation: GenerationSpec
     creates_endpoint: bool = False
 

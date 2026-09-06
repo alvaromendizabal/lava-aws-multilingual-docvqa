@@ -246,6 +246,8 @@ def build_job_plan(
         managed_spot=bool(runtime["managed_spot_for_smoke"]),
         limit=limit,
         input_mode=model.input_mode,
+        dtype=model.dtype,
+        quantization=model.quantization,
         generation=model.generation,
         creates_endpoint=False,
     )
