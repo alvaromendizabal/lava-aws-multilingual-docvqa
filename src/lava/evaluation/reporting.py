@@ -195,14 +195,19 @@ def _pilot_detail(run: dict[str, Any]) -> str:
     """Make full-pilot quality and uncertainty directly readable without opening JSON."""
     s = run["summary"]
     cards = (
-        (f"{s['normalized_exact_answer_micro']:.1%}", "Question-average answer score"),
-        (f"{s['normalized_exact_answer_document_macro']:.1%}", "Document-average answer score"),
+        (f"{s['normalized_exact_answer_micro']:.1%}", "Exact diagnostic per question"),
+        (f"{s['normalized_exact_answer_document_macro']:.1%}", "Exact diagnostic per document"),
         (f"{s['schema_valid_rate']:.1%}", "Valid output format"),
     )
     metrics = run.get("supporting_metrics")
     semantic = run.get("semantic_summary")
     if semantic and semantic["contract_current"]:
         official = semantic["metrics"]["question_micro"]
+        cards = (
+            (f"{official['answer']:.1%}", "Semantic VQA per question"),
+            (f"{semantic['metrics']['document_macro']['answer']:.1%}", "Semantic VQA per document"),
+            (f"{s['schema_valid_rate']:.1%}", "Valid output format"),
+        )
         score_text = (
             f"Local published-formula score: <strong>{official['overall']:.1%}</strong> · "
             f"Semantic VQA: {official['answer']:.1%} · Grounding F1: {official['grounding']:.1%}. "
@@ -245,12 +250,24 @@ def _pilot_detail(run: dict[str, Any]) -> str:
         }
         for key, value in s["document_scores"].items()
     ]
+    chart_metric = "Exact diagnostic"
+    if semantic and semantic["contract_current"]:
+        chart_metric = "Semantic VQA"
+        for row, key in zip(slices, s["by_answer_format"], strict=True):
+            row["summary"]["score"] = 100 * semantic["metrics"]["by_answer_format"][key]["answer"]
+        for row, key in zip(documents, s["document_scores"], strict=True):
+            row["summary"]["score"] = 100 * semantic["metrics"]["by_document"][key]["answer"]
+        extra += (
+            f'<p class="muted">Normalized-exact diagnostic: '
+            f"{s['normalized_exact_answer_micro']:.1%} per question · "
+            f"{s['normalized_exact_answer_document_macro']:.1%} per document.</p>"
+        )
     # Anchor answer-score axes at 100%, including all-zero slices.
     for rows in (slices, documents):
         for row in rows:
             row["axis_maximum"] = 100
-    charts = _chart(slices, "score", "Answer quality by format", "%")
-    charts += _chart(documents, "score", "Answer quality by document", "%")
+    charts = _chart(slices, "score", f"{chart_metric} by format", "%")
+    charts += _chart(documents, "score", f"{chart_metric} by document", "%")
     timing = run.get("job_timing", {})
     lifecycle = (
         f"Capacity wait: {_duration(timing.get('phase_seconds', {}).get('Pending'))} · "
@@ -485,7 +502,7 @@ details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-
 <div class="notice"><strong>LAVA metric:</strong> mean across questions of (semantic VQA + evidence-page F1) / 2. The published answer judge is Gemma-3 1B.
 Correct evidence pages are supplied to these readers; evidence F1 measures their citations within that oracle input and does not measure full-document retrieval.
 <a href="https://lava-workshop.github.io/">Organizer metric specification</a></div>
-<section class="panel" style="margin-top:24px"><h2>Document-level comparisons</h2>{comparison_html}
+<section class="panel" style="margin-top:24px"><h2>Normalized-exact diagnostic comparisons</h2>{comparison_html}
 <p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></section>
 {pilot_details}<div class="charts">{panels}</div>
 <details class="panel"><summary>Run history · includes earlier one-question smoke tests</summary><div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
