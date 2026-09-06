@@ -83,6 +83,7 @@ def load_report(root: Path) -> dict[str, Any]:
                 "model_key": summary["model_key"],
                 "instance_type": manifest["instance_type"],
                 "billable_seconds": manifest["billable_time_seconds"],
+                "job_timing": manifest.get("job_timing", {}),
                 "summary_sha256": manifest["public_summary_sha256"],
                 "complete": complete,
                 "summary": summary,
@@ -177,6 +178,11 @@ def _pilot_detail(run: dict[str, Any]) -> str:
             row["axis_maximum"] = 100
     charts = _chart(slices, "score", "Answer quality by format", "%")
     charts += _chart(documents, "score", "Answer quality by document", "%")
+    timing = run.get("job_timing", {})
+    lifecycle = (
+        f"Capacity wait: {_duration(timing.get('phase_seconds', {}).get('Pending'))} · "
+        f"Submission to completion: {_duration(timing.get('elapsed_seconds'))}."
+    )
     return (
         f'<section class="pilot"><h2>{html.escape(run["label"])} · complete frozen pilot</h2>'
         f'<div class="cards">{card_html}</div><p class="muted">'
@@ -186,7 +192,86 @@ def _pilot_detail(run: dict[str, Any]) -> str:
         f"{s['mean_generation_seconds']:.2f} s mean generation · "
         f"{s['max_peak_cuda_memory_allocated_mib'] / 1024:.2f} GiB peak allocated memory · "
         f"{run['billable_seconds']} billable seconds · {html.escape(run['instance_type'])}"
+        f"<br>{lifecycle}"
         "</p></section>"
+    )
+
+
+def _duration(seconds: float | None) -> str:
+    """Format elapsed time without turning missing historical telemetry into zero."""
+    if seconds is None:
+        return "not recorded"
+    minutes, remainder = divmod(round(seconds), 60)
+    return f"{minutes}m {remainder:02d}s"
+
+
+def _comparison_detail(pair: dict[str, Any], runs: dict[str, dict[str, Any]]) -> str:
+    """Expose weighting, direction, and uncertainty with a signed plot and numeric table."""
+    baseline, challenger = runs[pair["baseline_job"]], runs[pair["challenger_job"]]
+    a, b = baseline["summary"], challenger["summary"]
+    title = f"{challenger['label']} versus {baseline['label']}"
+    question_delta = 100 * (b["normalized_exact_answer_micro"] - a["normalized_exact_answer_micro"])
+    lower, upper = pair["exploratory_cluster_bootstrap_95_interval"]
+    cards = (
+        (f"{question_delta:+.2f} pp", "Change with equal question weights"),
+        (f"{100 * pair['mean_delta']:+.2f} pp", "Change with equal document weights"),
+        (f"{pair['exact_two_sided_sign_flip_p_value']:.3f}", "Exact paired two-sided p-value"),
+    )
+    card_html = "".join(
+        f'<div class="card"><strong>{value}</strong><span>{label}</span></div>'
+        for value, label in cards
+    )
+    bars, rows = [], []
+    center, scale = 315, 1.75  # A fixed -100 to +100 percentage-point domain.
+    for index, (document, delta) in enumerate(pair["per_document_delta"].items()):
+        value, y = 100 * delta, 55 + index * 48
+        x = center + min(0.0, value) * scale
+        color = "#147d92" if value >= 0 else "#b34b3d"
+        label = html.escape(document)
+        bars.append(
+            f'<text x="0" y="{y + 14}" class="label">{label}</text>'
+            f'<rect x="{x:.2f}" y="{y}" width="{abs(value) * scale:.2f}" '
+            f'height="18" rx="3" fill="{color}"/>'
+            f'<text x="510" y="{y + 14}" class="value">{value:+.2f} pp</text>'
+        )
+        cells = (
+            label,
+            str(a["document_question_counts"][document]),
+            f"{100 * a['document_scores'][document]:.2f}%",
+            f"{100 * b['document_scores'][document]:.2f}%",
+            f"{value:+.2f} pp",
+        )
+        rows.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
+    height = 65 + 48 * pair["document_count"]
+    chart = (
+        f'<svg role="img" aria-label="Document score changes: challenger minus baseline" '
+        f'viewBox="0 0 610 {height}"><title>{html.escape(title)}</title>'
+        '<text x="140" y="24" class="value">−100 pp</text>'
+        '<text x="315" y="24" text-anchor="middle" class="value">0</text>'
+        '<text x="490" y="24" text-anchor="end" class="value">+100 pp</text>'
+        f'<line x1="315" x2="315" y1="36" y2="{height - 12}" stroke="#9eacb8"/>'
+        + "".join(bars)
+        + "</svg>"
+    )
+    mixed = question_delta * pair["mean_delta"] < 0
+    interpretation = (
+        "Question and document averages move in opposite directions. "
+        "Questions from the same document are related; report both weightings. "
+        if mixed
+        else "Document averages give each document equal weight. "
+    )
+    headings = ("Document", "Questions", baseline["label"], challenger["label"], "Change")
+    head = "".join(f'<th scope="col">{html.escape(label)}</th>' for label in headings)
+    return (
+        f'<article class="comparison"><h3>{html.escape(title)}</h3>'
+        f'<div class="cards">{card_html}</div><p>{interpretation}'
+        f"{pair['documents_improved']} documents improved, {pair['documents_tied']} tied, "
+        f"and {pair['documents_regressed']} regressed. Positive changes favor the challenger.</p>"
+        f'<p class="notice">Exploratory 95% document-bootstrap interval: '
+        f"<strong>{100 * lower:+.2f} to {100 * upper:+.2f} percentage points</strong>. "
+        "This pilot does not justify selecting a winning model.</p>"
+        f'{chart}<div class="table-wrap"><table class="comparison-table"><thead><tr>{head}'
+        f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div></article>"
     )
 
 
@@ -262,10 +347,9 @@ def render_report(report: dict[str, Any]) -> str:
         "<p>Pending: at least two complete, compatible 16-question runs are required.</p>"
     )
     if report["paired_document_comparisons"]:
-        comparison_html = (
-            "<pre>"
-            + html.escape(json.dumps(report["paired_document_comparisons"], indent=2))
-            + "</pre>"
+        comparison_html = "".join(
+            _comparison_detail(pair, {r["job_name"]: r for r in runs})
+            for pair in report["paired_document_comparisons"]
         )
     rendered = (
         """<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -281,6 +365,7 @@ p{max-width:920px}.lead{font-size:18px;color:#506477}.cards,.charts{display:grid
 svg{width:100%;display:block}.label{font:13px system-ui;fill:#243f50}.value{font:12px system-ui;fill:#506477}
 pre{overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;background:#f4f6f8;padding:18px;border-radius:8px}
 details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-weight:600}.pilot{margin:36px 0}.pilot>.cards{margin:18px 0}.muted,footer{color:#607181;font-size:13px}footer{margin-top:28px}
+.comparison-table{min-width:600px}.comparison h3{font-size:19px}.comparison+.comparison{border-top:1px solid #dce4e9;margin-top:30px;padding-top:20px}.comparison svg{max-width:780px}
 @media(max-width:700px){main{padding:28px 18px}h1{font-size:35px}.cards,.charts{grid-template-columns:1fr}.panel{padding:18px}}
 </style></head><body><main><div class="eyebrow">LAVA / DOCUMENT INTELLIGENCE / AWS</div>
 <h1>HEADLINE_PLACEHOLDER</h1>
@@ -291,11 +376,11 @@ details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-
 <div class="card"><strong>16 / 5</strong><span>Frozen questions / documents</span></div></div>
 <div class="notice"><strong>Read the coverage before the score.</strong> One-question smoke tests verify execution.
 They cannot establish a winning reader. Exact matching is a diagnostic; the pinned semantic judge remains a separate gate.</div>
+<section class="panel" style="margin-top:24px"><h2>Document-level comparisons</h2>{comparison_html}
+<p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></section>
 {pilot_details}<div class="charts">{panels}</div>
 <section class="panel"><h2>Observed results · every run retained</h2><div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
 <p class="muted">Generation time excludes model loading. Billable seconds include the training job's measured billable duration; they are not dollar costs. Hardware and quantization differ across readers.</p></section>
-<section class="panel" style="margin-top:24px"><h2>Document-level comparisons</h2>{comparison_html}
-<p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></section>
 <section class="panel" style="margin-top:24px"><h2>Coverage and interpretation</h2><p>The frozen set has 15 Japanese questions and one Vietnamese question. Language is confounded with document identity. The Vietnamese result is a single example, not a language-level estimate.</p>
 <p>These are frozen-model descriptive evaluations. The existence of nested fold manifests does not mean nested training, tuning, or cross-validation has been performed. Retrieval is held at oracle evidence; overall oracle diagnostics contain a fixed grounding contribution.</p></section>
 <section class="panel" style="margin-top:24px"><h2>Audit trail</h2>{"".join(detail)}</section>

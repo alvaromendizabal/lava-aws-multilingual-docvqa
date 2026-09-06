@@ -428,6 +428,66 @@ def test_report_complete_pairs_require_compatible_protocol_and_generation(pilot,
     assert load_report(root)["paired_document_comparisons"] == []
 
 
+def test_verified_4b_9b_report_exposes_mixed_results_and_uncertainty():
+    report = load_report(ROOT)
+    pair = next(
+        p
+        for p in report["paired_document_comparisons"]
+        if "4b-fused" in p["baseline_job"] and "9b-fused" in p["challenger_job"]
+    )
+    assert pair["mean_delta"] == pytest.approx(-0.04119047619047619)
+    assert (pair["documents_improved"], pair["documents_tied"], pair["documents_regressed"]) == (
+        2,
+        2,
+        1,
+    )
+    assert pair["exact_two_sided_sign_flip_p_value"] == 1.0
+    rendered = render_report(report)
+    for required in (
+        "+7.65 pp",
+        "-4.12 pp",
+        "-80.00 pp",
+        "opposite directions",
+        "-43.17 to +25.98",
+        "2 documents improved, 2 tied, and 1 regressed",
+    ):
+        assert required in rendered
+    assert "Pending: at least two" not in rendered
+    assert "560403859723" not in rendered
+    assert "s3://" not in rendered
+
+
+def test_comparison_chart_has_accessible_numeric_table_and_bounded_bars():
+    import re
+    import xml.etree.ElementTree as ET
+
+    rendered = render_report(load_report(ROOT))
+    charts = re.findall(r"<svg[^>]*>.*?</svg>", rendered, flags=re.DOTALL)
+    chart = next(ET.fromstring(svg) for svg in charts if "challenger minus baseline" in svg)
+    assert chart.find("title") is not None
+    bars = chart.findall("rect")
+    assert len(bars) == 5
+    for bar in bars:
+        x, width = float(bar.attrib["x"]), float(bar.attrib["width"])
+        assert 140 <= x <= x + width <= 490
+    assert '<table class="comparison-table">' in rendered
+    assert '<th scope="col">Questions</th>' in rendered
+
+
+def test_comparison_escapes_model_labels():
+    from copy import deepcopy
+
+    from lava.evaluation.reporting import _comparison_detail
+
+    report = deepcopy(load_report(ROOT))
+    pair = report["paired_document_comparisons"][0]
+    runs = {run["job_name"]: run for run in report["runs"]}
+    runs[pair["challenger_job"]]["label"] = '<script>alert("model")</script>'
+    rendered = _comparison_detail(pair, runs)
+    assert "<script>" not in rendered
+    assert "&lt;script&gt;" in rendered
+
+
 def run_again(pilot, *, prefix="retry", source="run"):
     _, _, summary, _, _, _ = pilot
     model = load_resolved_model(

@@ -74,6 +74,50 @@ def _write_atomic(path: Path, payload: bytes) -> None:
     temporary.replace(path)
 
 
+def _job_timing(description: Mapping[str, object]) -> dict[str, object]:
+    """Preserve AWS lifecycle times; missing historical fields remain unknown."""
+
+    def timestamp(value: object) -> datetime | None:
+        if value is None:
+            return None
+        parsed = datetime.fromisoformat(value) if isinstance(value, str) else value
+        if not isinstance(parsed, datetime) or parsed.tzinfo is None:
+            raise ValueError("AWS lifecycle timestamps must include a timezone")
+        return parsed.astimezone(UTC)
+
+    created = timestamp(description.get("CreationTime"))
+    started = timestamp(description.get("TrainingStartTime"))
+    ended = timestamp(description.get("TrainingEndTime"))
+    known = [value for value in (created, started, ended) if value is not None]
+    if known != sorted(known):
+        raise ValueError("AWS lifecycle timestamps are out of order")
+    phases: dict[str, float] = {}
+    transitions = description.get("SecondaryStatusTransitions", [])
+    if not isinstance(transitions, list):
+        raise TypeError("AWS secondary status transitions must be a list")
+    for transition in transitions:
+        if not isinstance(transition, Mapping) or not isinstance(transition.get("Status"), str):
+            raise TypeError("Malformed AWS secondary status transition")
+        begin = timestamp(transition.get("StartTime"))
+        finish = timestamp(transition.get("EndTime"))
+        if begin is None or finish is None:
+            continue
+        seconds = (finish - begin).total_seconds()
+        if seconds < 0:
+            raise ValueError("AWS phase ends before it starts")
+        status = transition["Status"]
+        phases[status] = phases.get(status, 0.0) + seconds
+    return {
+        "created_at_utc": created.isoformat() if created else None,
+        "compute_started_at_utc": started.isoformat() if started else None,
+        "ended_at_utc": ended.isoformat() if ended else None,
+        "elapsed_seconds": round((ended - created).total_seconds(), 3)
+        if created and ended
+        else None,
+        "phase_seconds": {key: round(value, 3) for key, value in phases.items()},
+    }
+
+
 def _sync() -> int:
     """Sync one verified public summary without shell-exported bucket state."""
     parser = argparse.ArgumentParser()
@@ -97,6 +141,7 @@ def _sync() -> int:
 
     if description_mapping.get("TrainingJobStatus") != "Completed":
         raise RuntimeError("Result sync requires a Completed SageMaker training job")
+    job_timing = _job_timing(description_mapping)
 
     output_prefix = canonical_output_s3_prefix(
         description_mapping,
@@ -184,6 +229,7 @@ def _sync() -> int:
         "instance_type": instance_type,
         "training_time_seconds": description_mapping.get("TrainingTimeInSeconds"),
         "billable_time_seconds": description_mapping.get("BillableTimeInSeconds"),
+        "job_timing": job_timing,
         "public_summary_sha256": observed_sha256,
         "artifact_gate": public_metadata(gate.as_dict()),
     }

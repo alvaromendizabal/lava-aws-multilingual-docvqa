@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any
@@ -44,6 +45,65 @@ def _description() -> dict[str, Any]:
         },
         "ResourceConfig": {"InstanceType": "ml.g6e.2xlarge"},
     }
+
+
+def test_job_timing_preserves_utc_and_separates_capacity_wait() -> None:
+    module = _load_script()
+    description = {
+        "CreationTime": datetime(2026, 9, 6, 19, 0, tzinfo=UTC),
+        "TrainingStartTime": "2026-09-06T12:02:00-07:00",
+        "TrainingEndTime": "2026-09-06T19:05:30Z",
+        "SecondaryStatusTransitions": [
+            {
+                "Status": "Pending",
+                "StartTime": "2026-09-06T19:00:01Z",
+                "EndTime": "2026-09-06T19:01:00Z",
+            },
+            {
+                "Status": "Pending",
+                "StartTime": "2026-09-06T19:01:00Z",
+                "EndTime": "2026-09-06T19:02:00Z",
+            },
+            {
+                "Status": "Training",
+                "StartTime": "2026-09-06T19:02:00Z",
+                "EndTime": "2026-09-06T19:05:30Z",
+            },
+        ],
+    }
+    result = module._job_timing(description)
+    assert result["created_at_utc"] == "2026-09-06T19:00:00+00:00"
+    assert result["compute_started_at_utc"] == "2026-09-06T19:02:00+00:00"
+    assert result["elapsed_seconds"] == 330
+    assert result["phase_seconds"] == {"Pending": 119, "Training": 210}
+
+
+def test_missing_job_timing_remains_unknown() -> None:
+    result = _load_script()._job_timing({})
+    assert result["elapsed_seconds"] is None
+    assert result["phase_seconds"] == {}
+    assert result["compute_started_at_utc"] is None
+
+
+@pytest.mark.parametrize(
+    "description",
+    [
+        {"CreationTime": "2026-09-06T19:00:00"},
+        {"CreationTime": "2026-09-06T19:00:00Z", "TrainingEndTime": "2026-09-06T18:00:00Z"},
+        {
+            "SecondaryStatusTransitions": [
+                {
+                    "Status": "Pending",
+                    "StartTime": "2026-09-06T19:00:00Z",
+                    "EndTime": "2026-09-06T18:00:00Z",
+                }
+            ]
+        },
+    ],
+)
+def test_job_timing_rejects_ambiguous_or_reversed_timestamps(description) -> None:
+    with pytest.raises(ValueError):
+        _load_script()._job_timing(description)
 
 
 def test_sync_uses_job_metadata_not_shell_bucket(

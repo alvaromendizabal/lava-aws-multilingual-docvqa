@@ -9,17 +9,29 @@ LAVA is a research-grade multilingual document-intelligence system built to sepa
 | Reader | SageMaker target | Verified scope | Billable seconds |
 | --- | --- | --- | --- |
 | Qwen3.5-4B fused direct | `ml.g5.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **380** |
-| Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | One-question smoke | 350 |
+| Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **395** |
 | Qwen3.8-27B NF4 fused direct | `ml.g5.2xlarge` | One-question smoke | 783 |
 
-The complete 4B pilot has **38.1% question-average** and **43.8% document-average**
-normalized-exact answer diagnostics, **100% valid output**, and no parser errors.
-Valid formatting does not imply a correct answer. Every raw generation, question,
-score, and aggregate was independently verified against the frozen manifest.
+| Complete pilot | Question-average score | Document-average score | Mean generation | Peak allocated GPU memory |
+| --- | ---: | ---: | ---: | ---: |
+| 4B | 38.13% | 43.83% | 5.52 s | 10.95 GiB |
+| 9B | 45.77% | 39.71% | 3.61 s | 20.15 GiB |
 
-Only one reader is needed for deployment. The next optional comparison is 9B;
-27B can wait until the results justify another experiment. These are frozen-model
-evaluations, not three required training jobs. The configured 27B candidate uses a
+Both complete pilots have **100% valid output** and no parser errors. Answer scores
+are normalized-exact diagnostics with partial list credit. Every raw generation,
+question, score, and aggregate was independently checked against the frozen manifest;
+all **16 immutable 9B checkpoints** were also verified against the final records.
+
+The comparison is mixed: 9B improves two documents, ties two, and regresses on one.
+Its question-average gain is **7.65 percentage points**, while its document-average
+change is **−4.12 points**. The exploratory document-bootstrap interval is
+**−43.17 to +25.98 points**, with an exact paired two-sided p-value of **1.000**.
+There is no promotion decision from five documents. Hardware differs between runs;
+generation time is an observed system result, not a controlled model-speed comparison.
+
+Only one reader is needed for deployment. Preserve these completed runs. Next,
+audit shared failures and expand representative evaluation before selecting a reader.
+27B remains an optional comparison. The configured 27B candidate uses a
 different model generation and NF4 quantization, so the comparison also changes
 precision and model family version. This small pilot does not establish SOTA quality.
 
@@ -48,14 +60,11 @@ The public interface is intentionally small. Historical phase-specific wrappers 
 # Local quality and reproducibility gate
 make quality
 
-# Preview the next complete-pilot comparison; no GPU is launched
-make benchmark-preview MODEL=qwen35_9b_fused_direct
-
-# Optional paid 9B comparison, explicitly gated
-make benchmark-submit MODEL=qwen35_9b_fused_direct CHARGES=YES
-
 # Rebuild the offline public dashboard
 make report
+
+# Optional 27B plan review; no GPU is launched
+make benchmark-preview MODEL=qwen38_27b_nf4_g5_fused_direct
 ```
 
 Reconnect to active jobs; independently verify and synchronize completed jobs:
@@ -79,6 +88,11 @@ This applies to new jobs created with durable checkpoint support. Replacement jo
 are billed; instance provisioning and any necessary model loading recur. An
 interrupted question without a durable checkpoint may be repeated. See the
 [evaluation and recovery guide](docs/evaluation.md) for the complete contract.
+
+Accepted SageMaker jobs continue when the terminal disconnects or the operator
+signs out. The local monitor can reconnect by job name; it is not the job executor.
+Cloud runtime limits still apply. Two-job concurrency remains a planned, separately
+tested runner capability; the current submission guard allows one active LAVA job.
 
 ## Engineering controls
 

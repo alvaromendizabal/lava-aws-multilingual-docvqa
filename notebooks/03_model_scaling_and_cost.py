@@ -44,4 +44,12 @@ with logger.stage("report", heartbeat_seconds=15):
 # not completed nested training or tuning. Document-paired comparisons appear only
 # after two compatible full pilots have passed the artifact gate.
 #
+# The verified 4B and 9B pilots show why both weighting schemes matter: 9B gains
+# 7.65 percentage points per question but loses 4.12 points per document. Two
+# documents improve, two tie, and one regresses. The dashboard exposes the signed
+# document changes and the exploratory interval. GPU hardware also differs, so
+# generation latency is an observed system comparison rather than isolated scaling.
+# Both completed experiments should be reused; no additional inference is needed
+# to inspect their results. The 9B run persisted and verified all 16 S3 checkpoints.
+#
 # `make report` writes the same standalone HTML and aggregate JSON for sharing.
