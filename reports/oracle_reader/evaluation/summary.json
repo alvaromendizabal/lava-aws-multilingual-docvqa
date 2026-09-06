@@ -21,7 +21,136 @@
       },
       "label": "Qwen3.5 \u00b7 4B",
       "model_key": "qwen35_4b_fused_direct",
-      "semantic_summary": null,
+      "semantic_summary": {
+        "contract_current": true,
+        "evidence_scope": "oracle_supplied_pages",
+        "judge_contract": {
+          "acceptance_probes_sha256": "81bec452d04faac9829ac5cb375795228f928d660d42e1ee5d19ba554769b12e",
+          "config": {
+            "attention_implementation": "eager",
+            "boundary": "Local implementation of published LAVA formulas with a pinned Gemma-3 1B judge. Organizer prompt and runtime are not published; this is not an official server score.",
+            "device": "cpu",
+            "do_sample": false,
+            "dtype": "float32",
+            "max_input_tokens": 2048,
+            "max_new_tokens": 8,
+            "metric_source": "https://lava-workshop.github.io/#evaluation",
+            "model_id": "google/gemma-3-1b-it",
+            "model_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "official_server_parity": false,
+            "schema_version": 1,
+            "seed": 20260902,
+            "threads": 4,
+            "tokenizer_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "torch_version": "2.10.0",
+            "transformers_version": "5.16.1"
+          },
+          "contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+          "prompt_sha256": "c4fc9a94ca799c4c73a12bc7cd9efd1db19fcd2c17fb263c8f6c5011953eb6c4",
+          "source_sha256": {
+            "src/lava/evaluation/matching.py": "72b15abaaa0e0ead2b53748c2a8440aa9c4c7e68cf9dba6a0c460c009b7f22c5",
+            "src/lava/evaluation/metric.py": "030e8250a4fc622d15733e70e38243eb55c3b3a65422f3ee73ccf25a925b17dd",
+            "src/lava/evaluation/normalization.py": "3a510ce9bb32920ef9c724126c1288d78a92751b40b18c6190c197b7781655e5",
+            "src/lava/evaluation/saved_predictions.py": "52acb4c7755f54b15e7ff9e807b0fcdb608c6a85fe2e1842565296c9c22f8b7f",
+            "src/lava/evaluation/schemas.py": "89b07ffd137475f92753ad1fc66fd1652c1e2fd57ecaccf29ca219449eb7173a",
+            "src/lava/evaluation/semantic.py": "072b11dca8213d2a36b177c9e022bafde5852c6128b4a5645ccd0b2d1fdecb94",
+            "uv.lock": "ba56c7a8d4b8d2bda5637693ba4fc5a2edebda42001421263c8dce9f1aa6808f"
+          }
+        },
+        "judge_identity": "gemma-lava:6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+        "metrics": {
+          "answer_format_counts": {
+            "number": 4,
+            "ordered_list": 1,
+            "string": 7,
+            "unordered_list": 4
+          },
+          "by_answer_format": {
+            "number": {
+              "answer": 0.25,
+              "grounding": 0.9166666666666666,
+              "overall": 0.5833333333333333
+            },
+            "ordered_list": {
+              "answer": 0.5,
+              "grounding": 1.0,
+              "overall": 0.75
+            },
+            "string": {
+              "answer": 0.5714285714285714,
+              "grounding": 1.0,
+              "overall": 0.7857142857142857
+            },
+            "unordered_list": {
+              "answer": 0.65,
+              "grounding": 0.9642857142857143,
+              "overall": 0.8071428571428572
+            }
+          },
+          "by_document": {
+            "doc-01": {
+              "answer": 0.75,
+              "grounding": 1.0,
+              "overall": 0.875
+            },
+            "doc-02": {
+              "answer": 0.25,
+              "grounding": 0.9166666666666666,
+              "overall": 0.5833333333333333
+            },
+            "doc-03": {
+              "answer": 0.26666666666666666,
+              "grounding": 1.0,
+              "overall": 0.6333333333333333
+            },
+            "doc-04": {
+              "answer": 0.625,
+              "grounding": 1.0,
+              "overall": 0.8125
+            },
+            "doc-05": {
+              "answer": 0.8,
+              "grounding": 0.8571428571428571,
+              "overall": 0.8285714285714285
+            }
+          },
+          "by_language": {
+            "ja": {
+              "answer": 0.48666666666666664,
+              "grounding": 0.9777777777777777,
+              "overall": 0.7322222222222222
+            },
+            "vi": {
+              "answer": 0.8,
+              "grounding": 0.8571428571428571,
+              "overall": 0.8285714285714285
+            }
+          },
+          "document_count": 5,
+          "document_macro": {
+            "answer": 0.5383333333333333,
+            "grounding": 0.9547619047619047,
+            "overall": 0.746547619047619
+          },
+          "question_count": 16,
+          "question_micro": {
+            "answer": 0.50625,
+            "grounding": 0.9702380952380952,
+            "overall": 0.7382440476190476
+          }
+        },
+        "official_server_score": null,
+        "schema_version": 1,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+          "model_key": "qwen35_4b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "0b8c8d6313a1de9bd8ebe51fe2d350bb64a952913a0be1443ecbc6d85ed5b0ce",
+          "source_summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926"
+        },
+        "status": "local_published_formula_score"
+      },
       "summary": {
         "abstention_rate": 0.0,
         "answer_format_counts": {
@@ -198,7 +327,136 @@
       },
       "label": "Qwen3.5 \u00b7 9B",
       "model_key": "qwen35_9b_fused_direct",
-      "semantic_summary": null,
+      "semantic_summary": {
+        "contract_current": true,
+        "evidence_scope": "oracle_supplied_pages",
+        "judge_contract": {
+          "acceptance_probes_sha256": "81bec452d04faac9829ac5cb375795228f928d660d42e1ee5d19ba554769b12e",
+          "config": {
+            "attention_implementation": "eager",
+            "boundary": "Local implementation of published LAVA formulas with a pinned Gemma-3 1B judge. Organizer prompt and runtime are not published; this is not an official server score.",
+            "device": "cpu",
+            "do_sample": false,
+            "dtype": "float32",
+            "max_input_tokens": 2048,
+            "max_new_tokens": 8,
+            "metric_source": "https://lava-workshop.github.io/#evaluation",
+            "model_id": "google/gemma-3-1b-it",
+            "model_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "official_server_parity": false,
+            "schema_version": 1,
+            "seed": 20260902,
+            "threads": 4,
+            "tokenizer_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "torch_version": "2.10.0",
+            "transformers_version": "5.16.1"
+          },
+          "contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+          "prompt_sha256": "c4fc9a94ca799c4c73a12bc7cd9efd1db19fcd2c17fb263c8f6c5011953eb6c4",
+          "source_sha256": {
+            "src/lava/evaluation/matching.py": "72b15abaaa0e0ead2b53748c2a8440aa9c4c7e68cf9dba6a0c460c009b7f22c5",
+            "src/lava/evaluation/metric.py": "030e8250a4fc622d15733e70e38243eb55c3b3a65422f3ee73ccf25a925b17dd",
+            "src/lava/evaluation/normalization.py": "3a510ce9bb32920ef9c724126c1288d78a92751b40b18c6190c197b7781655e5",
+            "src/lava/evaluation/saved_predictions.py": "52acb4c7755f54b15e7ff9e807b0fcdb608c6a85fe2e1842565296c9c22f8b7f",
+            "src/lava/evaluation/schemas.py": "89b07ffd137475f92753ad1fc66fd1652c1e2fd57ecaccf29ca219449eb7173a",
+            "src/lava/evaluation/semantic.py": "072b11dca8213d2a36b177c9e022bafde5852c6128b4a5645ccd0b2d1fdecb94",
+            "uv.lock": "ba56c7a8d4b8d2bda5637693ba4fc5a2edebda42001421263c8dce9f1aa6808f"
+          }
+        },
+        "judge_identity": "gemma-lava:6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+        "metrics": {
+          "answer_format_counts": {
+            "number": 4,
+            "ordered_list": 1,
+            "string": 7,
+            "unordered_list": 4
+          },
+          "by_answer_format": {
+            "number": {
+              "answer": 1.0,
+              "grounding": 1.0,
+              "overall": 1.0
+            },
+            "ordered_list": {
+              "answer": 1.0,
+              "grounding": 1.0,
+              "overall": 1.0
+            },
+            "string": {
+              "answer": 0.7142857142857143,
+              "grounding": 0.9285714285714286,
+              "overall": 0.8214285714285714
+            },
+            "unordered_list": {
+              "answer": 0.7059523809523809,
+              "grounding": 0.8809523809523809,
+              "overall": 0.793452380952381
+            }
+          },
+          "by_document": {
+            "doc-01": {
+              "answer": 0.75,
+              "grounding": 1.0,
+              "overall": 0.875
+            },
+            "doc-02": {
+              "answer": 0.75,
+              "grounding": 0.875,
+              "overall": 0.8125
+            },
+            "doc-03": {
+              "answer": 0.9523809523809524,
+              "grounding": 1.0,
+              "overall": 0.9761904761904763
+            },
+            "doc-04": {
+              "answer": 0.8666666666666667,
+              "grounding": 0.9166666666666666,
+              "overall": 0.8916666666666666
+            },
+            "doc-05": {
+              "answer": 0.5,
+              "grounding": 0.8571428571428571,
+              "overall": 0.6785714285714286
+            }
+          },
+          "by_language": {
+            "ja": {
+              "answer": 0.8215873015873016,
+              "grounding": 0.9444444444444444,
+              "overall": 0.883015873015873
+            },
+            "vi": {
+              "answer": 0.5,
+              "grounding": 0.8571428571428571,
+              "overall": 0.6785714285714286
+            }
+          },
+          "document_count": 5,
+          "document_macro": {
+            "answer": 0.7638095238095238,
+            "grounding": 0.9297619047619048,
+            "overall": 0.8467857142857144
+          },
+          "question_count": 16,
+          "question_micro": {
+            "answer": 0.8014880952380953,
+            "grounding": 0.9389880952380952,
+            "overall": 0.8702380952380953
+          }
+        },
+        "official_server_score": null,
+        "schema_version": 1,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+          "model_key": "qwen35_9b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "8ecff0b63955b147509749f523b52748f45dbf6732d0f4794bb71ca58523395b",
+          "source_summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc"
+        },
+        "status": "local_published_formula_score"
+      },
       "summary": {
         "abstention_rate": 0.0,
         "answer_format_counts": {
@@ -541,7 +799,136 @@
       },
       "label": "Qwen3.5 \u00b7 4B",
       "model_key": "qwen35_4b_fused_direct",
-      "semantic_summary": null,
+      "semantic_summary": {
+        "contract_current": true,
+        "evidence_scope": "oracle_supplied_pages",
+        "judge_contract": {
+          "acceptance_probes_sha256": "81bec452d04faac9829ac5cb375795228f928d660d42e1ee5d19ba554769b12e",
+          "config": {
+            "attention_implementation": "eager",
+            "boundary": "Local implementation of published LAVA formulas with a pinned Gemma-3 1B judge. Organizer prompt and runtime are not published; this is not an official server score.",
+            "device": "cpu",
+            "do_sample": false,
+            "dtype": "float32",
+            "max_input_tokens": 2048,
+            "max_new_tokens": 8,
+            "metric_source": "https://lava-workshop.github.io/#evaluation",
+            "model_id": "google/gemma-3-1b-it",
+            "model_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "official_server_parity": false,
+            "schema_version": 1,
+            "seed": 20260902,
+            "threads": 4,
+            "tokenizer_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "torch_version": "2.10.0",
+            "transformers_version": "5.16.1"
+          },
+          "contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+          "prompt_sha256": "c4fc9a94ca799c4c73a12bc7cd9efd1db19fcd2c17fb263c8f6c5011953eb6c4",
+          "source_sha256": {
+            "src/lava/evaluation/matching.py": "72b15abaaa0e0ead2b53748c2a8440aa9c4c7e68cf9dba6a0c460c009b7f22c5",
+            "src/lava/evaluation/metric.py": "030e8250a4fc622d15733e70e38243eb55c3b3a65422f3ee73ccf25a925b17dd",
+            "src/lava/evaluation/normalization.py": "3a510ce9bb32920ef9c724126c1288d78a92751b40b18c6190c197b7781655e5",
+            "src/lava/evaluation/saved_predictions.py": "52acb4c7755f54b15e7ff9e807b0fcdb608c6a85fe2e1842565296c9c22f8b7f",
+            "src/lava/evaluation/schemas.py": "89b07ffd137475f92753ad1fc66fd1652c1e2fd57ecaccf29ca219449eb7173a",
+            "src/lava/evaluation/semantic.py": "072b11dca8213d2a36b177c9e022bafde5852c6128b4a5645ccd0b2d1fdecb94",
+            "uv.lock": "ba56c7a8d4b8d2bda5637693ba4fc5a2edebda42001421263c8dce9f1aa6808f"
+          }
+        },
+        "judge_identity": "gemma-lava:6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+        "metrics": {
+          "answer_format_counts": {
+            "number": 4,
+            "ordered_list": 1,
+            "string": 7,
+            "unordered_list": 4
+          },
+          "by_answer_format": {
+            "number": {
+              "answer": 0.25,
+              "grounding": 0.9166666666666666,
+              "overall": 0.5833333333333333
+            },
+            "ordered_list": {
+              "answer": 0.5,
+              "grounding": 1.0,
+              "overall": 0.75
+            },
+            "string": {
+              "answer": 0.5714285714285714,
+              "grounding": 1.0,
+              "overall": 0.7857142857142857
+            },
+            "unordered_list": {
+              "answer": 0.65,
+              "grounding": 0.9642857142857143,
+              "overall": 0.8071428571428572
+            }
+          },
+          "by_document": {
+            "doc-01": {
+              "answer": 0.75,
+              "grounding": 1.0,
+              "overall": 0.875
+            },
+            "doc-02": {
+              "answer": 0.25,
+              "grounding": 0.9166666666666666,
+              "overall": 0.5833333333333333
+            },
+            "doc-03": {
+              "answer": 0.26666666666666666,
+              "grounding": 1.0,
+              "overall": 0.6333333333333333
+            },
+            "doc-04": {
+              "answer": 0.625,
+              "grounding": 1.0,
+              "overall": 0.8125
+            },
+            "doc-05": {
+              "answer": 0.8,
+              "grounding": 0.8571428571428571,
+              "overall": 0.8285714285714285
+            }
+          },
+          "by_language": {
+            "ja": {
+              "answer": 0.48666666666666664,
+              "grounding": 0.9777777777777777,
+              "overall": 0.7322222222222222
+            },
+            "vi": {
+              "answer": 0.8,
+              "grounding": 0.8571428571428571,
+              "overall": 0.8285714285714285
+            }
+          },
+          "document_count": 5,
+          "document_macro": {
+            "answer": 0.5383333333333333,
+            "grounding": 0.9547619047619047,
+            "overall": 0.746547619047619
+          },
+          "question_count": 16,
+          "question_micro": {
+            "answer": 0.50625,
+            "grounding": 0.9702380952380952,
+            "overall": 0.7382440476190476
+          }
+        },
+        "official_server_score": null,
+        "schema_version": 1,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+          "model_key": "qwen35_4b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "0b8c8d6313a1de9bd8ebe51fe2d350bb64a952913a0be1443ecbc6d85ed5b0ce",
+          "source_summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926"
+        },
+        "status": "local_published_formula_score"
+      },
       "summary": {
         "abstention_rate": 0.0,
         "answer_format_counts": {
@@ -782,7 +1169,136 @@
       },
       "label": "Qwen3.5 \u00b7 9B",
       "model_key": "qwen35_9b_fused_direct",
-      "semantic_summary": null,
+      "semantic_summary": {
+        "contract_current": true,
+        "evidence_scope": "oracle_supplied_pages",
+        "judge_contract": {
+          "acceptance_probes_sha256": "81bec452d04faac9829ac5cb375795228f928d660d42e1ee5d19ba554769b12e",
+          "config": {
+            "attention_implementation": "eager",
+            "boundary": "Local implementation of published LAVA formulas with a pinned Gemma-3 1B judge. Organizer prompt and runtime are not published; this is not an official server score.",
+            "device": "cpu",
+            "do_sample": false,
+            "dtype": "float32",
+            "max_input_tokens": 2048,
+            "max_new_tokens": 8,
+            "metric_source": "https://lava-workshop.github.io/#evaluation",
+            "model_id": "google/gemma-3-1b-it",
+            "model_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "official_server_parity": false,
+            "schema_version": 1,
+            "seed": 20260902,
+            "threads": 4,
+            "tokenizer_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+            "torch_version": "2.10.0",
+            "transformers_version": "5.16.1"
+          },
+          "contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+          "prompt_sha256": "c4fc9a94ca799c4c73a12bc7cd9efd1db19fcd2c17fb263c8f6c5011953eb6c4",
+          "source_sha256": {
+            "src/lava/evaluation/matching.py": "72b15abaaa0e0ead2b53748c2a8440aa9c4c7e68cf9dba6a0c460c009b7f22c5",
+            "src/lava/evaluation/metric.py": "030e8250a4fc622d15733e70e38243eb55c3b3a65422f3ee73ccf25a925b17dd",
+            "src/lava/evaluation/normalization.py": "3a510ce9bb32920ef9c724126c1288d78a92751b40b18c6190c197b7781655e5",
+            "src/lava/evaluation/saved_predictions.py": "52acb4c7755f54b15e7ff9e807b0fcdb608c6a85fe2e1842565296c9c22f8b7f",
+            "src/lava/evaluation/schemas.py": "89b07ffd137475f92753ad1fc66fd1652c1e2fd57ecaccf29ca219449eb7173a",
+            "src/lava/evaluation/semantic.py": "072b11dca8213d2a36b177c9e022bafde5852c6128b4a5645ccd0b2d1fdecb94",
+            "uv.lock": "ba56c7a8d4b8d2bda5637693ba4fc5a2edebda42001421263c8dce9f1aa6808f"
+          }
+        },
+        "judge_identity": "gemma-lava:6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+        "metrics": {
+          "answer_format_counts": {
+            "number": 4,
+            "ordered_list": 1,
+            "string": 7,
+            "unordered_list": 4
+          },
+          "by_answer_format": {
+            "number": {
+              "answer": 1.0,
+              "grounding": 1.0,
+              "overall": 1.0
+            },
+            "ordered_list": {
+              "answer": 1.0,
+              "grounding": 1.0,
+              "overall": 1.0
+            },
+            "string": {
+              "answer": 0.7142857142857143,
+              "grounding": 0.9285714285714286,
+              "overall": 0.8214285714285714
+            },
+            "unordered_list": {
+              "answer": 0.7059523809523809,
+              "grounding": 0.8809523809523809,
+              "overall": 0.793452380952381
+            }
+          },
+          "by_document": {
+            "doc-01": {
+              "answer": 0.75,
+              "grounding": 1.0,
+              "overall": 0.875
+            },
+            "doc-02": {
+              "answer": 0.75,
+              "grounding": 0.875,
+              "overall": 0.8125
+            },
+            "doc-03": {
+              "answer": 0.9523809523809524,
+              "grounding": 1.0,
+              "overall": 0.9761904761904763
+            },
+            "doc-04": {
+              "answer": 0.8666666666666667,
+              "grounding": 0.9166666666666666,
+              "overall": 0.8916666666666666
+            },
+            "doc-05": {
+              "answer": 0.5,
+              "grounding": 0.8571428571428571,
+              "overall": 0.6785714285714286
+            }
+          },
+          "by_language": {
+            "ja": {
+              "answer": 0.8215873015873016,
+              "grounding": 0.9444444444444444,
+              "overall": 0.883015873015873
+            },
+            "vi": {
+              "answer": 0.5,
+              "grounding": 0.8571428571428571,
+              "overall": 0.6785714285714286
+            }
+          },
+          "document_count": 5,
+          "document_macro": {
+            "answer": 0.7638095238095238,
+            "grounding": 0.9297619047619048,
+            "overall": 0.8467857142857144
+          },
+          "question_count": 16,
+          "question_micro": {
+            "answer": 0.8014880952380953,
+            "grounding": 0.9389880952380952,
+            "overall": 0.8702380952380953
+          }
+        },
+        "official_server_score": null,
+        "schema_version": 1,
+        "source": {
+          "asset_manifest_sha256": "95adafc93f4e7a47ba9f180b57b6512647d4fe2ad8320dcfa813dab916be43e3",
+          "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+          "model_key": "qwen35_9b_fused_direct",
+          "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+          "source_records_sha256": "8ecff0b63955b147509749f523b52748f45dbf6732d0f4794bb71ca58523395b",
+          "source_summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc"
+        },
+        "status": "local_published_formula_score"
+      },
       "summary": {
         "abstention_rate": 0.0,
         "answer_format_counts": {

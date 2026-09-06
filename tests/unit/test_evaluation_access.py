@@ -101,6 +101,27 @@ def test_access_errors_do_not_hide_programming_errors():
         raise ValueError("unexpected")
 
 
+def test_transformers_wrapped_gate_error_is_sanitized(capsys):
+    gate = GatedRepoError(
+        SECRET,
+        response=httpx.Response(
+            403, request=httpx.Request("GET", "https://huggingface.co/private")
+        ),
+    )
+    with (
+        pytest.raises(EvaluationAccessError, match="Google's terms"),
+        RuntimeEventLogger("test").stage("load"),
+        hub_access_errors(),
+    ):
+        raise OSError(SECRET) from gate
+    assert SECRET not in capsys.readouterr().out
+
+
+def test_unrelated_filesystem_error_is_not_misreported_as_login_failure():
+    with pytest.raises(FileNotFoundError, match="local file"), hub_access_errors():
+        raise FileNotFoundError("local file")
+
+
 def test_gemma_load_translates_gate_error_before_logging(tmp_path, monkeypatch, capsys):
     from transformers import AutoTokenizer
 
@@ -182,6 +203,28 @@ def test_cli_interrupt_preserves_a_distinct_attempt_log(tmp_path, monkeypatch):
     assert module.main() == 130
     assert module.main() == 130
     assert len(list((tmp_path / "artifacts/semantic_judge/runtime").glob("*/events.jsonl"))) == 2
+
+
+def test_cli_judge_rejection_has_a_distinct_exit_code_and_saved_diagnostic(
+    tmp_path, monkeypatch, capsys
+):
+    from lava.evaluation.semantic import JudgeAcceptanceError
+
+    module = load_command()
+    monkeypatch.setattr(module, "find_repo_root", lambda _: tmp_path)
+    monkeypatch.setattr("sys.argv", ["evaluate_oracle_reader.py", "--mode", "semantic"])
+
+    def reject(*args):
+        raise JudgeAcceptanceError("Synthetic acceptance probe failed")
+
+    monkeypatch.setattr(module, "run_evaluation", reject)
+    assert module.main() == 3
+    output = capsys.readouterr().out
+    assert "SEMANTIC_JUDGE_REJECTED" in output
+    assert "Traceback" not in output and "EVALUATION_ACTION_REQUIRED" not in output
+    logs = list((tmp_path / "artifacts/semantic_judge/runtime").glob("*/events.jsonl"))
+    events = [json.loads(line) for line in logs[0].read_text().splitlines()]
+    assert events[-1]["event"] == "evaluation.judge_rejected"
 
 
 @pytest.mark.parametrize(

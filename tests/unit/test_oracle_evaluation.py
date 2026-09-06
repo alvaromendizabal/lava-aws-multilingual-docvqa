@@ -415,6 +415,14 @@ def test_report_rejects_modified_summary(tmp_path):
 
     shutil.copytree(ROOT / "configs", tmp_path / "configs")
     shutil.copytree(ROOT / "reports/oracle_reader/runs", tmp_path / "reports/oracle_reader/runs")
+    # Real semantic results now bind their evaluator source and frozen dependencies.
+    shutil.copytree(
+        ROOT / "src/lava/evaluation",
+        tmp_path / "src/lava/evaluation",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+    shutil.copyfile(ROOT / "uv.lock", tmp_path / "uv.lock")
+    assert load_report(tmp_path)["runs"]  # The complete fixture must pass before tampering.
     path = next((tmp_path / "reports/oracle_reader/runs").glob("*/public_summary.json"))
     path.write_bytes(path.read_bytes() + b" ")
     with pytest.raises(ValueError, match="checksum"):

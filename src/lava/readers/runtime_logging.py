@@ -50,12 +50,27 @@ class RuntimeEventLogger:
             raise ValueError("heartbeat_seconds must be positive")
         stage_started = time.monotonic()
         stop = threading.Event()
+        lifecycle_lock = threading.Lock()
 
         def heartbeat() -> None:
             while not stop.wait(heartbeat_seconds):
+                with lifecycle_lock:
+                    # The timer may have expired just before the stage stopped.
+                    if stop.is_set():
+                        return
+                    self.emit(
+                        f"{name}.heartbeat",
+                        stage_elapsed_seconds=round(time.monotonic() - stage_started, 3),
+                    )
+
+        def finish(event: str, **fields: Any) -> None:
+            stop.set()
+            # Serialize the terminal event after any heartbeat already writing.
+            with lifecycle_lock:
                 self.emit(
-                    f"{name}.heartbeat",
+                    event,
                     stage_elapsed_seconds=round(time.monotonic() - stage_started, 3),
+                    **fields,
                 )
 
         thread = threading.Thread(target=heartbeat, name=f"{name}-heartbeat", daemon=True)
@@ -64,19 +79,15 @@ class RuntimeEventLogger:
         try:
             yield
         except BaseException as exc:
-            self.emit(
+            finish(
                 f"{name}.failed",
                 level="ERROR",
-                stage_elapsed_seconds=round(time.monotonic() - stage_started, 3),
                 exception_type=type(exc).__name__,
                 exception_message=str(exc),
             )
             raise
         else:
-            self.emit(
-                f"{name}.completed",
-                stage_elapsed_seconds=round(time.monotonic() - stage_started, 3),
-            )
+            finish(f"{name}.completed")
         finally:
             stop.set()
             thread.join(timeout=min(heartbeat_seconds, 1.0))

@@ -40,7 +40,7 @@ with logger.stage("report", heartbeat_seconds=15):
 #
 # The pilot has 16 questions from five documents (15 Japanese, one Vietnamese).
 # It cannot establish language-general performance. Exact scores are diagnostics;
-# semantic judging remains a separate milestone. Fold manifests describe a protocol,
+# the pinned Gemma semantic evaluation is also complete. Fold manifests describe a protocol,
 # not completed nested training or tuning. Document-paired comparisons appear only
 # after two compatible full pilots have passed the artifact gate.
 #
@@ -51,5 +51,11 @@ with logger.stage("report", heartbeat_seconds=15):
 # generation latency is an observed system comparison rather than isolated scaling.
 # Both completed experiments should be reused; no additional inference is needed
 # to inspect their results. The 9B run persisted and verified all 16 S3 checkpoints.
+#
+# Local semantic VQA is 50.625% for 4B and 80.149% for 9B; combined LAVA scores
+# are 73.824% and 87.024%. These are local formula-based scores, not organizer-server
+# results. All 28 public judge controls passed, and a second run reused every
+# decision without model loading. Semantic charts use the current contract; the
+# paired normalized-exact comparison remains separately labeled.
 #
 # `make report` writes the same standalone HTML and aggregate JSON for sharing.

@@ -43,8 +43,8 @@ Perform these steps in order. Paste an interactive login command **by itself**.
 
    ```bash
    cd "$HOME/lava-aws-multilingual-docvqa"
-   git fetch origin
-   git switch main
+   git fetch origin &&
+   git switch main &&
    git merge --ff-only origin/main
    ```
 
@@ -95,13 +95,65 @@ The memory gate requires at least 8 GiB currently available, bounded by Linux
 container limits as well as host RAM. It repeats immediately before uncached
 model loading; the threshold is conservative operating headroom, not a measured
 peak-memory claim. Fully cached judge decisions can still be reused without
-loading the model. Model loading and live semantic scores remain unverified until
-the authorized host completes acceptance and evaluation.
+loading the model. The authorized Studio host completed model loading, all 28
+controls, both full evaluations, and a second run using only cached decisions on
+2026-09-06. Runtime artifacts remain available in S3.
 
 After successful scoring, review and commit only public result aggregates and
 the report on a results branch, run `make quality`, and merge through a reviewed
 pull request. Questions, answers, credentials, weights, and logs remain outside
 Git. A new implementation or judge contract uses a separate scoring cache.
+
+## Judge validation and notebook update recovery
+
+The 2026-09-06 operator run passed access checks with 28.16 GiB available, loaded
+Gemma successfully, and stopped because the original prompt judged `1000` and
+`1001` equivalent. This was a judge-quality failure. The earlier gated-model 403
+was resolved by the operator; repeated login or reader GPU runs cannot correct
+an inaccurate judge.
+
+The revised prompt explicitly treats the ground truth as authoritative and grades
+a quoted submitted answer against it. It preserves the pinned Gemma revision,
+float32 CPU runtime, strict YES/NO parsing, and all published score formulas.
+No probe answers are inserted into the prompt. The original eight controls remain;
+20 additional controls cover decimal precision, dates, opposite meanings, empty
+answers, multilingual names and negation, formatting, and injected instructions.
+All 28 passed on the real cached model in `lava-dev`; see the
+[validation evidence](../reports/oracle_reader/judge_validation.json). These are public development
+controls, not a held-out estimate of general judge accuracy or organizer parity.
+
+Every acceptance run evaluates all controls, logs expected/observed results with
+UTC timestamps, and saves a content-addressed report in S3 before reporting pass
+or failure. Malformed output is not converted to a negative vote. A rejection
+exits with status 3 and `SEMANTIC_JUDGE_REJECTED`; saved reader answers remain valid.
+The changed scoring contract isolates earlier decisions, including the incorrect
+old numeric decision. Compatible decisions within the new contract are reusable.
+
+If an executed notebook blocks `git switch main`, first copy its exact bytes to
+`artifacts/notebook_runs/<UTC-attempt>/`, upload the copy to the private S3 run
+prefix, and verify the checksum. A Git stash alone is **not an output backup**:
+the notebook clean filter strips outputs even when stashing. Preserve source
+edits with a named stash and reapply those edits deliberately after updating.
+Only restore the canonical notebook after verifying that its source is unchanged
+and its executed copy is safely preserved.
+
+The Studio checkout's old filter also renumbered cell IDs, making a freshly
+restored notebook appear modified. Preserve IDs while continuing to strip outputs:
+
+```bash
+git config --local filter.nbstripout.clean 'uv run --frozen nbstripout --keep-id'
+git config --local filter.nbstripout.smudge cat
+git config --local filter.nbstripout.required true
+git diff -- notebooks/02_verified_gpu_execution.ipynb
+```
+
+On 2026-09-06 this configuration removed the false ID-only difference in Studio.
+A regression verifies preserved IDs and source, removed outputs and execution
+counts, and an idempotent second clean pass. Do not paste independent update
+commands that continue after a failed switch. The `&&` chain in step 4 stops at
+the first error. Never use `reset --hard` to resolve this. Notebook outputs do
+not imply that reader inference needs repeating; the paired public sources stay
+clean and reviewable.
 
 ## Verified reader results
 
@@ -145,10 +197,29 @@ exact paired two-sided sign-flip p-value is 1.000. These results do not select a
 winning model. The dashboard presents signed document deltas, a numeric table,
 both weighting schemes, and uncertainty directly.
 
+## Completed local semantic evaluation
+
+| Reader | Semantic VQA / question | Semantic VQA / document | Grounding F1 | Local LAVA overall |
+| --- | ---: | ---: | ---: | ---: |
+| 4B | 50.625% | 53.833% | 97.024% | 73.824% |
+| 9B | 80.149% | 76.381% | 93.899% | 87.024% |
+
+Both rows cover the same 16 questions and five documents. The combined column is
+question-weighted, as specified by LAVA. These are local published-formula scores,
+not organizer-server results. The judge contract is
+`6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc`.
+Original reader hashes are unchanged. Public semantic summaries include per-format,
+per-language, and per-document results with exact source and judge provenance.
+
+9B improves semantic VQA on three documents, ties one, and regresses on doc-05,
+the sole Vietnamese question. The semantic and normalized-exact comparisons answer
+different evaluation questions; the dashboard labels them separately. The small
+pilot and oracle evidence setting do not support broad performance claims.
+
 ## Next experiment
 
-First finish the semantic evaluation of the **already saved** 4B and 9B answers.
-Their GPU inference is complete. The missing score is an evaluation-stage gap.
+Semantic evaluation of the **already saved** 4B and 9B answers is complete.
+Their GPU inference and saved-answer scoring are both verified.
 Notebook 02 and the report show 16/16 coverage for both, separate from historical
 one-question smoke runs. No reader rerun is required to add semantic scores.
 
@@ -247,11 +318,11 @@ Run `uv run --frozen --group judge hf auth login` by itself and finish browser
 authorization. Then run `make evaluation-check`, followed by `make evaluate`
 after the access check succeeds. The operator steps above explain each prompt.
 
-On 2026-09-06 this editing environment received HTTP 401 `GatedRepoError` for the
-pinned model. No pretrained Gemma judgments or semantic scores have been produced
-here. Acceptance probes and full scoring must pass in an authorized environment.
-Eight public synthetic probes are independent of the private pilot answers; they
-are a minimum acceptance gate, not proof of broad judge quality. The exact
+The operator resolved model access and resized `lava-dev` before real-model
+validation. On 2026-09-06 all 28 public controls and both 16-question evaluations
+passed on the existing CPU host. A second run reused all 129 decision requests
+with no model loading or inference. These public development controls are
+independent of the private pilot answers; they are not proof of broad judge quality. The exact
 organizer prompt and decoding runtime are not published. The dashboard labels
 results **local published-formula scores**, with `official_server_score: null`.
 An organizer-server score requires an actual organizer evaluation result.
@@ -368,7 +439,7 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the canonical gate passed all 293 tests and Mypy across 63 source
+On 2026-09-06, the canonical gate passed all 306 tests and Mypy across 63 source
 files. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
@@ -377,7 +448,14 @@ writes, immutable idempotent writes, parser failures, and complete artifact audi
 Tests use injected model and cloud adapters; they do not claim GPU execution.
 Checks also cover UTC lifecycle arithmetic and invalid timestamps,
 missing historical telemetry, the verified mixed 4B/9B result, accessible signed
-chart geometry, and HTML escaping. The current quality gate completed in 46 seconds.
+chart geometry, and HTML escaping. Two presentation
+regressions verify that current semantic results drive semantic charts and stale
+results retain diagnostic labels.
+The notebook-filter regression preserves IDs while removing execution output.
+Three deterministic concurrency regressions delay a heartbeat until after stage
+shutdown and cover successful, failed and interrupted stages. They fail against
+the earlier logger and pass with serialized terminal events. Heartbeat output
+cannot appear after a stage's final completion or failure event.
 The semantic evaluation stage adds 34 tests covering immutable decision reuse,
 negative decisions, rejected writes, ambiguous output, corruption, stale contracts,
 source hashes, actual predicted-page scoring, missing access, metric denominators,
@@ -391,8 +469,12 @@ gated permissions, network failures, secret-safe error messages, metadata-only
 access checks, host and cgroup memory limits, pre-load memory rejection, persisted
 event logs, interruption, and type checking with a corrupt old SQLite cache.
 Mypy uses its supported file-cache backend; actual type errors still fail the gate.
-An AWS read-only check identified `lava-dev` on `ml.t3.medium`; resizing is an
-operator action because it stops the current app and changes billed CPU capacity.
+The operator resized `lava-dev` from `ml.t3.medium` to `ml.m7i.2xlarge`.
+The real canonical evaluator completed in 65.13 seconds, creating 82 unique
+Gemma decisions and reusing 47 requests across readers. A second evaluation
+completed in 7.71 seconds with 129 reused requests, zero new decisions, and no
+model loading. Both notebooks 02 and 03 executed in real Jupyter kernels in
+2.93 seconds total. No reader inference or new GPU job was required.
 
 The 4B and 9B runs are real AWS evidence. Each was independently checked against all
 16 downloaded raw generations and the pinned manifest before synchronizing its
@@ -402,13 +484,13 @@ successful durable writes and readback on AWS. Recovery after interruption remai
 covered by explicit synthetic tests; it has not yet been exercised by deliberately
 interrupting a paid AWS job. No additional paid job was launched for this report.
 
-Notebook 03 supports offline report viewing. This editing environment blocks the
-socket bindings needed by a separate Jupyter kernel; in-process cell execution is
-used here. The signed comparison SVG was rendered and visually inspected; full
-browser screenshot inspection is unavailable in this environment. Report generation,
-escaping, and numeric output are tested. To exercise a separate kernel in SageMaker Studio:
+Notebook 03 supports offline report viewing. Both notebooks 02 and 03 executed
+successfully in real SageMaker Jupyter kernels after scoring. Public notebooks
+remain output-free and paired with reviewable Python sources. The generated HTML
+report is self-contained; its semantic charts use the current judge contract and
+its normalized-exact comparisons remain explicitly labeled. To execute the
+notebooks again in SageMaker Studio:
 
 ```bash
-uv run --frozen python -m ipykernel install --user --name lava --display-name 'Python (lava)'
-uv run --frozen python scripts/execute_notebook_smoke.py notebooks/03_model_scaling_and_cost.ipynb
+uv run --frozen python scripts/execute_notebook_smoke.py notebooks/02_verified_gpu_execution.ipynb notebooks/03_model_scaling_and_cost.ipynb
 ```

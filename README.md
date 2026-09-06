@@ -21,8 +21,18 @@ These are **full 16-question pilots**, not just smoke tests. Notebook 02 and the
 dashboard now prioritize current coverage; historical smokes appear in run history.
 The [published LAVA metric](https://lava-workshop.github.io/#evaluation) averages
 semantic answer credit and predicted evidence-page F1 per question. Semantic credit
-uses a Gemma-3 1B judge. The saved runs used normalized-exact diagnostics, so their
-semantic and combined LAVA scores remain **not evaluated**, never zero or inferred.
+uses a Gemma-3 1B judge. The original runs retained normalized-exact diagnostics.
+Semantic scores are now independently evaluated from their saved answers:
+
+| Reader | Semantic VQA | Evidence-page F1 | Local LAVA overall |
+| --- | ---: | ---: | ---: |
+| 4B | **50.63%** | 97.02% | **73.82%** |
+| 9B | **80.15%** | 93.90% | **87.02%** |
+
+The pinned CPU judge passed all **28 public controls**. Scoring both pilots took
+**65.13 seconds** on the existing Studio CPU; a second run took **7.71 seconds**,
+reused all **129 decision requests**, and loaded no model. See the
+[real-model validation and resume evidence](reports/oracle_reader/judge_validation.json).
 
 The canonical evaluator now reuses verified saved answers, writes immutable judge
 decisions to S3, and resumes without repeating accepted decisions. It pins the
@@ -32,16 +42,19 @@ The organizer's exact judge prompt/runtime is unpublished; local formula-based
 scores are explicitly distinct from organizer-server results. Oracle citation F1
 does not measure retrieval quality.
 
-Both complete pilots have **100% valid output** and no parser errors. Answer scores
-are normalized-exact diagnostics with partial list credit. Every raw generation,
+Both complete pilots have **100% valid output** and no parser errors. The first table of answer scores
+contains normalized-exact diagnostics with partial list credit; the semantic table
+uses the separately validated Gemma judge. Every raw generation,
 question, score, and aggregate was independently checked against the frozen manifest;
 all **16 immutable 9B checkpoints** were also verified against the final records.
 
-The comparison is mixed: 9B improves two documents, ties two, and regresses on one.
+The normalized-exact comparison is mixed: 9B improves two documents, ties two, and regresses on one.
 Its question-average gain is **7.65 percentage points**, while its document-average
 change is **−4.12 points**. The exploratory document-bootstrap interval is
 **−43.17 to +25.98 points**, with an exact paired two-sided p-value of **1.000**.
-There is no promotion decision from five documents. Hardware differs between runs;
+Under semantic judging, 9B improves three documents, ties one, and regresses on
+the sole Vietnamese document. Its document-average semantic VQA is 76.38%, versus
+53.83% for 4B. There is no promotion decision from five documents. Hardware differs between runs;
 generation time is an observed system result, not a controlled model-speed comparison.
 
 Only one reader is needed for deployment. Preserve these completed runs. Next,
@@ -62,7 +75,7 @@ flowchart TD
     C --> D["Private responses and checkpoints"]
     D --> E["Independent artifact and score checks"]
     E --> F["Public reports and notebooks"]
-    F --> G["Semantic judge, then retrieval experiments"]
+    F --> G["Failure analysis and retrieval experiments"]
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for the execution and lineage model.
@@ -142,7 +155,7 @@ The notebooks are paired with Jupytext so the `.ipynb` files remain convenient f
 
 ## Research program
 
-The current milestone isolates reader capability with oracle evidence. Further experiments can compare model candidates, modality ablations, multilingual slices, error categories, runtime, memory, and cost. A validated semantic judge and a larger representative evaluation set are required before broad quality claims. Retrieval and reranking are then introduced under the same frozen document-isolated protocol so retrieval failures cannot be confused with reader failures.
+The current milestone isolates reader capability with oracle evidence. Further experiments can compare model candidates, modality ablations, multilingual slices, error categories, runtime, memory, and cost. The semantic judge now passes its public acceptance controls; broader judge validation and a larger representative evaluation set are required before broad quality claims. Retrieval and reranking are then introduced under the same frozen document-isolated protocol so retrieval failures cannot be confused with reader failures.
 
 ## Repository layout
 

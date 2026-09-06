@@ -119,6 +119,14 @@ def hub_access_errors() -> Iterator[None]:
             "Could not reach Hugging Face. Check this machine's network access and retry "
             "`make evaluation-check`. This does not establish that your login is invalid."
         ) from None
+    except OSError as error:
+        # Transformers wraps gated Hub failures in OSError. Unwrap only a typed
+        # Hub/network cause; unrelated filesystem failures must still propagate.
+        cause = error.__cause__
+        if isinstance(cause, (LocalTokenNotFoundError, HfHubHTTPError, httpx.RequestError)):
+            with hub_access_errors():
+                raise cause
+        raise
 
 
 def check_judge_access(
