@@ -129,13 +129,31 @@ exits with status 3 and `SEMANTIC_JUDGE_REJECTED`; saved reader answers remain v
 The changed scoring contract isolates earlier decisions, including the incorrect
 old numeric decision. Compatible decisions within the new contract are reusable.
 
-If an executed notebook blocks `git switch main`, preserve it with a **named Git
-stash** before switching, then apply that exact stash after the update. Do not
-paste independent update commands that continue after a failed switch. The `&&`
-chain in step 4 stops at the first error. Never use `reset --hard` to resolve this.
-A notebook's outputs are local work, not evidence that reader inference needs to
-be repeated. Generated outputs belong under `artifacts/notebook_runs/`; the paired
-public notebook sources stay clean and reviewable.
+If an executed notebook blocks `git switch main`, first copy its exact bytes to
+`artifacts/notebook_runs/<UTC-attempt>/`, upload the copy to the private S3 run
+prefix, and verify the checksum. A Git stash alone is **not an output backup**:
+the notebook clean filter strips outputs even when stashing. Preserve source
+edits with a named stash and reapply those edits deliberately after updating.
+Only restore the canonical notebook after verifying that its source is unchanged
+and its executed copy is safely preserved.
+
+The Studio checkout's old filter also renumbered cell IDs, making a freshly
+restored notebook appear modified. Preserve IDs while continuing to strip outputs:
+
+```bash
+git config --local filter.nbstripout.clean 'uv run --frozen nbstripout --keep-id'
+git config --local filter.nbstripout.smudge cat
+git config --local filter.nbstripout.required true
+git diff -- notebooks/02_verified_gpu_execution.ipynb
+```
+
+On 2026-09-06 this configuration removed the false ID-only difference in Studio.
+A regression verifies preserved IDs and source, removed outputs and execution
+counts, and an idempotent second clean pass. Do not paste independent update
+commands that continue after a failed switch. The `&&` chain in step 4 stops at
+the first error. Never use `reset --hard` to resolve this. Notebook outputs do
+not imply that reader inference needs repeating; the paired public sources stay
+clean and reviewable.
 
 ## Verified reader results
 
@@ -421,7 +439,7 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the canonical gate passed all 302 tests and Mypy across 63 source
+On 2026-09-06, the canonical gate passed all 306 tests and Mypy across 63 source
 files. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
@@ -430,9 +448,14 @@ writes, immutable idempotent writes, parser failures, and complete artifact audi
 Tests use injected model and cloud adapters; they do not claim GPU execution.
 Checks also cover UTC lifecycle arithmetic and invalid timestamps,
 missing historical telemetry, the verified mixed 4B/9B result, accessible signed
-chart geometry, and HTML escaping. The quality gate completed in 48 seconds. Two presentation
+chart geometry, and HTML escaping. Two presentation
 regressions verify that current semantic results drive semantic charts and stale
 results retain diagnostic labels.
+The notebook-filter regression preserves IDs while removing execution output.
+Three deterministic concurrency regressions delay a heartbeat until after stage
+shutdown and cover successful, failed and interrupted stages. They fail against
+the earlier logger and pass with serialized terminal events. Heartbeat output
+cannot appear after a stage's final completion or failure event.
 The semantic evaluation stage adds 34 tests covering immutable decision reuse,
 negative decisions, rejected writes, ambiguous output, corruption, stale contracts,
 source hashes, actual predicted-page scoring, missing access, metric denominators,

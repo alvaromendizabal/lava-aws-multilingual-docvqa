@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import nbformat
@@ -12,6 +14,32 @@ EXPECTED = (
     "03_model_scaling_and_cost",
 )
 ACCOUNT_ID = re.compile(r"(?<!\d)\d{12}(?!\d)")
+
+
+def test_notebook_clean_filter_preserves_ids_and_removes_execution_outputs() -> None:
+    """Prevent ID renumbering from making restored notebooks appear modified."""
+    notebook = nbformat.v4.new_notebook(
+        cells=[
+            nbformat.v4.new_markdown_cell("Results", id="results-heading"),
+            nbformat.v4.new_code_cell(
+                "print('example')",
+                id="results-code",
+                execution_count=7,
+                outputs=[nbformat.v4.new_output("stream", name="stdout", text="example\n")],
+            ),
+        ]
+    )
+    command = [sys.executable, "-m", "nbstripout", "--keep-id"]
+    first = subprocess.run(
+        command, input=nbformat.writes(notebook), text=True, capture_output=True, check=True
+    ).stdout
+    cleaned = nbformat.reads(first, as_version=4)
+    assert [cell.id for cell in cleaned.cells] == [cell.id for cell in notebook.cells]
+    assert [cell.source for cell in cleaned.cells] == [cell.source for cell in notebook.cells]
+    assert cleaned.cells[1].outputs == []
+    assert cleaned.cells[1].execution_count is None
+    second = subprocess.run(command, input=first, text=True, capture_output=True, check=True).stdout
+    assert second == first
 
 
 def test_public_notebooks_are_paired_output_free_and_sanitized() -> None:
