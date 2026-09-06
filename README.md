@@ -63,6 +63,21 @@ audit shared failures and expand representative evaluation before selecting a re
 different model generation and NF4 quantization, so the comparison also changes
 precision and model family version. This small pilot does not establish SOTA quality.
 
+The report now compares **semantic answer, evidence and overall scores** with
+document-paired intervals, separately from exact diagnostics. On local LAVA
+overall, 9B improves **13.20 percentage points per question** and **10.02 points per
+document**; the exploratory interval is **−4.42 to +25.15 points**, with paired
+p-value **0.375**. Its remaining deficit is concentrated in string and unordered-list
+questions. These are measured score gaps, not causal explanations.
+
+The 16 questions are **all supplied training labels**. The separate test set has
+**624 questions / 200 documents**. The next model milestone is full-document
+evidence retrieval followed by reader evaluation with retrieved pages. A tested
+[submission workflow](docs/submission.md) verifies the pinned test/template files
+and exports only complete, provenance-bound test predictions. No submission has
+been uploaded. Kaggle showed a Late Submission option on September 6, 2026;
+authenticated eligibility and organizer runtime compliance remain unverified.
+
 [View the report source](reports/oracle_reader/evaluation/index.html) ·
 [Evaluation workflow](docs/evaluation.md) · [Aggregate results](reports/oracle_reader/evaluation/summary.json)
 
@@ -101,6 +116,10 @@ make evaluation-preview
 # Once Gemma access is configured, judge saved complete pilots on the current CPU
 make evaluation-check
 make evaluate
+
+# Inspect the submission contract; then verify pinned S3 input files
+make submission-preview
+make submission-check
 
 # Optional 27B plan review; no GPU is launched
 make benchmark-preview MODEL=qwen38_27b_nf4_g5_fused_direct

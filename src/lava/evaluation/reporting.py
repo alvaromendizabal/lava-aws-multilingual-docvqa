@@ -10,6 +10,7 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any
 
+from lava.evaluation.analysis import compare_semantic_runs, score_gap_profile
 from lava.evaluation.statistics import compare_document_scores
 from lava.readers.evaluation_contract import load_evaluation_contract
 
@@ -134,6 +135,7 @@ def load_report(root: Path) -> dict[str, Any]:
             }
         )
     comparisons = []
+    semantic_comparisons = []
     for left, right in combinations([r for r in runs if r["complete"]], 2):
         a, b = left["summary"], right["summary"]
         # Vary the reader; hold the evaluated questions and prompting fixed.
@@ -148,6 +150,7 @@ def load_report(root: Path) -> dict[str, Any]:
         )
         if any(a.get(key) != b.get(key) for key in keys):
             continue
+        semantic_comparisons.extend(compare_semantic_runs(left, right))
         comparisons.append(
             {
                 "baseline_job": left["job_name"],
@@ -165,6 +168,12 @@ def load_report(root: Path) -> dict[str, Any]:
         "runs": runs,
         "current_models": current_model_runs(runs),
         "paired_document_comparisons": comparisons,
+        "semantic_document_comparisons": semantic_comparisons,
+        "semantic_score_gaps": [
+            profile
+            for run in current_model_runs(runs)
+            if run["complete"] and (profile := score_gap_profile(run)) is not None
+        ],
         "interpretation": "Small oracle-reader pilot. Normalized-exact diagnostics and local semantic scores are distinct; no organizer-server parity or model promotion is claimed.",
     }
 
@@ -301,7 +310,14 @@ def _comparison_detail(pair: dict[str, Any], runs: dict[str, dict[str, Any]]) ->
     baseline, challenger = runs[pair["baseline_job"]], runs[pair["challenger_job"]]
     a, b = baseline["summary"], challenger["summary"]
     title = f"{challenger['label']} versus {baseline['label']}"
-    question_delta = 100 * (b["normalized_exact_answer_micro"] - a["normalized_exact_answer_micro"])
+    if "metric_label" in pair:
+        title += " · " + pair["metric_label"]
+    question_delta = 100 * pair.get(
+        "question_mean_delta",
+        b["normalized_exact_answer_micro"] - a["normalized_exact_answer_micro"],
+    )
+    baseline_scores = pair.get("baseline_document_scores", a["document_scores"])
+    challenger_scores = pair.get("challenger_document_scores", b["document_scores"])
     lower, upper = pair["exploratory_cluster_bootstrap_95_interval"]
     cards = (
         (f"{question_delta:+.2f} pp", "Change with equal question weights"),
@@ -328,8 +344,8 @@ def _comparison_detail(pair: dict[str, Any], runs: dict[str, dict[str, Any]]) ->
         cells = (
             label,
             str(a["document_question_counts"][document]),
-            f"{100 * a['document_scores'][document]:.2f}%",
-            f"{100 * b['document_scores'][document]:.2f}%",
+            f"{100 * baseline_scores[document]:.2f}%",
+            f"{100 * challenger_scores[document]:.2f}%",
             f"{value:+.2f} pp",
         )
         rows.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
@@ -366,6 +382,43 @@ def _comparison_detail(pair: dict[str, Any], runs: dict[str, dict[str, Any]]) ->
     )
 
 
+def _score_gap_details(profiles: list[dict[str, Any]]) -> str:
+    """Show which measured answer formats contribute to the remaining score deficit."""
+    if not profiles:
+        return ""
+    sections = []
+    for profile in profiles:
+        rows = []
+        for row in profile["by_answer_format"]:
+            cells = (
+                html.escape(row["answer_format"]),
+                str(row["question_count"]),
+                f"{100 * row['answer_gap_contribution']:.2f} pp",
+                f"{100 * row['grounding_gap_contribution']:.2f} pp",
+                f"{100 * row['overall_gap_contribution']:.2f} pp",
+            )
+            rows.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
+        sections.append(
+            f"<h3>{html.escape(profile['label'])}</h3>"
+            f"<p>Gap from a perfect local score: <strong>{100 * profile['overall_gap']:.2f} pp</strong>. "
+            f"Answer credit contributes {100 * profile['answer_gap']:.2f} pp; "
+            f"evidence credit contributes {100 * profile['grounding_gap']:.2f} pp.</p>"
+            '<div class="table-wrap"><table class="comparison-table"><thead><tr>'
+            '<th scope="col">Answer format</th><th scope="col">Questions</th>'
+            '<th scope="col">Answer gap</th><th scope="col">Evidence gap</th>'
+            '<th scope="col">Overall gap</th></tr></thead><tbody>'
+            + "".join(rows)
+            + "</tbody></table></div>"
+        )
+    return (
+        '<section class="panel" style="margin-top:24px"><h2>Where the remaining score is lost</h2>'
+        "<p>Contributions use the official equal-question weighting and add to the total score gap. "
+        "They identify measured weaknesses; they do not establish causes or promise recoverable gains.</p>"
+        + "".join(sections)
+        + "</section>"
+    )
+
+
 def render_report(report: dict[str, Any]) -> str:
     """Render an offline, self-contained report with escaped public fields only."""
     runs = report["runs"]
@@ -379,11 +432,16 @@ def render_report(report: dict[str, Any]) -> str:
             if semantic and semantic["contract_current"]
             else "Not evaluated"
         )
+        semantic_answer = (
+            f"{semantic['metrics']['question_micro']['answer']:.1%}"
+            if semantic and semantic["contract_current"]
+            else "Not evaluated"
+        )
         cells = (
             run["label"],
             f"{s['record_count']} / {report['expected_questions']}",
             "Full pilot verified" if run["complete"] else "Smoke only; full pilot pending",
-            f"{s['normalized_exact_answer_micro']:.1%}" if run["complete"] else "—",
+            semantic_answer,
             f"{s['self_grounding_f1_micro']:.1%}" if run["complete"] else "—",
             overall,
         )
@@ -396,7 +454,7 @@ def render_report(report: dict[str, Any]) -> str:
             "Reader",
             "Questions completed",
             "Current coverage",
-            "Answer diagnostic",
+            "Semantic VQA",
             "Evidence F1",
             "Local LAVA score",
         )
@@ -474,6 +532,13 @@ def render_report(report: dict[str, Any]) -> str:
             _comparison_detail(pair, {r["job_name"]: r for r in runs})
             for pair in report["paired_document_comparisons"]
         )
+    semantic_html = "<p>Two compatible, current semantic evaluations are required.</p>"
+    if report.get("semantic_document_comparisons"):
+        semantic_html = "".join(
+            _comparison_detail(pair, {r["job_name"]: r for r in runs})
+            for pair in report["semantic_document_comparisons"]
+        )
+    gap_html = _score_gap_details(report.get("semantic_score_gaps", []))
     rendered = (
         """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>LAVA | Reader evaluation</title>
@@ -498,12 +563,15 @@ details{border-top:1px solid #dce4e9;padding:18px 0}summary{cursor:pointer;font-
 <div class="card"><strong>{complete}</strong><span>Complete 16-question pilots</span></div>
 <div class="card"><strong>16 / 5</strong><span>Frozen questions / documents</span></div></div>
 <section class="panel"><h2>Current model coverage and performance</h2><div class="table-wrap"><table><thead><tr>{coverage_head}</tr></thead><tbody>{"".join(coverage_rows)}</tbody></table></div>
-<p class="muted">Full pilots take precedence over historical smoke tests. Missing semantic scores mean not evaluated, never zero. Answer diagnostics use normalized matching and partial list credit.</p></section>
+<p class="muted">Full pilots take precedence over historical smoke tests. Missing semantic scores mean not evaluated, never zero. Normalized-exact diagnostics are shown separately below.</p></section>
 <div class="notice"><strong>LAVA metric:</strong> mean across questions of (semantic VQA + evidence-page F1) / 2. The published answer judge is Gemma-3 1B.
 Correct evidence pages are supplied to these readers; evidence F1 measures their citations within that oracle input and does not measure full-document retrieval.
 <a href="https://lava-workshop.github.io/">Organizer metric specification</a></div>
-<section class="panel" style="margin-top:24px"><h2>Normalized-exact diagnostic comparisons</h2>{comparison_html}
-<p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></section>
+<section class="panel" style="margin-top:24px"><h2>Semantic model comparisons</h2>{semantic_html}
+<p class="muted">These descriptive comparisons use the same frozen questions and judge contract. Intervals and p-values are exploratory, with no multiple-comparison adjustment or model-promotion claim.</p></section>
+{gap_html}
+<details class="panel" style="margin-top:24px"><summary>Normalized-exact diagnostic comparisons</summary>{comparison_html}
+<p class="muted">Bootstrap intervals are exploratory with five documents. The smallest two-sided exact sign-flip p-value with five nonzero document deltas is 0.0625. No model promotion is supported by this pilot alone.</p></details>
 {pilot_details}<div class="charts">{panels}</div>
 <details class="panel"><summary>Run history · includes earlier one-question smoke tests</summary><div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
 <p class="muted">Generation time excludes model loading. Billable seconds include the training job's measured billable duration; they are not dollar costs. Hardware and quantization differ across readers.</p></details>

@@ -439,8 +439,8 @@ are made in canonical sources with no duplicate repair or fixed variants.
 
 ## Validation
 
-On 2026-09-06, the canonical gate passed all 306 tests and Mypy across 63 source
-files. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
+On 2026-09-06, the canonical gate passed all 369 tests and Mypy across 67 source
+files in 45 seconds. The canonical `make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
 notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
 duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
 interruption during restoration, corrupt or incompatible checkpoints, rejected
@@ -452,6 +452,11 @@ chart geometry, and HTML escaping. Two presentation
 regressions verify that current semantic results drive semantic charts and stale
 results retain diagnostic labels.
 The notebook-filter regression preserves IDs while removing execution output.
+The semantic-analysis and submission update adds 63 tests. These cover paired
+document comparisons, additive score gaps, incompatible or invalid metrics,
+model-free report imports, and the strict, resumable CSV export described in
+[the submission guide](submission.md). Synthetic CSV tests verify the exporter;
+they do not establish test-set model quality or competition eligibility.
 Three deterministic concurrency regressions delay a heartbeat until after stage
 shutdown and cover successful, failed and interrupted stages. They fail against
 the earlier logger and pass with serialized terminal events. Heartbeat output

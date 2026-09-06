@@ -1525,5 +1525,231 @@
       "supporting_metrics": null
     }
   ],
-  "schema_version": 1
+  "schema_version": 1,
+  "semantic_document_comparisons": [
+    {
+      "baseline_document_scores": {
+        "doc-01": 0.875,
+        "doc-02": 0.5833333333333333,
+        "doc-03": 0.6333333333333333,
+        "doc-04": 0.8125,
+        "doc-05": 0.8285714285714285
+      },
+      "baseline_job": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "challenger_document_scores": {
+        "doc-01": 0.875,
+        "doc-02": 0.8125,
+        "doc-03": 0.9761904761904763,
+        "doc-04": 0.8916666666666666,
+        "doc-05": 0.6785714285714286
+      },
+      "challenger_job": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "document_count": 5,
+      "documents_improved": 3,
+      "documents_regressed": 1,
+      "documents_tied": 1,
+      "exact_two_sided_sign_flip_p_value": 0.375,
+      "exploratory_cluster_bootstrap_95_interval": [
+        -0.044166666666666646,
+        0.25154761904761913
+      ],
+      "judge_contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+      "maximum_delta": 0.34285714285714297,
+      "mean_delta": 0.10023809523809528,
+      "median_delta": 0.07916666666666661,
+      "metric": "overall",
+      "metric_label": "Local LAVA overall",
+      "minimum_delta": -0.1499999999999999,
+      "per_document_delta": {
+        "doc-01": 0.0,
+        "doc-02": 0.22916666666666674,
+        "doc-03": 0.34285714285714297,
+        "doc-04": 0.07916666666666661,
+        "doc-05": -0.1499999999999999
+      },
+      "question_mean_delta": 0.13199404761904765
+    },
+    {
+      "baseline_document_scores": {
+        "doc-01": 0.75,
+        "doc-02": 0.25,
+        "doc-03": 0.26666666666666666,
+        "doc-04": 0.625,
+        "doc-05": 0.8
+      },
+      "baseline_job": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "challenger_document_scores": {
+        "doc-01": 0.75,
+        "doc-02": 0.75,
+        "doc-03": 0.9523809523809524,
+        "doc-04": 0.8666666666666667,
+        "doc-05": 0.5
+      },
+      "challenger_job": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "document_count": 5,
+      "documents_improved": 3,
+      "documents_regressed": 1,
+      "documents_tied": 1,
+      "exact_two_sided_sign_flip_p_value": 0.375,
+      "exploratory_cluster_bootstrap_95_interval": [
+        -0.08000000000000003,
+        0.5226190476190476
+      ],
+      "judge_contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+      "maximum_delta": 0.6857142857142857,
+      "mean_delta": 0.22547619047619047,
+      "median_delta": 0.2416666666666667,
+      "metric": "answer",
+      "metric_label": "Semantic VQA",
+      "minimum_delta": -0.30000000000000004,
+      "per_document_delta": {
+        "doc-01": 0.0,
+        "doc-02": 0.5,
+        "doc-03": 0.6857142857142857,
+        "doc-04": 0.2416666666666667,
+        "doc-05": -0.30000000000000004
+      },
+      "question_mean_delta": 0.2952380952380953
+    },
+    {
+      "baseline_document_scores": {
+        "doc-01": 1.0,
+        "doc-02": 0.9166666666666666,
+        "doc-03": 1.0,
+        "doc-04": 1.0,
+        "doc-05": 0.8571428571428571
+      },
+      "baseline_job": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "challenger_document_scores": {
+        "doc-01": 1.0,
+        "doc-02": 0.875,
+        "doc-03": 1.0,
+        "doc-04": 0.9166666666666666,
+        "doc-05": 0.8571428571428571
+      },
+      "challenger_job": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "document_count": 5,
+      "documents_improved": 0,
+      "documents_regressed": 2,
+      "documents_tied": 3,
+      "exact_two_sided_sign_flip_p_value": 0.5,
+      "exploratory_cluster_bootstrap_95_interval": [
+        -0.05833333333333335,
+        0.0
+      ],
+      "judge_contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
+      "maximum_delta": 0.0,
+      "mean_delta": -0.025,
+      "median_delta": 0.0,
+      "metric": "grounding",
+      "metric_label": "Evidence F1",
+      "minimum_delta": -0.08333333333333337,
+      "per_document_delta": {
+        "doc-01": 0.0,
+        "doc-02": -0.04166666666666663,
+        "doc-03": 0.0,
+        "doc-04": -0.08333333333333337,
+        "doc-05": 0.0
+      },
+      "question_mean_delta": -0.03125
+    }
+  ],
+  "semantic_score_gaps": [
+    {
+      "answer_gap": 0.246875,
+      "by_answer_format": [
+        {
+          "answer_format": "number",
+          "answer_gap_contribution": 0.09375,
+          "answer_score": 0.25,
+          "grounding_gap_contribution": 0.010416666666666671,
+          "grounding_score": 0.9166666666666666,
+          "overall_gap_contribution": 0.10416666666666667,
+          "question_count": 4
+        },
+        {
+          "answer_format": "string",
+          "answer_gap_contribution": 0.09375,
+          "answer_score": 0.5714285714285714,
+          "grounding_gap_contribution": 0.0,
+          "grounding_score": 1.0,
+          "overall_gap_contribution": 0.09375,
+          "question_count": 7
+        },
+        {
+          "answer_format": "unordered_list",
+          "answer_gap_contribution": 0.04375,
+          "answer_score": 0.65,
+          "grounding_gap_contribution": 0.004464285714285712,
+          "grounding_score": 0.9642857142857143,
+          "overall_gap_contribution": 0.04821428571428571,
+          "question_count": 4
+        },
+        {
+          "answer_format": "ordered_list",
+          "answer_gap_contribution": 0.015625,
+          "answer_score": 0.5,
+          "grounding_gap_contribution": 0.0,
+          "grounding_score": 1.0,
+          "overall_gap_contribution": 0.015625,
+          "question_count": 1
+        }
+      ],
+      "grounding_gap": 0.014880952380952384,
+      "interpretation": "Measured score deficits, not causal diagnoses or promised improvements.",
+      "job_name": "lava-oracle-qwen35-4b-fused-direct-20260906180137",
+      "label": "Qwen3.5 \u00b7 4B",
+      "overall_gap": 0.2617559523809524,
+      "overall_score": 0.7382440476190476,
+      "question_count": 16
+    },
+    {
+      "answer_gap": 0.09925595238095236,
+      "by_answer_format": [
+        {
+          "answer_format": "string",
+          "answer_gap_contribution": 0.0625,
+          "answer_score": 0.7142857142857143,
+          "grounding_gap_contribution": 0.015624999999999993,
+          "grounding_score": 0.9285714285714286,
+          "overall_gap_contribution": 0.078125,
+          "question_count": 7
+        },
+        {
+          "answer_format": "unordered_list",
+          "answer_gap_contribution": 0.03675595238095239,
+          "answer_score": 0.7059523809523809,
+          "grounding_gap_contribution": 0.014880952380952384,
+          "grounding_score": 0.8809523809523809,
+          "overall_gap_contribution": 0.05163690476190477,
+          "question_count": 4
+        },
+        {
+          "answer_format": "number",
+          "answer_gap_contribution": 0.0,
+          "answer_score": 1.0,
+          "grounding_gap_contribution": 0.0,
+          "grounding_score": 1.0,
+          "overall_gap_contribution": 0.0,
+          "question_count": 4
+        },
+        {
+          "answer_format": "ordered_list",
+          "answer_gap_contribution": 0.0,
+          "answer_score": 1.0,
+          "grounding_gap_contribution": 0.0,
+          "grounding_score": 1.0,
+          "overall_gap_contribution": 0.0,
+          "question_count": 1
+        }
+      ],
+      "grounding_gap": 0.030505952380952384,
+      "interpretation": "Measured score deficits, not causal diagnoses or promised improvements.",
+      "job_name": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+      "label": "Qwen3.5 \u00b7 9B",
+      "overall_gap": 0.12976190476190474,
+      "overall_score": 0.8702380952380953,
+      "question_count": 16
+    }
+  ]
 }
