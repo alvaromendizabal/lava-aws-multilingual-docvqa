@@ -55,11 +55,15 @@ jobs:
           subprocess.run(["git", "restore", "--source", main, "--staged", "--worktree", "--", *files], check=True)
           p = Path("README.md")
           text = p.read_text().replace("All five canonical notebooks", "All six canonical notebooks").replace("**Readable evidence:** five executed notebooks", "**Readable evidence:** six executed notebooks")
+          # Reuse the same numeric formatting as the verified notebook table.
+          summary = json.loads(Path("reports/oracle_reader/runs/lava-oracle-qwen35-4b-fused-direct-20260906180137/semantic_summary.json").read_text())
+          score = summary["metrics"]["question_micro"]["answer"]
+          text = text.replace("50.63%", f"{score:.2%}")
           lines = text.splitlines()
           position = next(i for i, line in enumerate(lines) if line.startswith("| [04 —"))
           lines.insert(position + 1, "| [05 — Retrieved-evidence extension](notebooks/05_end_to_end_system_evaluation.ipynb) | Implemented integration, actual measurement status, failure analysis and recovery |")
           text = "\n".join(lines) + "\n"
-          text = text.replace("## Reproduce and inspect", "The retrieved-page integration is implemented in Notebook 05. Its actual answer score remains explicitly unmeasured until the GPU experiment runs. `make system-preview` inspects the plan without paid compute; `make finish CHARGES=YES` explicitly authorizes one bounded GPU attempt, then scores saved answers, executes all six notebooks, runs the quality gate and archives verified outputs. See [the operator guide](docs/system_evaluation.md) for cost limits and recovery. This extension does not invalidate the completed component benchmark.\n\n## Reproduce and inspect")
+          text = text.replace("## Reproduce and inspect", "The retrieved-page pipeline is implemented; Notebook 05 reports its measurement status. Its actual answer score remains explicitly unmeasured until the GPU experiment runs. `make system-preview` inspects the plan without paid compute; `make finish CHARGES=YES` explicitly authorizes one bounded GPU attempt, then scores saved answers, executes all six notebooks, runs the quality gate and archives verified outputs. See [the operator guide](docs/system_evaluation.md) for cost limits and recovery. This extension does not invalidate the completed component benchmark.\n\n## Reproduce and inspect")
           p.write_text(text)
           p = Path("notebooks/README.md")
           p.write_text(p.read_text() + "\n\n## Optional integrated evaluation\n\n[05 — Retrieved-evidence evaluation](05_end_to_end_system_evaluation.ipynb) explains the label-blind input design, actual measurement status, failure analysis and recovery. It can be viewed without a GPU. The measured component benchmark remains complete; the charge-gated extension is operated through [the normal finish command](../docs/system_evaluation.md).\n")
@@ -81,7 +85,7 @@ jobs:
           subprocess.run(["git", "add", "README.md", "notebooks", "docs", "tests", ".github/workflows/ci.yml"], check=True)
           if git("diff", "--name-only", "--diff-filter=U"):
               raise SystemExit("Unresolved conflicts remain")
-          subprocess.run(["git", "commit", "-m", "Merge completed portfolio presentation with optional retrieved-evidence integration", "-m", "Preserve the measured results-first overview and all concurrent regression tests. Add the independently scoped sixth notebook and explicit execution path without reopening the completed component benchmark. Preserve both branches' ancestry and restore normal read-only CI."], check=True)
+          subprocess.run(["git", "commit", "-m", "Merge completed portfolio presentation with optional retrieved-evidence integration", "-m", "Preserve the measured results-first overview and all concurrent regression tests. Use metric-consistent percentage formatting. Add the independently scoped sixth notebook and execution path without reopening the completed component benchmark. Preserve both branches' ancestry and restore normal read-only CI."], check=True)
           PY
 
       - name: Install uv
