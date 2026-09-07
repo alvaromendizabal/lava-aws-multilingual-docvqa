@@ -1,0 +1,9 @@
+{
+  "analysis_inputs_sha256": "0fd7409317db8ea8089a6395b1778131c0846e711e2cf2de4179061775acc925",
+  "code_revision": "9d2e20b63e0e1ab5812d49429a96a7e9369fce2d",
+  "executed_code_cells": 3,
+  "notebook": "00_reproducibility_and_protocol.ipynb",
+  "output_sha256": "e4180678e707f19be5014ffc5b8ef05428a969fdb977e3a9eeddf34a4a0077a9",
+  "schema_version": 2,
+  "source_sha256": "c262b5c0f14b19b63c11c61712a4ac55ec7c4d5070b46c9e1308088e89e033d9"
+}

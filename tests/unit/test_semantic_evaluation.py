@@ -383,11 +383,17 @@ def test_permission_errors_are_not_cache_misses(monkeypatch):
         objects(client).read("one.json")
 
 
-def test_execution_notebook_runs_from_notebook_directory(monkeypatch):
+def test_execution_notebook_runs_from_notebook_directory(monkeypatch, tmp_path):
     tables = []
     monkeypatch.chdir(ROOT / "notebooks")
     monkeypatch.setattr("IPython.display.display", tables.append)
-    runpy.run_path(str(ROOT / "notebooks/02_verified_gpu_execution.py"))
+    import jupytext
+    import nbformat
+
+    notebook = nbformat.read(ROOT / "notebooks/02_verified_gpu_execution.ipynb", 4)
+    source = tmp_path / "notebook.py"
+    source.write_text(jupytext.writes(notebook, fmt="py:percent"))
+    runpy.run_path(str(source))
     html = tables[0].data
     assert "Qwen3.5 · 4B" in html and "Qwen3.5 · 9B" in html
     assert html.count("16 / 16") >= 2

@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 _FORBIDDEN = re.compile(
-    r"(repair|repaired|fixed)",
+    r"repair(?:ed)?|fixed|(?:^|[_\-.])fix(?:[_\-.]|$)",
     flags=re.IGNORECASE,
 )
 
@@ -14,6 +14,8 @@ _PROJECT_AREAS = (
     "pipelines",
     "configs",
     "tests",
+    "notebooks",
+    "docs",
 )
 
 

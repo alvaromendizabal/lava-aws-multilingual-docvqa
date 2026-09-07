@@ -76,38 +76,25 @@ resume command; an active job should be monitored, not duplicated.
 
 ## Read the process in notebooks
 
-- [02 — Verified GPU execution](../notebooks/02_verified_gpu_execution.ipynb):
-  milestones, cloud phases, recovery and commands.
-- [03 — Model comparison and cost](../notebooks/03_model_scaling_and_cost.ipynb):
-  eight steps from coverage through metric interpretation to the next decision.
-
-The notebooks run offline against verified public aggregates. Each code stage
-emits UTC/elapsed-time events and a heartbeat if it takes longer than 15 seconds.
-Tests execute both complete notebooks in fresh Linux IPC kernels, verify their
-completion events, and ensure canonical source files are unchanged. Executed
-outputs are retained separately on EBS and S3; Git keeps clean paired sources.
-
-To retain executed notebooks locally with per-notebook commit manifests:
+All five executed notebooks live in [notebooks/](../notebooks/README.md).
+Read 00 through 04 to understand the data, design, verified execution, model
+comparison, and retrieval results. Each runs independently against local public
+aggregates. It creates no GPU job and repeats no model inference.
 
 ```bash
-uv run --frozen python scripts/execute_notebook_smoke.py \
-  notebooks/02_verified_gpu_execution.ipynb \
-  notebooks/03_model_scaling_and_cost.ipynb \
-  --output-dir artifacts/notebook_runs/reader_comparison
+make notebooks
 ```
 
-Rerunning the same command verifies hashes and reuses completed notebooks. If
-code, data or source notebooks change, choose a new run directory; old results
-are preserved. An interrupted run reuses completed notebooks and executes the
-remaining ones. The command records UTC stages and total time in `events.jsonl`.
-The `smoke` name here refers to notebook execution testing, not a one-question
-model evaluation. Archive the entire run directory to the approved S3 artifact
-prefix; local persistence alone does not protect against deleting a Studio space.
+The command publishes results directly to the canonical notebook files and
+records source, input, and output hashes in `reports/notebook_execution/`.
+Current publications are reused even in a fresh clone. Changed inputs execute
+into immutable staging before publication; failures preserve previous outputs,
+and interrupted publication resumes without repeating completed execution.
+UTC stage events, progress, total time, and heartbeats are recorded under
+`artifacts/notebook_runs/`. Git retains the reviewed outputs in `notebooks/`.
+The former duplicate notebook folder and paired Python files are removed.
 
-
-Reviewed execution snapshots are published under `reports/notebooks/` with the
-same normal filenames. Git retains their outputs using a path-specific attribute;
-source notebooks under `notebooks/` remain output-free. Publication tests require
-matching source, input and output hashes, complete execution and no error/stderr
-outputs. Do not edit snapshots to change results: execute the canonical source
-again after the inputs change, then publish the newly verified files and manifests.
+For a separate private execution archive, the existing runner also supports
+`--output-dir artifacts/notebook_runs/<attempt>`. Archive important private
+artifacts to the approved S3 prefix and verify read-back before removing a
+working copy. Completed GPU responses and checkpoints already persist in S3.

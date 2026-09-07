@@ -92,7 +92,7 @@ from pinned versions if their local copies disappear or fail verification.
 
 The CPU process ends if Studio stops. S3 checkpoints survive; restarting the same
 command restores completed work. Longer GPU jobs use SageMaker's independent job
-lifecycle. The [executed notebook](../reports/notebooks/04_evidence_retrieval.ipynb)
+lifecycle. The [executed notebook](../notebooks/04_evidence_retrieval.ipynb)
 can be viewed without running either workload.
 
 ## Next experiment
