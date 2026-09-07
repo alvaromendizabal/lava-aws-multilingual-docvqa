@@ -40,7 +40,7 @@ Semantic scores are now independently evaluated from their saved answers:
 | 9B | **80.15%** | 93.90% | **87.02%** |
 | 27B NF4 | **70.98%** | 89.73% | **80.36%** |
 
-The pinned CPU judge passed all **28 public controls**. Scoring both pilots took
+The pinned CPU judge passed all **28 public controls**. Scoring the 4B and 9B pilots took
 **65.13 seconds** on the existing Studio CPU; a second run took **7.71 seconds**,
 reused all **129 decision requests**, and loaded no model. See the
 [real-model validation and resume evidence](reports/oracle_reader/judge_validation.json).

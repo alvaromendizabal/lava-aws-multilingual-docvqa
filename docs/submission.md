@@ -39,7 +39,8 @@ review those before adding or distributing external training material.
    baseline. This measures the performance lost when evidence must be found.
 4. Freeze one complete inference configuration, generate all 624 test predictions
    with durable per-question checkpoints, and measure complete runtime and GPU
-   memory. Preserve the existing 4B and 9B experiments. A 27B comparison is optional.
+   memory. Preserve all three completed pilots. The 27B comparison is scored;
+   9B remains the provisional reader on this small diagnostic set.
 5. Build and validate the CSV below, confirm authenticated late-submission
    availability, and upload the reviewed file. No upload is performed by this code.
 
