@@ -1,498 +1,99 @@
-# Oracle-reader evaluation and recovery
-
-## Operator steps: Hugging Face login and saved-answer scoring
-
-No Claude account, Claude installation, or Claude API key is used by this project.
-The Hugging Face CLI may print `hf skills add -g --claude`. This is an optional
-AI-assistant skill suggestion; ignore it. The login menu that follows belongs to
-**Hugging Face**. See the [official CLI guide](https://huggingface.co/docs/huggingface_hub/en/guides/cli#hf-auth-login).
-
-GitHub stores reviewed source and reports. AWS runs readers and retains private
-results in S3. Hugging Face provides model files, including Google's Gemma judge.
-Linking these services to ChatGPT does not automatically authenticate the CLI
-running inside your separate SageMaker terminal. Model-term acceptance is also
-separate from signing in.
-
-Perform these steps in order. Paste an interactive login command **by itself**.
-
-1. If the terminal is currently showing the login menu, leave **Log in with your
-   browser** selected and press **Enter**. Open the Hugging Face URL it prints in
-   your desktop browser, sign in, enter the displayed one-time code if requested,
-   and approve the device authorization. Wait for **Login successful** and the
-   ordinary `sagemaker-user@...$` prompt. If a previously pasted `make evaluate`
-   starts automatically on the old 4 GiB space, press **Ctrl+C** to stop the CPU
-   evaluation before proceeding. Completed reader answers remain in S3.
-
-2. In that same browser account, open
-   [google/gemma-3-1b-it](https://huggingface.co/google/gemma-3-1b-it). If prompted,
-   review and accept Google's terms or request access. Continue once access is
-   granted. You do not need another model-provider account.
-
-3. The verified `lava-dev` app was on **ml.t3.medium (4 GiB)** on 2026-09-06.
-   This is insufficient headroom for the pinned float32 CPU judge. Save notebook
-   files, open **SageMaker Studio > JupyterLab > lava-dev**, choose **Stop space**,
-   wait until stopped, select **ml.m7i.2xlarge (8 vCPUs / 32 GiB)**, and choose
-   **Run space**, then **Open JupyterLab**. Review the displayed CPU price before
-   starting it. Keep the existing space/storage and do not delete them: its EBS
-   volume persists across instance changes. This is a billed CPU size change,
-   not a GPU job. See the [AWS JupyterLab guide](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-updated-jl-user-guide.html).
-
-4. At an idle terminal prompt, update the merged main branch. This preserves
-   original experiment commits in Git history. Do not use force/reset commands
-   to discard local work if Git reports uncommitted changes.
-
-   ```bash
-   cd "$HOME/lava-aws-multilingual-docvqa"
-   git fetch origin &&
-   git switch main &&
-   git merge --ff-only origin/main
-   ```
-
-5. If login has not been completed, run just this command, then complete step 1:
-
-   ```bash
-   uv run --frozen --group judge hf auth login
-   ```
-
-6. Check memory, the terminal's account and the pinned Gemma resource. This downloads no
-   weights, reads no private predictions, and creates no AWS resources:
-
-   ```bash
-   make evaluation-check
-   ```
-
-   Continue only after **SEMANTIC_JUDGE_ACCESS_VERIFIED**. The output identifies
-   available RAM, the account and pinned model revision. A memory/login/access/network problem returns
-   a nonzero exit code with a specific next action, not an ambiguous success.
-
-7. Evaluate the saved complete pilots:
-
-   ```bash
-   make evaluate
-   ```
-
-   Expect source verification, `judge.load` heartbeats, acceptance probes, and
-   `judge.decision.completed` events with new/reused counts. CPU model loading or
-   judging can take time; a heartbeat is a liveness signal, not a quality score.
-   Completion is **SAVED_PREDICTIONS_EVALUATION_COMPLETED**. This creates no new
-   reader GPU job. Re-running the same command reuses compatible S3 decisions.
-
-8. Open `notebooks/03_model_scaling_and_cost.ipynb` in JupyterLab and select
-   **Run > Run All Cells**, or open the generated
-   `reports/oracle_reader/evaluation/index.html`. Notebook 02 shows current
-   coverage; notebook 03 embeds the report. The semantic score remains a clearly
-   labeled local implementation of the published formulas.
-
-Each evaluation/check invocation prints its log path under
-`artifacts/semantic_judge/runtime/<attempt>/events.jsonl`. These UTF-8 logs append
-UTC timestamps, stage durations, total elapsed time, heartbeats, and progress;
-each event is flushed to disk before it is printed. Keep these private workspace
-logs with the run. Accepted answer-pair decisions are separately durable in S3,
-including after loss of the local workspace. CPU judging runs on the current
-host: if that host stops, rerun the command to resume.
-
-The memory gate requires at least 8 GiB currently available, bounded by Linux
-container limits as well as host RAM. It repeats immediately before uncached
-model loading; the threshold is conservative operating headroom, not a measured
-peak-memory claim. Fully cached judge decisions can still be reused without
-loading the model. The authorized Studio host completed model loading, all 28
-controls, both full evaluations, and a second run using only cached decisions on
-2026-09-06. Runtime artifacts remain available in S3.
-
-After successful scoring, review and commit only public result aggregates and
-the report on a results branch, run `make quality`, and merge through a reviewed
-pull request. Questions, answers, credentials, weights, and logs remain outside
-Git. A new implementation or judge contract uses a separate scoring cache.
-
-## Judge validation and notebook update recovery
-
-The 2026-09-06 operator run passed access checks with 28.16 GiB available, loaded
-Gemma successfully, and stopped because the original prompt judged `1000` and
-`1001` equivalent. This was a judge-quality failure. The earlier gated-model 403
-was resolved by the operator; repeated login or reader GPU runs cannot correct
-an inaccurate judge.
-
-The revised prompt explicitly treats the ground truth as authoritative and grades
-a quoted submitted answer against it. It preserves the pinned Gemma revision,
-float32 CPU runtime, strict YES/NO parsing, and all published score formulas.
-No probe answers are inserted into the prompt. The original eight controls remain;
-20 additional controls cover decimal precision, dates, opposite meanings, empty
-answers, multilingual names and negation, formatting, and injected instructions.
-All 28 passed on the real cached model in `lava-dev`; see the
-[validation evidence](../reports/oracle_reader/judge_validation.json). These are public development
-controls, not a held-out estimate of general judge accuracy or organizer parity.
-
-Every acceptance run evaluates all controls, logs expected/observed results with
-UTC timestamps, and saves a content-addressed report in S3 before reporting pass
-or failure. Malformed output is not converted to a negative vote. A rejection
-exits with status 3 and `SEMANTIC_JUDGE_REJECTED`; saved reader answers remain valid.
-The changed scoring contract isolates earlier decisions, including the incorrect
-old numeric decision. Compatible decisions within the new contract are reusable.
-
-If an executed notebook blocks `git switch main`, first copy its exact bytes to
-`artifacts/notebook_runs/<UTC-attempt>/`, upload the copy to the private S3 run
-prefix, and verify the checksum. A Git stash alone is **not an output backup**:
-the notebook clean filter strips outputs even when stashing. Preserve source
-edits with a named stash and reapply those edits deliberately after updating.
-Only restore the canonical notebook after verifying that its source is unchanged
-and its executed copy is safely preserved.
-
-The Studio checkout's old filter also renumbered cell IDs, making a freshly
-restored notebook appear modified. Preserve IDs while continuing to strip outputs:
-
-```bash
-git config --local filter.nbstripout.clean 'uv run --frozen nbstripout --keep-id'
-git config --local filter.nbstripout.smudge cat
-git config --local filter.nbstripout.required true
-git diff -- notebooks/02_verified_gpu_execution.ipynb
-```
-
-On 2026-09-06 this configuration removed the false ID-only difference in Studio.
-A regression verifies preserved IDs and source, removed outputs and execution
-counts, and an idempotent second clean pass. Do not paste independent update
-commands that continue after a failed switch. The `&&` chain in step 4 stops at
-the first error. Never use `reset --hard` to resolve this. Notebook outputs do
-not imply that reader inference needs repeating; the paired public sources stay
-clean and reviewable.
-
-## Verified reader results
-
-The **4B and 9B complete pilots are verified**: each covers the same 16 questions
-across five documents, with 100% valid output and no parser errors. Their
-normalized-exact diagnostics are:
-
-| Measure | 4B | 9B |
-| --- | ---: | ---: |
-| Question-average answer score | 38.125% | 45.774% |
-| Document-average answer score | 43.833% | 39.714% |
-| Evidence-page F1 (oracle pages supplied) | 97.024% | 93.899% |
-| Exact evidence-page set | 87.50% | 81.25% |
-| Normalized-exact full-credit answers | 18.75% | 31.25% |
-| Generation p50 / p95 | 5.286 / 8.910 s | 3.422 / 5.157 s |
-| Mean generation time | 5.517 s | 3.610 s |
-| Peak allocated GPU memory | 10.951 GiB | 20.149 GiB |
-| AWS billable time | 6m 20s | 6m 35s |
-| Capacity wait | 57s | 26m 06s |
-| Submission to completion | 7m 18s | 32m 42s |
-
-The last row measures AWS creation to completion, excluding local preparation and
-monitor polling. Job lifecycle timestamps and phase durations are retained in each
-full run's public synchronization manifest. Missing legacy telemetry is shown as
-unknown. Generation time excludes model loading and uses different GPUs, so it is
-not an isolated model-speed comparison. Formatting validity and answer quality
-measure different things. Do not rerun either completed experiment.
-
-Run: `lava-oracle-qwen35-4b-fused-direct-20260906180137`.
-Code: `a4a5b8b1271cef96866f6c16134670cac78867d7`.
-Public-summary SHA-256: `ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926`.
-
-9B run: `lava-oracle-qwen35-9b-fused-direct-20260906190503`.
-Code: `5fcc7a35ac39c7223810004042b055abc79bf14b`.
-Public-summary SHA-256: `dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc`.
-
-9B improves two documents, ties two, and regresses on one. Its question-average
-gain is 7.65 percentage points, but its document-average change is −4.12 points.
-The exploratory 95% document-bootstrap interval is −43.17 to +25.98 points; the
-exact paired two-sided sign-flip p-value is 1.000. These results do not select a
-winning model. The dashboard presents signed document deltas, a numeric table,
-both weighting schemes, and uncertainty directly.
-
-## Completed local semantic evaluation
-
-| Reader | Semantic VQA / question | Semantic VQA / document | Grounding F1 | Local LAVA overall |
-| --- | ---: | ---: | ---: | ---: |
-| 4B | 50.625% | 53.833% | 97.024% | 73.824% |
-| 9B | 80.149% | 76.381% | 93.899% | 87.024% |
-| 27B NF4 | 70.982% | 76.548% | 89.732% | 80.357% |
-
-All three rows cover the same 16 questions and five documents. The combined column is
-question-weighted, as specified by LAVA. These are local published-formula scores,
-not organizer-server results. The judge contract is
-`6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc`.
-Original reader hashes are unchanged. Public semantic summaries include per-format,
-per-language, and per-document results with exact source and judge provenance.
-
-9B improves semantic VQA on three documents, ties one, and regresses on doc-05,
-the sole Vietnamese question. The semantic and normalized-exact comparisons answer
-different evaluation questions; the dashboard labels them separately. The small
-pilot and oracle evidence setting do not support broad performance claims.
-
-## Next experiment
-
-Semantic evaluation of the **already saved** 4B, 9B and 27B answers is complete.
-Their GPU inference and saved-answer scoring are verified. Notebook 02 and the
-report show 16/16 coverage for each, separate from historical one-question smokes.
-No reader rerun is required to add semantic scores.
-
-One deployed reader is sufficient. The model sizes are comparison candidates, not
-three required production models or three training stages. The 4B and 9B candidates
-are Qwen3.5 models; the configured 27B candidate is Qwen3.8 with NF4 quantization.
-The last comparison therefore changes model generation and numerical precision as
-well as parameter count. It cannot isolate parameter scaling alone.
-
-**Keep 9B as the provisional reader.** The completed 27B pilot is 6.67 percentage
-points lower on question-average local LAVA overall and 1.58 points lower with
-equal document weights. It improves one PDF, ties two and regresses on two.
-One invalid abstention remains a model failure; all 16 questions remain in the
-denominator. 27B improves unordered-list answer credit and the sole Vietnamese
-example, but five PDFs cannot establish held-out superiority or language strength.
-
-The completed job reused `qwen38_27b_nf4_g5_fused_direct` on `ml.g5.2xlarge`,
-the configuration that passed its smoke. It took 1010.753 seconds wall time and
-962 billable seconds, approximately $0.405 in training compute at the dated rate.
-Saved-answer semantic scoring took 18.33 seconds, with 15 new judge decisions and
-53 reused. The original 4B and 9B inference did not need to run again.
-
-The full-document text-retrieval baseline is now evaluated in
-[Notebook 04](../reports/notebooks/04_evidence_retrieval.ipynb). The next research
-step is 9B reader evaluation with retrieved pages. Analyze raw failures privately against source
-pages and reference answers, distinguishing reading, evidence selection and
-equivalent representations. Keep the frozen pilot and judge contract unchanged.
-Use representative documents and languages with a document-isolated held-out
-split when expanding evaluation. Follow the [submission roadmap](submission.md)
-for complete test inference and organizer runtime verification.
-
-From the project checkout in SageMaker Studio:
-
-```bash
-make quality
-make report
-```
-
-These commands start no GPU. Open `reports/oracle_reader/evaluation/index.html`
-or the [executed comparison notebook](../reports/notebooks/03_model_scaling_and_cost.ipynb)
-to inspect the completed scores, runtime, memory, coverage and provenance.
-A second 27B hardware run is unnecessary for the current reader decision.
-
-## Published metric and saved-answer evaluation
-
-The [LAVA organizers](https://lava-workshop.github.io/#evaluation) define:
-
-- String/number answers: binary semantic equivalence judged by Gemma-3 1B.
-- Unordered lists: F1 after semantic item matching without double-counting.
-- Ordered lists: semantic longest-common-subsequence length divided by the longer list.
-- Grounding: exact F1 between predicted and reference evidence-page sets.
-- Overall: average `(answer score + grounding F1) / 2` over questions.
-
-Document averages and language/format slices supplement the question-average score.
-The report also includes evidence precision, recall and exact page-set rate;
-normalized-exact full/zero-credit answer rates; schema validity and abstention;
-generation p50/p95, throughput, GPU memory, provisioning wait and billable duration.
-These are distinct measurements, not interchangeable definitions of accuracy.
-
-`scripts/evaluate_oracle_reader.py` audits each completed job, then scores the exact
-saved private records and pinned reference manifest. Its snapshot prevents scoring
-different bytes from those verified. Evidence comes from the reader's **predicted
-pages**, never the constant gold-page contribution used by the old oracle-fixed
-diagnostic. Since the reader receives oracle pages, this still does not evaluate
-retrieval or establish end-to-end challenge performance.
-
-```bash
-make evaluation-preview
-make metrics
-```
-
-Preview creates no compute and reads no private predictions. Diagnostics read
-existing S3 results and update public aggregate metrics. `make evaluate` runs the
-pinned Gemma-3 1B judge on the current machine's CPU; it creates no SageMaker job.
-S3 requests and the existing host retain their normal costs. The `judge`
-dependency group uses the official PyTorch CPU wheel index and is included in the
-default development environment so ordinary commands do not remove its packages.
-GPU container dependencies remain unchanged.
-
-Google requires accepting the [Gemma terms](https://huggingface.co/google/gemma-3-1b-it)
-and authenticating an authorized Hugging Face account. Configure access locally;
-never paste a token into ChatGPT, a notebook, or Git:
-
-Run `uv run --frozen --group judge hf auth login` by itself and finish browser
-authorization. Then run `make evaluation-check`, followed by `make evaluate`
-after the access check succeeds. The operator steps above explain each prompt.
-
-The operator resolved model access and resized `lava-dev` before real-model
-validation. On 2026-09-06 all 28 public controls and both 16-question evaluations
-passed on the existing CPU host. A second run reused all 129 decision requests
-with no model loading or inference. These public development controls are
-independent of the private pilot answers; they are not proof of broad judge quality. The exact
-organizer prompt and decoding runtime are not published. The dashboard labels
-results **local published-formula scores**, with `official_server_score: null`.
-An organizer-server score requires an actual organizer evaluation result.
-
-The judge contract fingerprints the model/tokenizer revisions, prompt, probes,
-runtime lock and metric sources. Every YES/NO decision is checksummed and stored
-privately with S3 conditional writes before progress is reported. Cache keys bind
-the contract, language and exact answer pair. Both positive and negative decisions
-are reusable across model candidates; ambiguous output, corruption and conflicting
-writes fail closed. Re-running `make evaluate` reuses completed decisions and
-continues only missing work. Changed contracts use a separate cache; old results
-remain in S3 and are labeled stale locally until rescored. No reader inference is
-repeated. The same original reader summary hashes remain unchanged.
-
-Evaluation emits UTC timestamps, stage and total elapsed time, 15-second
-heartbeats, and new/reused decision counts. CPU evaluation runs in the current
-process: shutting down that host stops it. Rerun the command to resume from S3.
-Accepted SageMaker GPU jobs have the separate session-independent behavior below.
-After scoring, review and commit aggregate result files and the rebuilt report.
-
-## Durable recovery
-
-For new benchmark jobs, every completed question is saved privately to S3 as one
-immutable object containing its exact raw generation, parsed record, scores, and
-compatibility contract. S3 SHA-256 checksums and conditional writes protect those
-objects. The `question.completed` event follows successful durable persistence.
-Records also remain in a private atomic local checkpoint.
-
-UTC timestamps, stage duration, total elapsed time, question counts, and heartbeats
-remain visible during inference, checkpoint writes, monitoring, and verification.
-New and reused question counts appear in the final public summary. Runtime telemetry
-on a reused answer describes its original inference, not the time spent restoring
-it. SageMaker billable duration refers to each attempt separately.
-
-If only the terminal disconnects, the cloud job may still be running. Reattach:
-
-```bash
-make monitor JOB=your-training-job-name
-```
-
-Once AWS accepts a job, execution is independent of the terminal, browser, or
-ChatGPT session. Signing out does not cancel it. Server-side runtime and pending
-limits still apply; logging and S3 checkpoint writes continue in the cloud.
-Local verification and report synchronization can be run when the operator returns.
-The current runner still permits only one active LAVA job. Optional two-job
-concurrency needs separate state isolation, duplicate submission protection, quota
-checks, combined cost review, and explicit tests; it is not needed to preserve
-either completed result.
-
-If AWS reports **Failed** or **Stopped**, keep the exact source Git checkout and
-preview recovery before creating replacement compute:
-
-```bash
-make benchmark-resume-preview MODEL=qwen35_9b_fused_direct JOB=your-failed-job-name
-make benchmark-resume MODEL=qwen35_9b_fused_direct JOB=your-failed-job-name CHARGES=YES
-```
-
-Recovery validates checkpoint checksums, question identity, code/model revisions,
-prompt, data, generation configuration, hardware, parsed answers, and recomputed
-scores before submission. The GPU process independently repeats compatibility
-checks. A new attempt has a distinct output prefix; prior outputs are preserved.
-An immutable parent link retains earlier checkpoints even if recovery itself is
-interrupted while copying saved work. Cyclic ancestry and conflicting answers are
-rejected. All parent attempts must remain available until evaluation is complete.
-
-Only unfinished questions run inference again. Invalid model outputs and
-abstentions are completed observations and are reused too. A question interrupted
-before its S3 checkpoint is acknowledged may need to run again. Replacement compute
-must provision a new instance and reload weights if any inference remains. If all
-16 answers were already checkpointed, the reader is never constructed, although
-the current resume command still provisions a billed job to finalize and verify
-its SageMaker artifact. Preview shows the reusable count before that paid choice.
-
-Automatic reuse is deliberately limited to unchanged code and deterministic
-benchmark decoding. Changed implementations must not mix old and new predictions.
-Jobs created before this checkpoint implementation cannot acquire resumability
-retroactively. The successful 4B run needs only synchronization, which is complete.
-
-## Verify, synchronize, and rebuild
-
-Submission already verifies completed outputs. Synchronization repeats verification
-before writing public aggregates:
-
-```bash
-make sync JOB=your-completed-job-name
-make report
-```
-
-Expected markers: `ORACLE_READER_BENCHMARK_VERIFIED`,
-`ORACLE_READER_RESULTS_SYNCED`, and `ORACLE_READER_REPORT_VERIFIED`.
-Review and commit result changes before another paid experiment. Public reports
-contain aggregates and hashes; private questions, answers, images, and generations
-remain outside Git. The normal runner is `scripts/run_oracle_reader.py`; corrections
-are made in canonical sources with no duplicate repair or fixed variants.
-
-## Interpretation
-
-- Report both question-average and document-average scores. Questions from one
-  document are related observations, not independent experimental units.
-- The set contains 15 Japanese questions and one Vietnamese question. Language and
-  document identity are confounded; one example cannot establish Vietnamese quality.
-- List answers can receive partial credit. These are normalized-exact diagnostics,
-  not organizer-server semantic scores. Numeric answers scored zero on this 4B run;
-  diagnosis must distinguish model errors from equivalent answer representations.
-- Oracle-fixed overall diagnostics include a constant grounding contribution.
-  Interpret answer quality separately. Retrieval and reranking are not evaluated here.
-- Compatible complete runs receive document-paired deltas, exploratory cluster
-  bootstrap intervals, and exact sign-flip p-values. With five nonzero document
-  deltas, the smallest two-sided p-value is 0.0625; this pilot cannot support a 5%
-  significance claim or model promotion by itself.
-- Hardware, quantization, startup overhead, retries, and per-question generation
-  time must be reported separately. Billable seconds are not dollar costs. Account
-  for failed and resumed attempts when calculating the cost of an experiment.
-
-## Validation
-
-On 2026-09-06, the submission gate passed all 373 tests and Mypy across 67 source
-files in 94 seconds in Linux CI. The restricted scratch sandbox passed 371 tests
-and skipped the two IPC kernel tests because it prohibits local sockets; both
-real-kernel tests passed in CI and in SageMaker Studio. The canonical
-`make quality` gate runs Ruff, Mypy, Pytest, shell syntax, compilation,
-notebook hygiene, and Git whitespace checks with timestamps, heartbeats, and total
-duration. Explicit synthetic interruption tests cover multiple restarts, disk loss,
-interruption during restoration, corrupt or incompatible checkpoints, rejected
-writes, immutable idempotent writes, parser failures, and complete artifact audits.
-Tests use injected model and cloud adapters; they do not claim GPU execution.
-Checks also cover UTC lifecycle arithmetic and invalid timestamps,
-missing historical telemetry, the verified mixed 4B/9B result, accessible signed
-chart geometry, and HTML escaping. Two presentation
-regressions verify that current semantic results drive semantic charts and stale
-results retain diagnostic labels.
-The notebook-filter regression preserves IDs while removing execution output.
-The semantic-analysis and submission update adds 67 tests. These cover paired
-document comparisons, additive score gaps, incompatible or invalid metrics,
-model-free report imports, and the strict, resumable CSV export described in
-[the submission guide](submission.md). Synthetic CSV tests verify the exporter;
-they do not establish test-set model quality or competition eligibility.
-Two regressions verify local error logging when archival fails, including
-preservation of an earlier input error. Two real-kernel tests verify Linux IPC
-transport and socket cleanup after successful and failed notebook cells. The
-headless runner keeps canonical notebook files unchanged and propagates errors.
-Three deterministic concurrency regressions delay a heartbeat until after stage
-shutdown and cover successful, failed and interrupted stages. They fail against
-the earlier logger and pass with serialized terminal events. Heartbeat output
-cannot appear after a stage's final completion or failure event.
-The semantic evaluation stage adds 34 tests covering immutable decision reuse,
-negative decisions, rejected writes, ambiguous output, corruption, stale contracts,
-source hashes, actual predicted-page scoring, missing access, metric denominators,
-latency percentiles, and notebook execution from its own directory. A tiny Gemma
-model with synthetic weights exercises the real pinned CPU generation path; it
-does not validate pretrained semantic judgment quality. No gated weights are
-downloaded in CI.
-
-The operator-readiness update adds 25 tests covering terminal authentication,
-gated permissions, network failures, secret-safe error messages, metadata-only
-access checks, host and cgroup memory limits, pre-load memory rejection, persisted
-event logs, interruption, and type checking with a corrupt old SQLite cache.
-Mypy uses its supported file-cache backend; actual type errors still fail the gate.
-The operator resized `lava-dev` from `ml.t3.medium` to `ml.m7i.2xlarge`.
-The real canonical evaluator completed in 65.13 seconds, creating 82 unique
-Gemma decisions and reusing 47 requests across readers. A second evaluation
-completed in 7.71 seconds with 129 reused requests, zero new decisions, and no
-model loading. Both notebooks 02 and 03 executed in real Jupyter kernels in
-2.93 seconds total. No reader inference or new GPU job was required.
-
-The 4B and 9B runs are real AWS evidence. Each was independently checked against all
-16 downloaded raw generations and the pinned manifest before synchronizing its
-public summary. The completed 9B run also verifies all 16 immutable S3 question
-checkpoints against final records, raw text, and recomputed scores. This proves
-successful durable writes and readback on AWS. Recovery after interruption remains
-covered by explicit synthetic tests; it has not yet been exercised by deliberately
-interrupting a paid AWS job. No additional paid job was launched for this report.
-
-Notebook 03 supports offline report viewing. Both notebooks 02 and 03 executed
-successfully in real SageMaker Jupyter kernels after scoring. Public notebooks
-remain output-free and paired with reviewable Python sources. The generated HTML
-report is self-contained; its semantic charts use the current judge contract and
-its normalized-exact comparisons remain explicitly labeled. To execute the
-notebooks again in SageMaker Studio:
-
-```bash
-uv run --frozen python scripts/execute_notebook_smoke.py notebooks/02_verified_gpu_execution.ipynb notebooks/03_model_scaling_and_cost.ipynb
-```
+# Evaluation, notebooks, and recovery
+
+## Read the current project
+
+Start with [Notebook 00](../notebooks/00_reproducibility_and_protocol.ipynb) and continue through 04.
+The only canonical notebook folder is `notebooks/`. It includes verified outputs, so reading the project does not require cloud execution, another login, or another model run.
+
+The data audit, 4B/9B/27B oracle-reader pilots, and full-document retrieval pilot are complete. The next experiment is 9B inference using retrieved evidence. See the [remaining delivery milestones](../README.md#remaining-delivery-milestones).
+
+## Metric and interpretation
+
+The [published LAVA metric](https://lava-workshop.github.io/#evaluation) averages answer credit and evidence-page F1 for each question, then averages over questions. Scalar answers use semantic equivalence; ordered lists use semantic longest-common-subsequence credit; unordered lists use maximum one-to-one semantic matching F1.
+
+Our pinned Gemma-3 1B judge implements these formulas with a validated local prompt and deterministic float32 CPU inference. The organizer's exact prompt/runtime is unpublished. Local scores are labeled accordingly and are not represented as server-identical leaderboard results.
+
+| Reader | Semantic answer credit | Evidence-page F1 | Local LAVA overall |
+| --- | ---: | ---: | ---: |
+| 4B | 50.63% | 97.02% | 73.82% |
+| 9B | 80.15% | 93.90% | 87.02% |
+| 27B NF4 | 70.98% | 89.73% | 80.36% |
+
+All three pilots contain the same 16 questions and five PDFs with correct evidence supplied. 4B and 9B each produced 16 valid responses. 27B produced 15 valid responses; its contradictory abstention remains a counted model failure. The 27B candidate also differs in model generation, quantization, and hardware.
+
+Keep 9B provisional. Inspect question averages, equal-document averages, per-document effects, answer formats, language slices, validity, latency, memory, and cost together. Five PDFs provide limited evidence, and there is only one Vietnamese training question. Document-bootstrap intervals and exact paired sign-flip tests are exploratory. The frozen nested document-isolation protocol is a constraint for future tuning, not a claim that nested cross-validation has already been completed.
+
+The initial normalized-exact answer diagnostics remain available for comparison; they are not semantic LAVA scores. Reader citation F1 with oracle pages also does not measure retrieval. [Notebook 04](../notebooks/04_evidence_retrieval.ipynb) reports retrieval recall, all-evidence coverage, MRR, MAP, and nDCG separately.
+
+## Judge acceptance and provenance
+
+The current prompt passed all 28 public development controls, including numeric precision, dates, negation, multilingual names, answer formatting, and instruction-injection cases. These controls are not a held-out accuracy estimate. See [the real-model validation record](../reports/oracle_reader/judge_validation.json).
+
+Model checkpoint, revision, prompt, decoding, dependencies, input versions, and code hashes form the scoring contract. Saved decisions are immutable and verified on read-back. Changed scoring contracts use separate caches. Malformed judge output is an error rather than an automatic negative vote. A rejected judge leaves reader predictions intact.
+
+Source predictions, raw responses, reference answers, and judge decisions stay private. Public reports contain sanitized aggregates and provenance. Neither authentication tokens nor model weights belong in Git.
+
+## Canonical commands
+
+Run these from the repository root. Review each command's scope before using it.
+
+| Command | What it does |
+| --- | --- |
+| `make notebooks` | Verify/reuse or refresh all five canonical executed notebooks |
+| `make quality` | Explicit tests, lint, format, types, compilation, and publication integrity |
+| `make evaluation-preview` | Inspect the saved-answer evaluation plan without loading a model |
+| `make evaluation-check` | Verify CPU memory, terminal authentication, and pinned Gemma access |
+| `make metrics` | Recompute supporting diagnostics from verified saved predictions |
+| `make evaluate` | Judge compatible saved predictions on the current CPU, resuming S3 decisions |
+| `make retrieval-preview` | Inspect the retrieval configuration without private downloads |
+| `make retrieval-evaluate` | Resume full-document retrieval from S3 checkpoints |
+| `make submission-preview` | Inspect the submission contract |
+| `make submission-check` | Verify pinned test and template input files |
+
+Optional `JOB=<sagemaker-job-name>` narrows the applicable evaluator command. Existing scored pilots do not need another GPU run.
+
+GPU submission, monitoring, verification, and checkpoint resume are documented in [the reader execution guide](benchmark.md). `make submit` is an AWS reader-job command; it does not submit to Kaggle.
+
+## Notebook persistence
+
+The notebook itself is the editable source and the readable output. There are no paired Python notebook files or duplicate publication notebooks. Reusable implementation belongs in `src/lava/`.
+
+Each canonical notebook has a manifest under `reports/notebook_execution/`, binding its source content, analysis inputs, exact output bytes, executed-cell count, and execution commit. Source identity ignores output values and automatic kernel metadata while retaining code, markdown, cell IDs, and meaningful metadata.
+
+`make notebooks`:
+
+1. Verifies a matching canonical publication and reuses it without execution.
+2. If inputs changed, executes into a content-addressed staging directory.
+3. Requires complete successful execution with unchanged source content.
+4. Publishes the notebook atomically, then its completion manifest.
+5. Recovers from a publication interruption using the completed staging record.
+
+A failed refresh preserves the previous publication. Merging unchanged code does not invalidate analysis results merely because the commit SHA changed; implementation and data hashes govern reuse. Publication tests verify all five notebooks, privacy, complete execution, absence of error/stderr outputs, and the canonical folder layout.
+
+For a private standalone archive, `scripts/execute_notebooks.py` retains its `--output-dir artifacts/notebook_runs/<attempt>` interface. Runtime logs include UTC timestamps, total/stage time, progress, and heartbeats.
+
+## Updating a working copy
+
+Close the notebooks after saving intentional edits. Run Git from the project root and inspect its status before switching or merging. Preserve any meaningful local source or result changes first. Never use a blanket reset or deletion to resolve an update conflict.
+
+Canonical notebooks explicitly disable Git's output-stripping filter. If automatic Jupyter metadata makes a verified notebook appear modified, `make notebooks` restores its verified publication when the source and data are unchanged. If the source changed, it executes and publishes the changed analysis.
+
+The former validation checkouts and legacy bundles were archived with checksums and S3 read-back before removal. There is one active checkout at `/home/sagemaker-user/lava-aws-multilingual-docvqa`. You do not need to navigate into runtime artifacts to find notebooks.
+
+## Authentication when actually needed
+
+Viewing or refreshing public analysis notebooks needs no model-provider login. The existing Studio environment already completed authenticated scoring.
+
+On a new environment, `make evaluation-check` identifies missing access before CPU judging. If it reports missing Hugging Face authentication, run the interactive `hf auth login` command by itself and complete its browser/device flow. The same account must have access to [Gemma](https://huggingface.co/google/gemma-3-1b-it). No Claude account is used.
+
+GitHub, AWS, and Hugging Face connectors do not automatically configure a separate terminal's credentials. Use the check output to determine whether setup is needed; do not repeat login or recreate the Studio space after successful authentication.
+
+## Runtime and resumption boundaries
+
+Accepted SageMaker jobs continue independently of a terminal or browser. A monitor reconnects by job name. Replacement jobs still incur provisioning and model-loading time, even when completed question checkpoints are reused.
+
+CPU judging and retrieval run on the current host. If Studio stops, the process stops; completed S3 checkpoints remain. Restarting the same command repeats only unfinished or incompatible work. A heartbeat reports liveness, while completed/total counts report progress.
+
+Cloud runtime limits and capacity constraints still apply. Two-job concurrent orchestration remains optional future work; the current job guard allows one active LAVA reader job.
+
+[Model comparison](../notebooks/03_model_scaling_and_cost.ipynb) · [Retrieval](retrieval.md) · [Submission](submission.md)

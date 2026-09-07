@@ -44,7 +44,7 @@ stop:
 	uv run --frozen python scripts/stop_oracle_reader_job.py --job-name $(JOB) --confirm YES
 
 notebooks:
-	uv run --frozen jupytext --sync notebooks/*.py
+	uv run --frozen python scripts/execute_notebooks.py --publish
 
 .PHONY: benchmark-preflight benchmark-preview benchmark-submit report
 benchmark-preflight:

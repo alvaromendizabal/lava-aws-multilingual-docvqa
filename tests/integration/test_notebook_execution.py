@@ -11,6 +11,8 @@ import nbformat
 import pytest
 from nbclient.exceptions import CellExecutionError
 
+from lava.notebook_execution import NOTEBOOK_STEMS
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -36,7 +38,7 @@ def test_real_notebook_kernel_uses_ipc_and_cleans_up(tmp_path, capfd, fail):
     notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_code_cell(source)])
     nbformat.write(notebook, path)
     original = path.read_bytes()
-    execute = runpy.run_path(str(ROOT / "scripts/execute_notebook_smoke.py"))["execute_notebook"]
+    execute = runpy.run_path(str(ROOT / "scripts/execute_notebooks.py"))["execute_notebook"]
     if fail:
         with pytest.raises(CellExecutionError, match="intentional regression test"):
             execute(path, tmp_path, 30, kernel_name="python3")
@@ -52,9 +54,7 @@ def test_real_notebook_kernel_uses_ipc_and_cleans_up(tmp_path, capfd, fail):
 
 
 @pytest.mark.skipif(os.name != "posix", reason="Linux notebook runtime")
-@pytest.mark.parametrize(
-    "stem", ["02_verified_gpu_execution", "03_model_scaling_and_cost", "04_evidence_retrieval"]
-)
+@pytest.mark.parametrize("stem", NOTEBOOK_STEMS)
 def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
     """Run the actual employer-facing notebooks and verify completed stage evidence."""
     import json
@@ -66,7 +66,7 @@ def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
         pytest.skip("Execution sandbox prohibits local IPC sockets; exercised in Linux CI")
     path = ROOT / "notebooks" / f"{stem}.ipynb"
     original = path.read_bytes()
-    execute = runpy.run_path(str(ROOT / "scripts/execute_notebook_smoke.py"))["execute_notebook"]
+    execute = runpy.run_path(str(ROOT / "scripts/execute_notebooks.py"))["execute_notebook"]
     result = execute(path, ROOT, 90, kernel_name="python3")
     code = [cell for cell in result.cells if cell.cell_type == "code"]
     assert [cell.execution_count for cell in code] == list(range(1, len(code) + 1))
@@ -86,10 +86,12 @@ def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
     html_outputs = [
         output.data["text/html"] for output in outputs if "text/html" in output.get("data", {})
     ]
-    expected = (
-        "Full-document retrieval evaluated"
-        if stem == "04_evidence_retrieval"
-        else "Full pilot scored"
-    )
+    expected = {
+        "00": "Data audit complete",
+        "01": "Three reader pilots scored",
+        "02": "Full pilot scored",
+        "03": "Full pilot scored",
+        "04": "Full-document retrieval evaluated",
+    }[stem[:2]]
     assert any(expected in text for text in html_outputs)
     assert path.read_bytes() == original

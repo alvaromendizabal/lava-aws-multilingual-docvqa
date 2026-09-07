@@ -21,6 +21,7 @@ LEGACY_PATHS = (
     "VERIFICATION.md",
     "tests/unit/test_phase5b_notebook_hygiene.py",
     "tests/unit/test_phase5c_source_contract.py",
+    "scripts/execute_notebook_smoke.py",
 )
 
 
@@ -40,6 +41,7 @@ def test_public_workflow_has_one_canonical_interface() -> None:
         "scripts/sync_oracle_reader_results.py",
         "scripts/stop_oracle_reader_job.py",
         "scripts/validate_public_notebooks.py",
+        "scripts/execute_notebooks.py",
     )
     for relative in required:
         assert (ROOT / relative).is_file(), relative
@@ -66,3 +68,27 @@ def test_gitignore_excludes_python_runtime_cache() -> None:
     ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "__pycache__/" in ignore
     assert "*.py[cod]" in ignore
+
+
+def test_empty_placeholder_capabilities_are_not_advertised_as_implemented() -> None:
+    removed = (
+        "app/.gitkeep",
+        "docker/.gitkeep",
+        "infra/terraform/.gitkeep",
+        "src/lava/agents/__init__.py",
+        "src/lava/models/__init__.py",
+        "src/lava/reranking/__init__.py",
+        "src/lava/serving/__init__.py",
+    )
+    tracked = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
+    assert not set(removed).intersection(tracked)
+
+
+def test_project_entrance_links_every_canonical_notebook_in_order() -> None:
+    from lava.notebook_execution import NOTEBOOK_STEMS
+
+    readme = (ROOT / "README.md").read_text()
+    positions = [readme.index(f"notebooks/{stem}.ipynb") for stem in NOTEBOOK_STEMS]
+    assert positions == sorted(positions)
+    assert "reports/notebooks/" not in readme
+    assert "## Remaining delivery milestones" in readme
