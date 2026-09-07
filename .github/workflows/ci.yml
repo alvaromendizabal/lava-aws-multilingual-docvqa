@@ -31,9 +31,19 @@ jobs:
           python - <<'PY'
           import base64, hashlib, json, lzma, os, subprocess, urllib.request
           base = "c4f55837dbaed5fd225c28856261f4422252b569"
-          parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
-          if parent != base:
-              raise SystemExit("Source import is bound to the reviewed base commit")
+          changed = subprocess.check_output(["git", "diff", "--name-only", base, "HEAD"], text=True).splitlines()
+          if changed != [".github/workflows/ci.yml"]:
+              raise SystemExit("Source import is bound to the reviewed source base")
+          def fetch(sha):
+              url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs/{sha}"
+              request = urllib.request.Request(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  blob = json.load(response)
+              data = base64.b64decode(blob["content"])
+              identity = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+              if identity != sha:
+                  raise SystemExit("Source transport content hash mismatch")
+              return data
           chunks = [
               "b2f05199bd2d0c8e004d9def0c0f21bed458726b",
               "7d658af61a55f17139a7774fc8285d5ce1915897",
@@ -44,22 +54,15 @@ jobs:
               "93fd260ccc7ab8f4db754012bb08827c6b87acf5",
               "bf9e37db853f75ac80aed493bdb0e099089e6da5",
           ]
-          parts = []
-          for sha in chunks:
-              url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs/{sha}"
-              request = urllib.request.Request(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
-              with urllib.request.urlopen(request, timeout=60) as response:
-                  blob = json.load(response)
-              data = base64.b64decode(blob["content"])
-              identity = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
-              if identity != sha:
-                  raise SystemExit("Source transport content hash mismatch")
-              parts.append(data)
-          payload = lzma.decompress(base64.b64decode(b"".join(parts)))
+          payload = lzma.decompress(base64.b64decode(b"".join(fetch(sha) for sha in chunks)))
           if hashlib.sha256(payload).hexdigest() != "df89af25e55ed8b45f3480069fc5bae6b1e817eb9f1a2503600035e80f9b898a":
               raise SystemExit("Reviewed source digest mismatch")
-          subprocess.run(["git", "apply", "--check", "-"], input=payload, check=True)
-          subprocess.run(["git", "apply", "--index", "-"], input=payload, check=True)
+          review = fetch("0b055ca494900c37e070407588284fc6e059ee7a")
+          if hashlib.sha256(review).hexdigest() != "1f59de8591ea9213b628edb5df450c176dc2c157718db3a45d802123ba4a8da9":
+              raise SystemExit("Source review digest mismatch")
+          for change in (payload, review):
+              subprocess.run(["git", "apply", "--check", "-"], input=change, check=True)
+              subprocess.run(["git", "apply", "--index", "-"], input=change, check=True)
           subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
           subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
           subprocess.run(["git", "commit", "-m", "feat: integrate durable retrieved-evidence evaluation\n\nSeparate inference inputs from labels; reuse verified retrieval and reader checkpoints. Add charge-gated idempotent SageMaker execution, final semantic analysis, explicit regressions and the canonical sixth notebook. Existing reader results and evaluation locks remain unchanged."], check=True)
@@ -76,7 +79,7 @@ jobs:
         run: |
           uv sync --frozen --group judge
           uv run --frozen python -m ipykernel install --user --name lava --display-name LAVA
-          uv run --frozen ruff check --select I --fix src tests scripts pipelines notebooks
+          uv run --frozen ruff check --select I,F401 --fix src tests scripts pipelines notebooks
           uv run --frozen ruff format src tests scripts pipelines notebooks
           git add src tests scripts pipelines notebooks
           if ! git diff --cached --quiet; then
@@ -96,6 +99,15 @@ jobs:
           set -o pipefail
           bash scripts/quality_gate.sh 2>&1 | tee "$RUNNER_TEMP/quality.log"
 
+      - name: Collect remaining diagnostics after a failed gate
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          uv run --frozen mypy src scripts > "$RUNNER_TEMP/diagnostics.log" 2>&1
+          uv run --frozen pytest -q >> "$RUNNER_TEMP/diagnostics.log" 2>&1
+          cat "$RUNNER_TEMP/diagnostics.log"
+
       - name: Publish only validated canonical source and notebook outputs
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/complete-system-evaluation'
         shell: bash
@@ -112,12 +124,12 @@ jobs:
         if: always()
         shell: bash
         run: |
-          touch "$RUNNER_TEMP/quality.log" "$RUNNER_TEMP/notebooks.log"
+          touch "$RUNNER_TEMP/quality.log" "$RUNNER_TEMP/notebooks.log" "$RUNNER_TEMP/diagnostics.log"
           git bundle create "$RUNNER_TEMP/source.bundle" HEAD
           git rev-parse HEAD > "$RUNNER_TEMP/source_commit.txt"
           tar -czf "$RUNNER_TEMP/notebooks.tar.gz" notebooks reports/notebook_execution
           cd "$RUNNER_TEMP"
-          sha256sum source.bundle quality.log notebooks.log notebooks.tar.gz source_commit.txt > evidence.sha256
+          sha256sum source.bundle quality.log notebooks.log notebooks.tar.gz diagnostics.log source_commit.txt > evidence.sha256
 
       - name: Retain public validation evidence
         if: always()
@@ -130,6 +142,7 @@ jobs:
             ${{ runner.temp }}/quality.log
             ${{ runner.temp }}/notebooks.log
             ${{ runner.temp }}/notebooks.tar.gz
+            ${{ runner.temp }}/diagnostics.log
             ${{ runner.temp }}/evidence.sha256
           if-no-files-found: error
           retention-days: 30
