@@ -95,7 +95,7 @@ command restores completed work. Longer GPU jobs use SageMaker's independent job
 lifecycle. The [executed notebook](../notebooks/04_evidence_retrieval.ipynb)
 can be viewed without running either workload.
 
-## Next experiment
+## Optional research extensions
 
 Evaluate the provisional 9B reader with a declared retrieved-page budget, keeping
 the model revision, decoding and semantic judge unchanged. Measure the resulting
@@ -104,6 +104,7 @@ Document page selection and full runtime. Use failure analysis to decide whether
 multilingual embeddings, visual retrieval or reranking justify their added cost.
 Do not select a method from hidden test feedback.
 
-The subsequent milestone is complete test inference and organizer-hardware runtime
-verification. Submission-schema validation exists; an accepted Kaggle submission
-and authenticated late-submission eligibility remain outstanding.
+The component research benchmark is complete. Reader integration, complete test
+inference, organizer-hardware verification, and Kaggle submission are outside this
+release. Existing submission utilities remain available for optional future use;
+no accepted submission or leaderboard score is claimed.

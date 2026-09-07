@@ -1,4 +1,10 @@
-# From verified reader results to a LAVA submission
+# Optional extension: a LAVA submission
+
+**The portfolio research benchmark is complete without a Kaggle submission.** This
+guide preserves the implemented submission checks and records what a future
+competition extension would require. It is not part of the employer reading path
+or a remaining requirement for the current release.
+
 
 The reader pilot is complete. Its 16 questions are all supplied training labels,
 covering five documents. The separate test set has 624 questions from 200 PDFs,
@@ -25,7 +31,7 @@ reproducibility verification, and full inference within two hours on one A100
 New competition-specific datasets also have publication and announcement rules;
 review those before adding or distributing external training material.
 
-## The next model experiment
+## If extending the benchmark to competition inference
 
 1. Freeze a full-document page-retrieval baseline using only the PDF and question.
    Evaluate evidence recall at k, all-evidence coverage, MRR, MAP and nDCG on the
