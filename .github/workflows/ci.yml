@@ -57,8 +57,8 @@ jobs:
           payload = lzma.decompress(base64.b64decode(b"".join(fetch(sha) for sha in chunks)))
           if hashlib.sha256(payload).hexdigest() != "df89af25e55ed8b45f3480069fc5bae6b1e817eb9f1a2503600035e80f9b898a":
               raise SystemExit("Reviewed source digest mismatch")
-          review = fetch("0b055ca494900c37e070407588284fc6e059ee7a")
-          if hashlib.sha256(review).hexdigest() != "1f59de8591ea9213b628edb5df450c176dc2c157718db3a45d802123ba4a8da9":
+          review = fetch("d9dce259904606a0db9622f1ff46330e37e9a6f7")
+          if hashlib.sha256(review).hexdigest() != "3badfea601625b262f1c6487bf4a2ce08af06d2b4c9fbec475d0dcb1ac0ce154":
               raise SystemExit("Source review digest mismatch")
           for change in (payload, review):
               subprocess.run(["git", "apply", "--check", "-"], input=change, check=True)
