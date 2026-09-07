@@ -169,9 +169,7 @@ class Qwen35Reader:
             raise ValueError(f"Invalid S3 URI: {uri}")
         return parsed.netloc, parsed.path.lstrip("/")
 
-    def _get_bytes(
-        self, uri: str, *, expected_sha256: str, version_id: str | None = None
-    ) -> bytes:
+    def _get_bytes(self, uri: str, *, expected_sha256: str, version_id: str | None = None) -> bytes:
         """Verify exactly the frozen input bytes before constructing a model prompt."""
         bucket, key = self._split_s3_uri(uri)
         request: dict[str, Any] = {"Bucket": bucket, "Key": key}
@@ -322,7 +320,9 @@ class Qwen35Reader:
         self._bitsandbytes_version = bitsandbytes_version
         self._model_load_seconds = time.perf_counter() - started
 
-    def _messages(self, example: OracleExample | ReaderInput) -> tuple[list[dict[str, Any]], int, int]:
+    def _messages(
+        self, example: OracleExample | ReaderInput
+    ) -> tuple[list[dict[str, Any]], int, int]:
         if self._processor is None:
             raise RuntimeError("Reader is not loaded")
         if isinstance(example, OracleExample):
@@ -341,11 +341,15 @@ class Qwen35Reader:
         for page in example.pages:
             content.append({"type": "text", "text": f"[PAGE {page.page_number}]"})
             if include_images:
-                with Image.open(io.BytesIO(self._get_bytes(
-                    page.image_s3_uri,
-                    expected_sha256=page.image_sha256,
-                    version_id=page.image_version_id,
-                ))) as source:
+                with Image.open(
+                    io.BytesIO(
+                        self._get_bytes(
+                            page.image_s3_uri,
+                            expected_sha256=page.image_sha256,
+                            version_id=page.image_version_id,
+                        )
+                    )
+                ) as source:
                     image = source.convert("RGB")
                 image_count += 1
                 total_pixels += image.width * image.height
@@ -409,7 +413,9 @@ class Qwen35Reader:
                     "Installed Transformers cannot explicitly control Qwen3.5 thinking mode"
                 ) from second_error
 
-    def predict(self, example: OracleExample | ReaderInput) -> tuple[ReaderPrediction, ReaderTelemetry]:
+    def predict(
+        self, example: OracleExample | ReaderInput
+    ) -> tuple[ReaderPrediction, ReaderTelemetry]:
         """Generate and parse one structured answer."""
         if isinstance(example, OracleExample):
             example = ReaderInput.from_oracle(example)

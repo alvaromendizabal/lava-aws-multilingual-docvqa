@@ -20,15 +20,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bucket", required=True)
     parser.add_argument("--region", required=True)
-    parser.add_argument(
-        "--manifest-s3-uri", "--manifest_s3_uri", dest="manifest_s3_uri"
-    )
-    parser.add_argument(
-        "--output-s3-prefix", "--output_s3_prefix", dest="output_s3_prefix"
-    )
-    parser.add_argument(
-        "--protocol-lock-id", "--protocol_lock_id", dest="protocol_lock_id"
-    )
+    parser.add_argument("--manifest-s3-uri", "--manifest_s3_uri", dest="manifest_s3_uri")
+    parser.add_argument("--output-s3-prefix", "--output_s3_prefix", dest="output_s3_prefix")
+    parser.add_argument("--protocol-lock-id", "--protocol_lock_id", dest="protocol_lock_id")
     parser.add_argument("--model-key", "--model_key", dest="model_key")
     parser.add_argument("--experiment-id", "--experiment_id", dest="experiment_id")
     parser.add_argument("--limit", type=int)
@@ -50,8 +44,11 @@ def main() -> None:
         )
         with logger.stage("system.job", heartbeat_seconds=15):
             result = run_inference(
-                ROOT, boto3.client("s3", region_name=args.region),
-                args.bucket, args.contract_id, logger,
+                ROOT,
+                boto3.client("s3", region_name=args.region),
+                args.bucket,
+                args.contract_id,
+                logger,
             )
         logger.emit("system.job.completed", question_count=len(result["records"]))
         print("SYSTEM_READER_JOB_COMPLETE", flush=True)
@@ -59,8 +56,14 @@ def main() -> None:
 
     from lava.readers.benchmark import run_oracle_benchmark
 
-    for name in ("manifest_s3_uri", "output_s3_prefix", "protocol_lock_id",
-                 "model_key", "experiment_id", "limit"):
+    for name in (
+        "manifest_s3_uri",
+        "output_s3_prefix",
+        "protocol_lock_id",
+        "model_key",
+        "experiment_id",
+        "limit",
+    ):
         if getattr(args, name) is None:
             parser.error(f"Oracle inference requires {name}")
 

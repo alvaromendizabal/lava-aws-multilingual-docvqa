@@ -70,7 +70,9 @@ def score_predictions(
             raise ValueError("Reader request differs from its frozen reference")
         public_id = f"q-{index:02d}"
         public_references.append(
-            reference.model_copy(update={"question_id": public_id, "document_id": request.document_alias})
+            reference.model_copy(
+                update={"question_id": public_id, "document_id": request.document_alias}
+            )
         )
         predictions.append(
             PredictionRecord(
@@ -80,7 +82,9 @@ def score_predictions(
             )
         )
         gold, predicted, available = (
-            set(reference.evidence_pages), set(prediction.evidence_pages), set(request.available_pages)
+            set(reference.evidence_pages),
+            set(prediction.evidence_pages),
+            set(request.available_pages),
         )
         details.append(
             {
@@ -102,13 +106,20 @@ def score_predictions(
     # Actual predicted pages are scored; gold pages are NEVER substituted.
     scores, metrics = score_dataset(tuple(public_references), tuple(predictions), judge=judge)
     for detail, score in zip(details, scores, strict=True):
-        detail.update(answer_score=score.answer_score, evidence_f1=score.grounding_score,
-                      local_lava=score.overall_score)
+        detail.update(
+            answer_score=score.answer_score,
+            evidence_f1=score.grounding_score,
+            local_lava=score.overall_score,
+        )
         detail["failure_category"] = (
-            "invalid_response" if not detail["schema_valid"]
-            else "missing_evidence" if not detail["all_evidence_retrieved"]
-            else "answer_incomplete_or_incorrect" if score.answer_score < 1
-            else "evidence_citation_incomplete" if score.grounding_score < 1
+            "invalid_response"
+            if not detail["schema_valid"]
+            else "missing_evidence"
+            if not detail["all_evidence_retrieved"]
+            else "answer_incomplete_or_incorrect"
+            if score.answer_score < 1
+            else "evidence_citation_incomplete"
+            if score.grounding_score < 1
             else "full_credit"
         )
     generation = [row.generation_seconds for row in telemetry]
@@ -122,7 +133,9 @@ def score_predictions(
             "evidence_precision": fmean(row["evidence_precision"] for row in details),
             "evidence_recall": fmean(row["evidence_recall"] for row in details),
             "retrieval_recall": fmean(row["retrieval_recall"] for row in details),
-            "all_evidence_retrieved": fmean(float(row["all_evidence_retrieved"]) for row in details),
+            "all_evidence_retrieved": fmean(
+                float(row["all_evidence_retrieved"]) for row in details
+            ),
             "failure_counts": dict(Counter(row["failure_category"] for row in details)),
         },
         "runtime": {
@@ -132,8 +145,9 @@ def score_predictions(
             "reader_total_mean_seconds": fmean(total),
             "reader_total_p95_seconds": quantiles(total, n=100, method="inclusive")[94],
             "sum_reader_total_seconds": sum(total),
-            "peak_allocated_gib": max(row.peak_cuda_memory_allocated_mib for row in telemetry)/1024,
-            "peak_reserved_gib": max(row.peak_cuda_memory_reserved_mib for row in telemetry)/1024,
+            "peak_allocated_gib": max(row.peak_cuda_memory_allocated_mib for row in telemetry)
+            / 1024,
+            "peak_reserved_gib": max(row.peak_cuda_memory_reserved_mib for row in telemetry) / 1024,
             "scope": "Per-question reader telemetry; excludes retrieval, provisioning and checkpoint I/O. First uncached question includes model load. Resume may span jobs.",
         },
     }
@@ -171,18 +185,24 @@ def evaluate_system(root: Path, s3: Any, bucket: str, logger: RuntimeEventLogger
     store = store_for(s3, bucket, contract["contract_id"])
     manifest, inference = store.read("inputs.json"), store.read("inference.json")
     if manifest is None or inference is None:
-        raise ValueError("Complete retrieved-page inference is required; no answer scores published")
+        raise ValueError(
+            "Complete retrieved-page inference is required; no answer scores published"
+        )
     sources = pilot_sources(root, contract["retrieval"]["config"])
-    references = parse_training_csv(cached_source(
-        s3, bucket, root / "artifacts/retrieval/inputs/train.csv", sources["train.csv"], logger
-    ))
+    references = parse_training_csv(
+        cached_source(
+            s3, bucket, root / "artifacts/retrieval/inputs/train.csv", sources["train.csv"], logger
+        )
+    )
     judging = judge_contract(root)
     protocol = json.loads((root / "configs/evaluation_protocol.lock.json").read_bytes())[
         "protocol_lock_id"
     ]
     judge = DurableSemanticJudge(
         judging,
-        ImmutableS3Objects(s3, bucket, f"experiments/oracle-reader/evaluation/{protocol}/{judging['contract_id']}"),
+        ImmutableS3Objects(
+            s3, bucket, f"experiments/oracle-reader/evaluation/{protocol}/{judging['contract_id']}"
+        ),
         GemmaDecision(judging["config"], logger, root / "artifacts/semantic_judge/model_cache"),
         logger,
     )
@@ -190,7 +210,12 @@ def evaluate_system(root: Path, s3: Any, bucket: str, logger: RuntimeEventLogger
     judge.validate()
     with logger.stage("system.semantic.scoring", heartbeat_seconds=15):
         result = score_predictions(manifest, inference, references, judge)
-    baseline_path = root / "reports/oracle_reader/runs" / contract["config"]["oracle_job"] / "semantic_summary.json"
+    baseline_path = (
+        root
+        / "reports/oracle_reader/runs"
+        / contract["config"]["oracle_job"]
+        / "semantic_summary.json"
+    )
     baseline_bytes = baseline_path.read_bytes()
     if digest(baseline_bytes) != baseline_path.with_suffix(".sha256").read_text().strip():
         raise ValueError("Oracle comparison checksum mismatch")
@@ -216,7 +241,8 @@ def evaluate_system(root: Path, s3: Any, bucket: str, logger: RuntimeEventLogger
         "oracle_summary_sha256": digest(baseline_bytes),
         "oracle_question_micro": baseline["metrics"]["question_micro"],
         "paired_document_comparison": paired,
-        "question_mean_delta": result["metrics"]["question_micro"]["overall"] - baseline["metrics"]["question_micro"]["overall"],
+        "question_mean_delta": result["metrics"]["question_micro"]["overall"]
+        - baseline["metrics"]["question_micro"]["overall"],
         "limitations": "All 16 previously examined training questions from five PDFs; not held-out performance, a leaderboard result, or evidence of model superiority. Confidence intervals are exploratory. No fine-tuning was performed.",
         **result,
     }
@@ -225,6 +251,11 @@ def evaluate_system(root: Path, s3: Any, bucket: str, logger: RuntimeEventLogger
     if store.read(key) != summary:
         raise ValueError("System scoring report failed durable read-back")
     publish_summary(root, summary)
-    logger.emit("system.evaluation.completed", question_count=16, document_count=5,
-                new_decisions=judge.new_decisions, reused_decisions=judge.reused_decisions)
+    logger.emit(
+        "system.evaluation.completed",
+        question_count=16,
+        document_count=5,
+        new_decisions=judge.new_decisions,
+        reused_decisions=judge.reused_decisions,
+    )
     return summary

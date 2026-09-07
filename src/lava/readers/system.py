@@ -35,7 +35,13 @@ from lava.readers.private_artifacts import read_raw_response
 from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.schemas import OraclePageAsset, ReaderInput, ReaderPrediction, ReaderTelemetry
 from lava.retrieval.lexical import PageText, RetrievalQuery
-from lava.retrieval.pipeline import ObjectStore, extract_pages, implementation_contract, rank_query, stage
+from lava.retrieval.pipeline import (
+    ObjectStore,
+    extract_pages,
+    implementation_contract,
+    rank_query,
+    stage,
+)
 from lava.retrieval.storage import CheckpointStore
 
 SYSTEM_PREFIX = "experiments/submissions/system"
@@ -64,7 +70,9 @@ def system_config(root: Path) -> dict[str, Any]:
 def system_contract(root: Path) -> dict[str, Any]:
     """Stable across report-only commits and merges; invalidate changed inference inputs."""
     config = system_config(root)
-    model = load_resolved_model(root / "configs/oracle_reader_models.lock.json", config["model_key"])
+    model = load_resolved_model(
+        root / "configs/oracle_reader_models.lock.json", config["model_key"]
+    )
     retrieval_config = json.loads((root / "configs/retrieval.json").read_bytes())
     paths = (
         "src/lava/readers/system.py",
@@ -138,9 +146,7 @@ def select_pages(ranking: dict[str, Any], page_count: int, budget: int) -> tuple
     return tuple(sorted(order[:budget]))
 
 
-def prepare_inputs(
-    root: Path, s3: Any, bucket: str, logger: RuntimeEventLogger
-) -> dict[str, Any]:
+def prepare_inputs(root: Path, s3: Any, bucket: str, logger: RuntimeEventLogger) -> dict[str, Any]:
     """Reuse the existing PDF/query checkpoints and render only the selected unique pages."""
     from lava.retrieval.evaluation import pilot_sources
 
@@ -162,7 +168,9 @@ def prepare_inputs(
     if len(references) != config["question_count"] or len(aliases) != config["document_count"]:
         raise ValueError("Incomplete final-pilot source coverage")
     retrieval_id = digest(encode(contract["retrieval"]))
-    retrieval_store = CheckpointStore(s3, bucket, f"experiments/submissions/retrieval/{retrieval_id}")
+    retrieval_store = CheckpointStore(
+        s3, bucket, f"experiments/submissions/retrieval/{retrieval_id}"
+    )
     renderer = yaml.safe_load((root / "configs/oracle_reader_benchmark.yaml").read_bytes())[
         "asset_builder"
     ]
@@ -210,15 +218,20 @@ def prepare_inputs(
                 if number in page_assets:
                     continue
                 identity = {
-                    "source": source, "render": render, "page": number,
+                    "source": source,
+                    "render": render,
+                    "page": number,
                     "renderer": contract["retrieval"]["source_sha256"],
                     "pymupdf": contract["retrieval"]["pymupdf_version"],
                 }
 
                 def render_asset(
-                    number: int = number, identity: dict[str, Any] = identity,
-                    document_id: str = document_id, alias: str = alias,
-                    source: dict[str, str] = source, load_pdf: Callable[[], bytes] = load_pdf,
+                    number: int = number,
+                    identity: dict[str, Any] = identity,
+                    document_id: str = document_id,
+                    alias: str = alias,
+                    source: dict[str, str] = source,
+                    load_pdf: Callable[[], bytes] = load_pdf,
                 ) -> dict[str, Any]:
                     with pymupdf.open(stream=load_pdf(), filetype="pdf") as document:
                         page = document[number - 1]
@@ -235,8 +248,11 @@ def prepare_inputs(
                         key = f"{base}/{kind}.{extension}"
                         put_blob(s3, bucket, key, payload, mime)
                         values.update(
-                            {f"{kind}_s3_uri": f"s3://{bucket}/{key}",
-                             f"{kind}_sha256": digest(payload), f"{kind}_version_id": None}
+                            {
+                                f"{kind}_s3_uri": f"s3://{bucket}/{key}",
+                                f"{kind}_sha256": digest(payload),
+                                f"{kind}_version_id": None,
+                            }
                         )
                     asset = OraclePageAsset(
                         asset_version="retrieved-pages-v1",
@@ -377,8 +393,11 @@ def infer_requests(
         prediction, _ = validate_prediction(request, saved)
         records.append(saved)
         logger.emit(
-            "system.question.completed", completed=number, total=len(requests),
-            reused_count=reused, schema_valid=prediction.schema_valid,
+            "system.question.completed",
+            completed=number,
+            total=len(requests),
+            reused_count=reused,
+            schema_valid=prediction.schema_valid,
         )
     result = {
         "schema_version": 1,
@@ -390,13 +409,18 @@ def infer_requests(
     if store.read("inference.json") != result:
         raise ValueError("Inference completion failed durable read-back")
     logger.emit(
-        "system.inference.completed", completed=len(records), reused_count=reused,
-        new_count=len(records) - reused, total_elapsed_seconds=round(time.perf_counter()-started, 3),
+        "system.inference.completed",
+        completed=len(records),
+        reused_count=reused,
+        new_count=len(records) - reused,
+        total_elapsed_seconds=round(time.perf_counter() - started, 3),
     )
     return result
 
 
-def run_inference(root: Path, s3: Any, bucket: str, identity: str, logger: RuntimeEventLogger) -> dict:
+def run_inference(
+    root: Path, s3: Any, bucket: str, identity: str, logger: RuntimeEventLogger
+) -> dict:
     """GPU entry point. This function never reads labels or evaluation answers."""
     from lava.readers.reader_factory import build_reader
 
@@ -408,6 +432,8 @@ def run_inference(root: Path, s3: Any, bucket: str, identity: str, logger: Runti
     if manifest is None:
         raise ValueError("Prepare and verify reader inputs before allocating GPU work")
     # Reader construction is lazy; model loading occurs only for an uncached question.
-    model = load_resolved_model(root / "configs/oracle_reader_models.lock.json", contract["config"]["model_key"])
+    model = load_resolved_model(
+        root / "configs/oracle_reader_models.lock.json", contract["config"]["model_key"]
+    )
     reader = build_reader(model, region=os.environ.get("AWS_DEFAULT_REGION", "us-west-2"))
     return infer_requests(manifest, contract, store, reader.predict, logger)
