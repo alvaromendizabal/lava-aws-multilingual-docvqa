@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import stat
+import subprocess
 from pathlib import Path
 from types import ModuleType
 
@@ -114,19 +116,116 @@ def test_canonical_stop_command_is_explicitly_guarded() -> None:
     assert "STOP_TOTAL_ELAPSED_SECONDS" in stopper
 
 
-def test_entrypoint_modes_are_lint_safe() -> None:
-    root = _root()
-    for relative in (
-        "scripts/monitor_oracle_reader_job.py",
-        "scripts/run_oracle_reader.py",
-        "scripts/stop_oracle_reader_job.py",
-        "scripts/preflight.py",
-    ):
-        assert stat.S_IMODE((root / relative).stat().st_mode) == 0o644, relative
+_PYTHON_ENTRYPOINTS = (
+    "scripts/monitor_oracle_reader_job.py",
+    "scripts/run_oracle_reader.py",
+    "scripts/stop_oracle_reader_job.py",
+    "scripts/preflight.py",
+)
+_QUALITY_GATE = "scripts/quality_gate.sh"
 
-    quality_gate = root / "scripts" / "quality_gate.sh"
-    assert stat.S_IMODE(quality_gate.stat().st_mode) == 0o755
+
+def _assert_entrypoint_modes(root: Path) -> None:
+    """Check execution semantics, not group/other bits controlled by the user's umask."""
+    for relative in _PYTHON_ENTRYPOINTS:
+        mode = (root / relative).lstat().st_mode
+        assert stat.S_ISREG(mode), f"{relative} must be a regular file"
+        assert mode & stat.S_IRUSR, f"{relative} must be owner-readable"
+        assert not mode & 0o111, f"{relative} must not be executable"
+
+    quality_gate = root / _QUALITY_GATE
+    mode = quality_gate.lstat().st_mode
+    assert stat.S_ISREG(mode), f"{_QUALITY_GATE} must be a regular file"
+    required = stat.S_IRUSR | stat.S_IXUSR
+    assert mode & required == required, f"{_QUALITY_GATE} must be owner-readable and executable"
     assert quality_gate.read_text(encoding="utf-8").startswith("#!/usr/bin/env bash\n")
+
+
+def test_entrypoint_modes_are_lint_safe() -> None:
+    _assert_entrypoint_modes(_root())
+
+
+def test_entrypoint_git_modes_are_canonical() -> None:
+    """Git records executable intent; a private checkout need not be world-readable."""
+    expected = {relative: "100644" for relative in _PYTHON_ENTRYPOINTS}
+    expected[_QUALITY_GATE] = "100755"
+    result = subprocess.run(
+        ["git", "ls-files", "--stage", "-z", "--", *expected],
+        cwd=_root(),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    observed = {}
+    for entry in result.stdout.split("\0"):
+        if entry:
+            metadata, relative = entry.split("\t", 1)
+            mode, _object_id, stage = metadata.split()
+            assert stage == "0", f"Unmerged entrypoint: {relative}"
+            observed[relative] = mode
+    assert observed == expected
+
+
+def _write_entrypoint_fixture(root: Path) -> None:
+    """Small inert scripts: no project imports, credentials, network or cloud calls."""
+    (root / "scripts").mkdir(parents=True)
+    for relative in _PYTHON_ENTRYPOINTS:
+        path = root / relative
+        path.write_text("# Non-executable Python entrypoint fixture.\n", encoding="utf-8")
+        path.chmod(0o644)
+    gate = root / _QUALITY_GATE
+    gate.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    gate.chmod(0o755)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX checkout permissions")
+@pytest.mark.parametrize("mask", [0o022, 0o002, 0o077], ids=["022", "002", "077"])
+def test_entrypoint_contract_survives_real_git_checkout(tmp_path: Path, mask: int) -> None:
+    """Reproduce Git's actual checkout behavior, with umask isolated to the child process."""
+    source = tmp_path / "source"
+    _write_entrypoint_fixture(source)
+    subprocess.run(["git", "init", "--quiet", str(source)], check=True)
+    subprocess.run(["git", "add", "--", "scripts"], cwd=source, check=True)
+    checkout = tmp_path / "checkout"
+    subprocess.run(
+        ["git", "checkout-index", "--all", f"--prefix={checkout}/"],
+        cwd=source,
+        umask=mask,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert stat.S_IMODE((checkout / _QUALITY_GATE).stat().st_mode) == 0o777 & ~mask
+    for relative in _PYTHON_ENTRYPOINTS:
+        assert stat.S_IMODE((checkout / relative).stat().st_mode) == 0o666 & ~mask
+    _assert_entrypoint_modes(checkout)
+    subprocess.run([str(checkout / _QUALITY_GATE)], check=True, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize(
+    ("relative", "mode", "message"),
+    [
+        (_PYTHON_ENTRYPOINTS[0], 0o744, "must not be executable"),
+        (_PYTHON_ENTRYPOINTS[0], 0o200, "must be owner-readable"),
+        (_QUALITY_GATE, 0o600, "must be owner-readable and executable"),
+        (_QUALITY_GATE, 0o100, "must be owner-readable and executable"),
+    ],
+)
+def test_entrypoint_contract_rejects_unusable_modes(
+    tmp_path: Path, relative: str, mode: int, message: str
+) -> None:
+    """Accepting private checkouts must not hide genuine read/execute regressions."""
+    _write_entrypoint_fixture(tmp_path)
+    (tmp_path / relative).chmod(mode)
+    with pytest.raises(AssertionError, match=message):
+        _assert_entrypoint_modes(tmp_path)
+
+
+def test_entrypoint_contract_requires_shell_shebang(tmp_path: Path) -> None:
+    _write_entrypoint_fixture(tmp_path)
+    (tmp_path / _QUALITY_GATE).write_text("exit 0\n", encoding="utf-8")
+    with pytest.raises(AssertionError):
+        _assert_entrypoint_modes(tmp_path)
 
 
 def test_monitor_failure_fallback_catches_only_expected_failures() -> None:
