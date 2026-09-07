@@ -1,9 +1,9 @@
 {
-  "analysis_inputs_sha256": "0fd7409317db8ea8089a6395b1778131c0846e711e2cf2de4179061775acc925",
-  "code_revision": "9d2e20b63e0e1ab5812d49429a96a7e9369fce2d",
+  "analysis_inputs_sha256": "ad593b3e086a9b21f18f7aee883a0e8e56ff76d120be56e30cb6a05cab2057f4",
+  "code_revision": "d3abba25dd41de9f3dbd053e74a109e6a2f7883b",
   "executed_code_cells": 8,
   "notebook": "03_model_scaling_and_cost.ipynb",
-  "output_sha256": "0245c0e8862bb7454d6fe2f09eb89b3a33814a31f448a4da0ddf22ca1748a173",
+  "output_sha256": "561a1cc16e73eaa41a77638c2ce82430488512d36b12ac2a2b187ed01cff076e",
   "schema_version": 2,
-  "source_sha256": "0d5a40c7b7c594d37b15a2ae6b7e0d8d9be8d80b10cf711b3ac714d5546a330e"
+  "source_sha256": "d7d9b8bc2759a0e3dcb6939a43eebf77ea8e8b52af6029963b8083daaf50f12a"
 }
