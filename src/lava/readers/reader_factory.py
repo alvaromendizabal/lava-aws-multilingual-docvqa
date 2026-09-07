@@ -8,6 +8,7 @@ from lava.readers.qwen35 import Qwen35Reader
 from lava.readers.schemas import (
     OracleExample,
     ReaderFamily,
+    ReaderInput,
     ReaderPrediction,
     ReaderTelemetry,
     ResolvedModel,
@@ -19,7 +20,7 @@ class OracleReader(Protocol):
 
     def predict(
         self,
-        example: OracleExample,
+        example: OracleExample | ReaderInput,
     ) -> tuple[ReaderPrediction, ReaderTelemetry]:
         """Generate one prediction and its telemetry."""
 

@@ -6,9 +6,10 @@ This is the only canonical notebook folder. Each notebook includes verified exec
 2. [01 — Reader benchmark design](01_oracle_reader_benchmark_design.ipynb): understand what was compared.
 3. [02 — Verified GPU execution](02_verified_gpu_execution.ipynb): inspect all three complete pilots.
 4. [03 — Model scaling and cost](03_model_scaling_and_cost.ipynb): compare answer quality, evidence, runtime, memory, and cost.
-5. [04 — Evidence retrieval](04_evidence_retrieval.ipynb): inspect full-document retrieval and the next integration milestone.
+5. [04 — Evidence retrieval](04_evidence_retrieval.ipynb): inspect full-document retrieval.
+6. [05 — End-to-end system evaluation](05_end_to_end_system_evaluation.ipynb): inspect the integrated pipeline, actual completion status, metrics and failure analysis.
 
-**Current position:** the three reader pilots and retrieval pilot are complete. Next comes actual 9B inference using retrieved pages. Complete-system validation, final test inference, and Kaggle submission remain outstanding.
+**Current position:** the three reader pilots and retrieval pilot are complete. Notebook 05 is the integrated evaluation and explicitly shows whether its GPU inference is pending or measured. Kaggle test inference and submission are optional extensions.
 
 Open this folder in SageMaker at:
 `/home/sagemaker-user/lava-aws-multilingual-docvqa/notebooks/`

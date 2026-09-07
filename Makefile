@@ -89,3 +89,19 @@ submission-preview:
 
 submission-check:
 	uv run --frozen python scripts/prepare_submission.py --mode check
+
+ATTEMPT ?= 1
+RETRY ?= NO
+.PHONY: system-preview system-prepare system-evaluate finish
+system-preview:
+	uv run --frozen python scripts/evaluate_system.py --mode preview
+
+system-prepare:
+	uv run --frozen python scripts/evaluate_system.py --mode prepare
+
+system-evaluate:
+	uv run --frozen --group judge python scripts/evaluate_system.py --mode evaluate
+
+finish:
+	@test "$(CHARGES)" = "YES" || (echo "New GPU work requires CHARGES=YES. Preview with make system-preview." >&2; exit 2)
+	uv run --frozen --group judge python scripts/evaluate_system.py --mode finish --acknowledge-charges $(CHARGES) --attempt $(ATTEMPT) --retry $(RETRY)

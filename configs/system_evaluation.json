@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "model_key": "qwen35_9b_fused_direct",
+  "page_budget": 5,
+  "retrieval_method": "bm25",
+  "question_count": 16,
+  "document_count": 5,
+  "oracle_job": "lava-oracle-qwen35-9b-fused-direct-20260906190503",
+  "max_runtime_seconds": 1800,
+  "max_pending_seconds": 86400,
+  "split": "training_diagnostic",
+  "official_server_parity": false,
+  "scope": "One retrieved-evidence 9B pilot. No test inference, Kaggle upload, model tuning or automatic paid retry."
+}

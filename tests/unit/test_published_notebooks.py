@@ -19,6 +19,7 @@ def test_canonical_publication_matches_current_sources_and_verified_inputs(stem)
         "02": "Full pilot scored",
         "03": "Full pilot scored",
         "04": "Full-document retrieval evaluated",
+        "05": "Current end-to-end status",
     }[stem[:2]]
     assert expected in path.read_text()
     assert '"contract_current": false' not in path.read_text()

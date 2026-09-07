@@ -4,11 +4,11 @@
 
 An evidence-grounded document-QA research project using open vision-language models, multilingual retrieval, reproducible AWS execution, and auditable evaluation.
 
-**Current position:** data acquisition and audit, the 4B/9B/27B reader comparison, and full-document retrieval are complete. **Next:** evaluate the provisional 9B reader using retrieved pages. Complete-system performance and a Kaggle submission remain outstanding.
+**Current position:** data acquisition and audit, the 4B/9B/27B reader comparison, and full-document retrieval are complete. **Final portfolio gate:** run the implemented, frozen 9B retrieved-page pilot and publish its measured results. Notebook 05 shows its actual status; no end-to-end score is claimed before real inference. Kaggle submission is optional.
 
 ## Start in notebooks/
 
-There is one canonical notebook folder: **[notebooks/](notebooks/)**. All five notebooks contain actual executed outputs. Read them in order; each can also run independently. Viewing them requires no GPU job, data download, or model-provider login.
+There is one canonical notebook folder: **[notebooks/](notebooks/)**. All six notebooks contain actual executed outputs. Read them in order; each can also run independently. Viewing them requires no GPU job, data download, or model-provider login.
 
 | Notebook | What it explains | Current state |
 | --- | --- | --- |
@@ -16,7 +16,8 @@ There is one canonical notebook folder: **[notebooks/](notebooks/)**. All five n
 | [01 — Reader benchmark design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Why these three model configurations were compared | Complete |
 | [02 — Verified GPU execution](notebooks/02_verified_gpu_execution.ipynb) | Run coverage, cloud execution, checkpoints | Three full pilots verified |
 | [03 — Model scaling and cost](notebooks/03_model_scaling_and_cost.ipynb) | Answer quality, evidence, latency, memory, cost | Three pilots scored; provisional 9B |
-| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Search all PDF pages and measure retrieval | Complete; reader integration next |
+| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Search all PDF pages and measure retrieval | Complete |
+| [05 — End-to-end evaluation](notebooks/05_end_to_end_system_evaluation.ipynb) | Input design, integrated score, failure analysis, recovery | Implemented; actual GPU run is explicitly gated |
 
 In SageMaker Studio, open `/home/sagemaker-user/lava-aws-multilingual-docvqa/notebooks/`.
 Do not navigate into an `artifacts/.../checkout` directory to read the project.
@@ -51,20 +52,27 @@ At five pages, equal-document recall is 92.50% and all-evidence coverage is 75.0
 
 ## Remaining delivery milestones
 
-| Milestone | Work remaining | Completion evidence |
-| --- | --- | --- |
-| **1. Complete-system pilot** | Run 9B on retrieved pages; inspect missing evidence, invalid responses, and answer failures | Actual LAVA score, per-document/language/format diagnostics, runtime, memory, and verified resume |
-| **2. Reproducible submission pipeline** | Package inference in Docker, verify the recorded single-GPU and two-hour limits, process all 200 test PDFs and 624 questions | Complete predictions with provenance and successful schema/ID/page validation |
-| **3. Submission and portfolio release** | Confirm current Kaggle eligibility, submit if permitted, publish the final walkthrough and results/limitations | Accepted submission receipt or explicit eligibility blocker; reproducible tagged release |
+The portfolio completion gate is **one frozen integrated pilot**, not another model sweep or a Kaggle upload. The canonical implementation supplies five BM25-selected pages to the existing 9B reader. Labels remain separate; every answer is independently parsed, checkpointed, and read back before progress is acknowledged. A deterministic job identity permits reconnection without duplicate jobs. New failed-job attempts require separate approval.
 
-The important missing experiment is milestone 1. Its failure analysis determines whether retrieval needs another iteration. There is no defensible percentage-complete or guaranteed finish date before that result. Additional larger models, optional ablations, and a web demo are not prerequisites for this delivery path.
+From the existing configured SageMaker workspace:
+
+```bash
+make system-preview          # Inspect only: no paid resource or private download.
+make finish CHARGES=YES       # Explicitly approve one bounded GPU attempt, then score and publish.
+```
+
+The second command reuses completed document/ranking checkpoints, prepares only selected page assets, launches or reattaches to the 16-question job, scores saved answers with the unchanged judge, executes all six notebooks, runs the quality gate and archives successful notebook publications. The training attempt uses one `ml.g6e.2xlarge`, a 1,800-second runtime cap and a $5 per-attempt training-compute estimate guard. This is **not a total AWS billing cap**: existing Studio, storage, logs, transfer and prior attempts are separate. No automatic paid retry is allowed. See [final pilot operation](docs/system_evaluation.md) for recovery and the publication commands.
+
+Completion evidence must include actual retrieved-page predictions and semantic/evidence/local LAVA scores, per-document diagnostics, measured runtime, durable provenance and a passing final quality gate. Pending inference is never reported as successful or as a zero score. A lower result than the oracle baseline is retained and explained rather than hidden.
+
+**Optional Kaggle extension:** validate the full inference container/runtime, generate all 624 hidden-test predictions, verify schema and exact IDs, and confirm submission eligibility. These are not requirements to finish the scoped research portfolio. No leaderboard submission, production deployment or held-out generalization is claimed here.
 
 ## Run and resume
 
 From the repository root:
 
 ```bash
-# Verify or refresh the five canonical notebooks; reuse current outputs.
+# Verify or refresh the six canonical notebooks; reuse current outputs.
 make notebooks
 
 # Explicit tests, formatting, lint, types, compilation, and publication integrity.
@@ -85,7 +93,7 @@ Reader checkpoints, retrieval checkpoints, and judge decisions persist in S3. Lo
 
 | Folder | Purpose |
 | --- | --- |
-| `notebooks/` | The five canonical, executed walkthroughs |
+| `notebooks/` | The six canonical, executed walkthroughs |
 | `src/lava/` | Data, metrics, readers, retrieval, and observability implementation |
 | `scripts/` and `Makefile` | Canonical commands |
 | `configs/` | Pinned experiment, model, and evaluation contracts |
@@ -98,4 +106,4 @@ Reader checkpoints, retrieval checkpoints, and judge decisions persist in S3. Lo
 
 Empty scaffolding and duplicate notebook representations have been removed. Completed run history and source/model/data locks remain because they substantiate the results and enable resumption.
 
-[Evaluation and recovery](docs/evaluation.md) · [Reader execution](docs/benchmark.md) · [Retrieval](docs/retrieval.md) · [Submission](docs/submission.md) · [Architecture](docs/architecture.md)
+[Evaluation and recovery](docs/evaluation.md) · [Reader execution](docs/benchmark.md) · [Retrieval](docs/retrieval.md) · [Final pilot](docs/system_evaluation.md) · [Optional submission](docs/submission.md) · [Architecture](docs/architecture.md)

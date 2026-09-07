@@ -239,6 +239,55 @@ class OracleExample(FrozenModel):
         return self
 
 
+class ReaderInput(FrozenModel):
+    """Label-free reader request; candidate pages are not asserted to be gold evidence."""
+
+    question_id: str = Field(min_length=1)
+    document_id: str = Field(min_length=1)
+    document_alias: str = Field(pattern=r"^doc-[0-9]{2}$")
+    question: str = Field(min_length=1)
+    answer_format: AnswerFormat
+    language: str = Field(min_length=2, max_length=8)
+    pages: tuple[OraclePageAsset, ...] = Field(min_length=1, max_length=10)
+
+    @property
+    def available_pages(self) -> tuple[int, ...]:
+        """Expose physical PDF numbers, never positions within the retrieved subset."""
+        return tuple(page.page_number for page in self.pages)
+
+    @model_validator(mode="after")
+    def validate_candidates(self) -> ReaderInput:
+        """Reject duplicate, reordered, mixed-document or mixed-version page assets."""
+        numbers = self.available_pages
+        if numbers != tuple(sorted(set(numbers))):
+            raise ValueError("Candidate pages must be sorted and unique")
+        if any(
+            page.document_id != self.document_id or page.document_alias != self.document_alias
+            for page in self.pages
+        ):
+            raise ValueError("Candidate pages must belong to the request document")
+        sources = {
+            (page.source_pdf_s3_uri, page.source_pdf_sha256, page.source_pdf_version_id)
+            for page in self.pages
+        }
+        if len(sources) != 1:
+            raise ValueError("Candidate pages must share one frozen PDF source")
+        return self
+
+    @classmethod
+    def from_oracle(cls, example: OracleExample) -> ReaderInput:
+        """Copy only explicitly allowed fields; omit answers and gold-page labels."""
+        return cls(
+            question_id=example.question_id,
+            document_id=example.document_id,
+            document_alias=example.document_alias,
+            question=example.question,
+            answer_format=example.answer_format,
+            language=example.language,
+            pages=example.pages,
+        )
+
+
 class ReaderPrediction(FrozenModel):
     """Parsed structured reader output without hidden reasoning text."""
 

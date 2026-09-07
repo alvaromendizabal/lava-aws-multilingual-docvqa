@@ -11,7 +11,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from lava.readers.benchmark import run_oracle_benchmark
 from lava.readers.model_registry import load_resolved_model
 from lava.readers.runtime_logging import RuntimeEventLogger
 
@@ -22,21 +21,48 @@ def main() -> None:
     parser.add_argument("--bucket", required=True)
     parser.add_argument("--region", required=True)
     parser.add_argument(
-        "--manifest-s3-uri", "--manifest_s3_uri", dest="manifest_s3_uri", required=True
+        "--manifest-s3-uri", "--manifest_s3_uri", dest="manifest_s3_uri"
     )
     parser.add_argument(
-        "--output-s3-prefix", "--output_s3_prefix", dest="output_s3_prefix", required=True
+        "--output-s3-prefix", "--output_s3_prefix", dest="output_s3_prefix"
     )
     parser.add_argument(
-        "--protocol-lock-id", "--protocol_lock_id", dest="protocol_lock_id", required=True
+        "--protocol-lock-id", "--protocol_lock_id", dest="protocol_lock_id"
     )
-    parser.add_argument("--model-key", "--model_key", dest="model_key", required=True)
-    parser.add_argument("--experiment-id", "--experiment_id", dest="experiment_id", required=True)
-    parser.add_argument("--limit", type=int, required=True)
-    parser.add_argument("--mode", choices=("smoke", "benchmark"), default="smoke")
+    parser.add_argument("--model-key", "--model_key", dest="model_key")
+    parser.add_argument("--experiment-id", "--experiment_id", dest="experiment_id")
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--mode", choices=("smoke", "benchmark", "system"), default="smoke")
     parser.add_argument("--resume-s3-prefix", "--resume_s3_prefix", dest="resume_s3_prefix")
     parser.add_argument("--checkpoint_schema_version", choices=("1",))
+    parser.add_argument("--contract-id")
     args = parser.parse_args()
+
+    if args.mode == "system":
+        import boto3
+
+        from lava.readers.system import run_inference
+
+        if not args.contract_id:
+            parser.error("System inference requires --contract-id")
+        logger = RuntimeEventLogger(
+            "system.job", jsonl_path=Path("/opt/ml/model/private/events.jsonl")
+        )
+        with logger.stage("system.job", heartbeat_seconds=15):
+            result = run_inference(
+                ROOT, boto3.client("s3", region_name=args.region),
+                args.bucket, args.contract_id, logger,
+            )
+        logger.emit("system.job.completed", question_count=len(result["records"]))
+        print("SYSTEM_READER_JOB_COMPLETE", flush=True)
+        return
+
+    from lava.readers.benchmark import run_oracle_benchmark
+
+    for name in ("manifest_s3_uri", "output_s3_prefix", "protocol_lock_id",
+                 "model_key", "experiment_id", "limit"):
+        if getattr(args, name) is None:
+            parser.error(f"Oracle inference requires {name}")
 
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
