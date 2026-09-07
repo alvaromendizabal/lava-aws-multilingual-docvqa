@@ -1,9 +1,9 @@
 {
-  "analysis_inputs_sha256": "0fd7409317db8ea8089a6395b1778131c0846e711e2cf2de4179061775acc925",
-  "code_revision": "9d2e20b63e0e1ab5812d49429a96a7e9369fce2d",
+  "analysis_inputs_sha256": "ad593b3e086a9b21f18f7aee883a0e8e56ff76d120be56e30cb6a05cab2057f4",
+  "code_revision": "2ba834c92aa233067de5bee17274c29f793b223d",
   "executed_code_cells": 2,
   "notebook": "01_oracle_reader_benchmark_design.ipynb",
-  "output_sha256": "66acb6304e0770f5d2bc9399fcdaea417aaa1aff96e19e6eecaa51f8de2b24cb",
+  "output_sha256": "f747439b1c2cfa8655e0f7fec6853a1b4f82f0dc57645852b7d4ecbd1a95f51e",
   "schema_version": 2,
-  "source_sha256": "5b261243bf504a5a0ac9076269841286ebffacf106809c1c1e2377c6fe6653fc"
+  "source_sha256": "9e1d00b06a37672396aae562fccb5fe42eb04b3e039d67fa7cb6cb5e6915cb4b"
 }

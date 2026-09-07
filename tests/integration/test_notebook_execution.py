@@ -92,6 +92,7 @@ def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
         "02": "Full pilot scored",
         "03": "Full pilot scored",
         "04": "Full-document retrieval evaluated",
+        "05": "Current end-to-end status",
     }[stem[:2]]
     assert any(expected in text for text in html_outputs)
     assert path.read_bytes() == original

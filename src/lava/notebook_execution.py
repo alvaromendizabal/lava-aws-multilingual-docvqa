@@ -20,6 +20,7 @@ NOTEBOOK_STEMS = (
     "02_verified_gpu_execution",
     "03_model_scaling_and_cost",
     "04_evidence_retrieval",
+    "05_end_to_end_system_evaluation",
 )
 
 

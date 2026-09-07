@@ -10,7 +10,7 @@ The portfolio deliverable is complete: verified data, frozen experiments, genera
 
 ## Read the project
 
-All five canonical notebooks live in [notebooks/](notebooks/). They can be read independently.
+All six canonical notebooks live in [notebooks/](notebooks/). They can be read independently.
 
 | Notebook | What to look for |
 | --- | --- |
@@ -19,6 +19,7 @@ All five canonical notebooks live in [notebooks/](notebooks/). They can be read 
 | [02 — Cloud execution](notebooks/02_verified_gpu_execution.ipynb) | Actual runs, checkpoints, logging, and recovery |
 | [03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Answer quality, citations, document effects, latency, memory, and cost |
 | [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Retrieval curves, document-level failures, and measured resumption |
+| [05 — Retrieved-evidence extension](notebooks/05_end_to_end_system_evaluation.ipynb) | Implemented integration, actual measurement status, failure analysis and recovery |
 
 **Short review:** read 00, then the results and conclusions in 03 and 04. Use 01 and 02 for methodological and engineering detail. No notebook needs to be run just to inspect the results.
 
@@ -30,7 +31,7 @@ Each reader received the correct evidence pages and their native text. These are
 
 | Reader configuration | Semantic answer credit | Evidence-page F1 | Local LAVA score | Valid responses |
 | --- | ---: | ---: | ---: | ---: |
-| Qwen3.5 4B · BF16 | 50.63% | 97.02% | 73.82% | 16/16 |
+| Qwen3.5 4B · BF16 | 50.62% | 97.02% | 73.82% | 16/16 |
 | Qwen3.5 9B · BF16 | **80.15%** | 93.90% | **87.02%** | 16/16 |
 | Qwen3.8 27B · NF4 | 70.98% | 89.73% | 80.36% | 15/16 |
 
@@ -54,7 +55,7 @@ The separate BM25 retrieval experiment searched **all 74 pages** in the training
 - **Experimental judgment:** frozen model/data/prompt contracts, a common question set, counted failures, and explicit comparison limits.
 - **Evaluation depth:** the LAVA formula, answer and citation diagnostics, document/language/format slices, exploratory uncertainty, retrieval ranking metrics, and measured resource use.
 - **Reliable execution:** independent SageMaker GPU jobs, per-question S3 checkpoints, checksum verification, and recovery from interrupted work.
-- **Readable evidence:** five executed notebooks with explanations, tables, charts, UTC timestamps, elapsed time, progress, and heartbeats.
+- **Readable evidence:** six executed notebooks with explanations, tables, charts, UTC timestamps, elapsed time, progress, and heartbeats.
 - **Software quality:** unit and real-kernel integration tests, recovery tests, formatting, lint, types, and CI. Tests validate correctness; benchmark metrics describe model behavior.
 
 ## Scope and limitations
@@ -64,6 +65,8 @@ This release completes a **component-level research benchmark**. Five labeled PD
 The 87.02% reader score uses oracle pages. Retrieval was evaluated separately, so no end-to-end answer score is claimed. Native-text retrieval also does not establish visual understanding of every chart or scanned page.
 
 Reader evaluation with retrieved pages, a deployed application, full test inference, and Kaggle submission are **optional extensions outside this completed release**. No submission or leaderboard result is claimed. There are no additional experiments required to review or use this portfolio benchmark.
+
+The retrieved-page pipeline is implemented; Notebook 05 reports its measurement status. Its actual answer score remains explicitly unmeasured until the GPU experiment runs. `make system-preview` inspects the plan without paid compute; `make finish CHARGES=YES` explicitly authorizes one bounded GPU attempt, then scores saved answers, executes all six notebooks, runs the quality gate and archives verified outputs. See [the operator guide](docs/system_evaluation.md) for cost limits and recovery. This extension does not invalidate the completed component benchmark.
 
 ## Reproduce and inspect
 

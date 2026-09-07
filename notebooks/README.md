@@ -15,3 +15,8 @@ All five canonical notebooks include verified execution outputs. **Open and read
 The component benchmark is complete. Integrated reader/retrieval evaluation, deployment, and Kaggle submission are optional extensions; no end-to-end or leaderboard score is claimed. See [scope and limitations](../README.md#scope-and-limitations).
 
 In Studio, this folder is `/home/sagemaker-user/lava-aws-multilingual-docvqa/notebooks/`. For reproduction, `make notebooks` verifies/reuses outputs or refreshes changed inputs, and `make quality` checks tests and publication integrity. Both run from the repository root and create no GPU job.
+
+
+## Optional integrated evaluation
+
+[05 — Retrieved-evidence evaluation](05_end_to_end_system_evaluation.ipynb) explains the label-blind input design, actual measurement status, failure analysis and recovery. It can be viewed without a GPU. The measured component benchmark remains complete; the charge-gated extension is operated through [the normal finish command](../docs/system_evaluation.md).
