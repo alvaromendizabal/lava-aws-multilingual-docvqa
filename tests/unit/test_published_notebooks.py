@@ -16,7 +16,9 @@ from lava.notebook_execution import analysis_input_digest
 ROOT = Path(__file__).resolve().parents[2]
 
 
-@pytest.mark.parametrize("stem", ["02_verified_gpu_execution", "03_model_scaling_and_cost"])
+@pytest.mark.parametrize(
+    "stem", ["02_verified_gpu_execution", "03_model_scaling_and_cost", "04_evidence_retrieval"]
+)
 def test_published_snapshot_matches_current_sources_and_verified_inputs(stem):
     path = ROOT / "reports/notebooks" / f"{stem}.ipynb"
     manifest = json.loads(path.with_suffix(".manifest.json").read_text())
@@ -36,7 +38,12 @@ def test_published_snapshot_matches_current_sources_and_verified_inputs(stem):
     serialized = path.read_text()
     assert not re.search(r"arn:aws:|s3://|AKIA[A-Z0-9]{16}|hf_[A-Za-z0-9]{20,}", serialized)
     assert '"contract_current": false' not in serialized
-    assert "Full pilot scored" in serialized
+    expected = (
+        "Full-document retrieval evaluated"
+        if stem == "04_evidence_retrieval"
+        else "Full pilot scored"
+    )
+    assert expected in serialized
     attribute = subprocess.check_output(
         ["git", "check-attr", "filter", "--", str(path.relative_to(ROOT))], cwd=ROOT, text=True
     )

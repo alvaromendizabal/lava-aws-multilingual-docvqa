@@ -52,7 +52,9 @@ def test_real_notebook_kernel_uses_ipc_and_cleans_up(tmp_path, capfd, fail):
 
 
 @pytest.mark.skipif(os.name != "posix", reason="Linux notebook runtime")
-@pytest.mark.parametrize("stem", ["02_verified_gpu_execution", "03_model_scaling_and_cost"])
+@pytest.mark.parametrize(
+    "stem", ["02_verified_gpu_execution", "03_model_scaling_and_cost", "04_evidence_retrieval"]
+)
 def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
     """Run the actual employer-facing notebooks and verify completed stage evidence."""
     import json
@@ -84,5 +86,10 @@ def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
     html_outputs = [
         output.data["text/html"] for output in outputs if "text/html" in output.get("data", {})
     ]
-    assert any("Full pilot scored" in text for text in html_outputs)
+    expected = (
+        "Full-document retrieval evaluated"
+        if stem == "04_evidence_retrieval"
+        else "Full pilot scored"
+    )
+    assert any(expected in text for text in html_outputs)
     assert path.read_bytes() == original

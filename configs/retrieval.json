@@ -1,0 +1,25 @@
+{
+  "bm25": {
+    "b": 0.75,
+    "k1": 1.2
+  },
+  "budgets": [
+    1,
+    2,
+    3,
+    5,
+    10
+  ],
+  "expected_document_count": 5,
+  "expected_question_count": 16,
+  "method": "native_text_bm25",
+  "ocr": false,
+  "schema_version": 1,
+  "selection_policy": "prespecified_diagnostic_no_label_tuning",
+  "source_manifest_sha256": "712d66f0d5208f67248651dc80a973ed95610e39cf4aafdf26858162b5d24188",
+  "sources": {
+    "bm25": "https://lucene.apache.org/core/9_12_1/core/org/apache/lucene/search/similarities/BM25Similarity.html",
+    "pdf_extraction": "https://pymupdf.readthedocs.io/en/latest/recipes-text.html"
+  },
+  "tokenizer": "nfkc_casefold_words_char_2_3"
+}

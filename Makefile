@@ -4,6 +4,13 @@ JOB ?=
 CHARGES ?= NO
 CONFIRM ?= NO
 
+.PHONY: retrieval-preview retrieval-evaluate
+retrieval-preview:
+	uv run --frozen python scripts/evaluate_retrieval.py --mode preview
+
+retrieval-evaluate:
+	uv run --frozen python scripts/evaluate_retrieval.py --mode evaluate
+
 .PHONY: quality preflight preview submit monitor verify sync stop notebooks
 
 quality:
