@@ -1,2 +1,4 @@
 *.ipynb filter=nbstripout
 *.ipynb diff=jupytext
+# Reviewed public execution snapshots retain outputs; editable sources stay stripped.
+reports/notebooks/*.ipynb -filter

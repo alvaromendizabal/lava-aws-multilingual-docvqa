@@ -4,18 +4,28 @@
 
 LAVA is a research-grade multilingual document-intelligence system built to separate **reader quality**, **retrieval quality**, and **systems cost** under a frozen, leakage-resistant evaluation protocol. The project combines open vision-language models, immutable model/data lineage, AWS SageMaker GPU execution, structured artifact verification, and reproducible public analysis notebooks.
 
+## Read the executed notebooks
+
+Start with [02 — Verified GPU execution](reports/notebooks/02_verified_gpu_execution.ipynb),
+then [03 — Which reader should we use?](reports/notebooks/03_model_scaling_and_cost.ipynb).
+These GitHub-viewable snapshots include actual outputs, timestamps, metric tables
+and charts from the completed three-model comparison. Each has a checksum manifest
+binding it to the editable source and analysis inputs. Canonical editable notebooks
+remain in `notebooks/`; publication snapshots are tested separately and retain outputs.
+
 ## Current verified results
 
 | Reader | SageMaker target | Verified scope | Billable seconds |
 | --- | --- | --- | --- |
 | Qwen3.5-4B fused direct | `ml.g5.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **380** |
 | Qwen3.5-9B fused direct | `ml.g6e.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **395** |
-| Qwen3.8-27B NF4 fused direct | `ml.g5.2xlarge` | One-question smoke | 783 |
+| Qwen3.8-27B NF4 fused direct | `ml.g5.2xlarge` | **Complete pilot: 16 questions / 5 documents** | **962** |
 
 | Complete pilot | Question-average diagnostic | Document-average diagnostic | Evidence-page F1 | Mean generation | Peak GPU memory |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 4B | 38.13% | 43.83% | 97.02% | 5.52 s | 10.95 GiB |
 | 9B | 45.77% | 39.71% | 93.90% | 3.61 s | 20.15 GiB |
+| 27B NF4 | 33.48% | 29.88% | 89.73% | 12.24 s | 20.63 GiB |
 
 These are **full 16-question pilots**, not just smoke tests. Notebook 02 and the
 dashboard now prioritize current coverage; historical smokes appear in run history.
@@ -28,8 +38,9 @@ Semantic scores are now independently evaluated from their saved answers:
 | --- | ---: | ---: | ---: |
 | 4B | **50.63%** | 97.02% | **73.82%** |
 | 9B | **80.15%** | 93.90% | **87.02%** |
+| 27B NF4 | **70.98%** | 89.73% | **80.36%** |
 
-The pinned CPU judge passed all **28 public controls**. Scoring both pilots took
+The pinned CPU judge passed all **28 public controls**. Scoring the 4B and 9B pilots took
 **65.13 seconds** on the existing Studio CPU; a second run took **7.71 seconds**,
 reused all **129 decision requests**, and loaded no model. See the
 [real-model validation and resume evidence](reports/oracle_reader/judge_validation.json).
@@ -42,11 +53,14 @@ The organizer's exact judge prompt/runtime is unpublished; local formula-based
 scores are explicitly distinct from organizer-server results. Oracle citation F1
 does not measure retrieval quality.
 
-Both complete pilots have **100% valid output** and no parser errors. The first table of answer scores
+The 4B and 9B pilots have **100% valid output** and no parser errors. The 27B
+pilot has **93.75% valid output**: one contradictory abstention is retained as a
+model failure, with all 16 questions still in the denominator. The first table of answer scores
 contains normalized-exact diagnostics with partial list credit; the semantic table
 uses the separately validated Gemma judge. Every raw generation,
 question, score, and aggregate was independently checked against the frozen manifest;
-all **16 immutable 9B checkpoints** were also verified against the final records.
+all **16 immutable checkpoints** in each of the 9B and 27B runs were also verified
+against the final records.
 
 The normalized-exact comparison is mixed: 9B improves two documents, ties two, and regresses on one.
 Its question-average gain is **7.65 percentage points**, while its document-average
@@ -57,11 +71,27 @@ the sole Vietnamese document. Its document-average semantic VQA is 76.38%, versu
 53.83% for 4B. There is no promotion decision from five documents. Hardware differs between runs;
 generation time is an observed system result, not a controlled model-speed comparison.
 
-Only one reader is needed for deployment. Preserve these completed runs. Next,
-audit shared failures and expand representative evaluation before selecting a reader.
-27B remains an optional comparison. The configured 27B candidate uses a
-different model generation and NF4 quantization, so the comparison also changes
-precision and model family version. This small pilot does not establish SOTA quality.
+**Keep 9B as the provisional reader.** The complete 27B comparison is now scored:
+27B is **6.67 percentage points lower** on question-average local LAVA overall
+and **1.58 points lower** when each PDF has equal weight. It improves one PDF,
+ties two and regresses on two. Its exploratory document-bootstrap interval is
+**−14.75 to +12.50 points**; five PDFs cannot establish held-out superiority.
+27B improves unordered-list answer credit and the single Vietnamese example,
+but those small slices cannot establish a general language or format advantage.
+
+The 27B run completed in **16m 51s wall time**, with **962 billable seconds**.
+Estimated training compute is **$0.405**, compared with **$0.307 for 9B** and
+**$0.160 for 4B**, using the dated Oregon Training prices in
+[the pricing snapshot](reports/aws/training_prices.json). These figures exclude
+Studio, storage, logs, transfer, taxes and discounts. Semantic scoring took
+**18.33 seconds** on the existing Studio CPU: 15 new decisions and 53 reused.
+The successful one-question 27B smoke remains in the historical run record.
+
+Only one reader is needed for deployment. Preserve all completed runs and move
+next to full-document retrieval and error analysis. The 27B candidate uses a
+different model generation and NF4 quantization, so this comparison also changes
+precision, hardware and model family version. This small pilot does not establish
+SOTA quality or prove that 9B is universally better.
 
 The report now compares **semantic answer, evidence and overall scores** with
 document-paired intervals, separately from exact diagnostics. On local LAVA
@@ -121,7 +151,7 @@ make evaluate
 make submission-preview
 make submission-check
 
-# Optional 27B plan review; no GPU is launched
+# Reference 27B plan review; the pilot is already complete, no GPU is launched
 make benchmark-preview MODEL=qwen38_27b_nf4_g5_fused_direct
 ```
 

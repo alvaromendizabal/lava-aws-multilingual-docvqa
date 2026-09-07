@@ -203,8 +203,9 @@ both weighting schemes, and uncertainty directly.
 | --- | ---: | ---: | ---: | ---: |
 | 4B | 50.625% | 53.833% | 97.024% | 73.824% |
 | 9B | 80.149% | 76.381% | 93.899% | 87.024% |
+| 27B NF4 | 70.982% | 76.548% | 89.732% | 80.357% |
 
-Both rows cover the same 16 questions and five documents. The combined column is
+All three rows cover the same 16 questions and five documents. The combined column is
 question-weighted, as specified by LAVA. These are local published-formula scores,
 not organizer-server results. The judge contract is
 `6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc`.
@@ -218,10 +219,10 @@ pilot and oracle evidence setting do not support broad performance claims.
 
 ## Next experiment
 
-Semantic evaluation of the **already saved** 4B and 9B answers is complete.
-Their GPU inference and saved-answer scoring are both verified.
-Notebook 02 and the report show 16/16 coverage for both, separate from historical
-one-question smoke runs. No reader rerun is required to add semantic scores.
+Semantic evaluation of the **already saved** 4B, 9B and 27B answers is complete.
+Their GPU inference and saved-answer scoring are verified. Notebook 02 and the
+report show 16/16 coverage for each, separate from historical one-question smokes.
+No reader rerun is required to add semantic scores.
 
 One deployed reader is sufficient. The model sizes are comparison candidates, not
 three required production models or three training stages. The 4B and 9B candidates
@@ -229,50 +230,38 @@ are Qwen3.5 models; the configured 27B candidate is Qwen3.8 with NF4 quantizatio
 The last comparison therefore changes model generation and numerical precision as
 well as parameter count. It cannot isolate parameter scaling alone.
 
-The next research step is failure analysis and evaluation expansion. Both readers
-score zero on doc-02; 9B regresses on the sole Vietnamese question in doc-05.
-Review those raw answers privately against the source pages and reference answers,
-distinguishing reading errors, evidence selection, and equivalent representations.
-Keep this frozen diagnostic unchanged; any new semantic metric needs a versioned
-contract and independent validation. Add representative documents and languages
-with a held-out evaluation split before selecting one reader.
+**Keep 9B as the provisional reader.** The completed 27B pilot is 6.67 percentage
+points lower on question-average local LAVA overall and 1.58 points lower with
+equal document weights. It improves one PDF, ties two and regresses on two.
+One invalid abstention remains a model failure; all 16 questions remain in the
+denominator. 27B improves unordered-list answer credit and the sole Vietnamese
+example, but five PDFs cannot establish held-out superiority or language strength.
 
-27B can optionally answer whether a different reader resolves the observed failures
-on the same frozen pilot. Its one-question smoke is already verified; a complete
-16-question run has not yet been submitted. None of these pilot results alone
-establishes state-of-the-art performance.
+The completed job reused `qwen38_27b_nf4_g5_fused_direct` on `ml.g5.2xlarge`,
+the configuration that passed its smoke. It took 1010.753 seconds wall time and
+962 billable seconds, approximately $0.405 in training compute at the dated rate.
+Saved-answer semantic scoring took 18.33 seconds, with 15 new judge decisions and
+53 reused. The original 4B and 9B inference did not need to run again.
 
-Use **one** `qwen38_27b_nf4_g5_fused_direct` full pilot on `ml.g5.2xlarge`, the exact
-27B path that passed its smoke. G6e was verified for 9B, not this 27B configuration.
-Duplicating 27B across G5 and G6e would test hardware, not add another reader
-candidate. A controlled hardware experiment can follow if latency/cost is the
-research question. Do not assume that similarly named G6 and G6e have the same GPU.
+The next research step is full-document evidence retrieval followed by 9B reader
+evaluation with retrieved pages. Analyze raw failures privately against source
+pages and reference answers, distinguishing reading, evidence selection and
+equivalent representations. Keep the frozen pilot and judge contract unchanged.
+Use representative documents and languages with a document-isolated held-out
+split when expanding evaluation. Follow the [submission roadmap](submission.md)
+for complete test inference and organizer runtime verification.
 
 From the project checkout in SageMaker Studio:
 
 ```bash
 make quality
 make report
-make benchmark-preview MODEL=qwen38_27b_nf4_g5_fused_direct
 ```
 
-Preview starts no GPU. Open `reports/oracle_reader/evaluation/index.html`, or run
-notebook 03, to inspect answer scores by document and format, runtime, memory,
-coverage, and provenance. Smoke results remain explicitly labeled.
-
-The optional paid 27B comparison, after reviewing its preview:
-
-```bash
-make benchmark-submit MODEL=qwen38_27b_nf4_g5_fused_direct CHARGES=YES
-```
-
-Submission requires committed code, explicit charge acknowledgement, a sufficient
-quota, no active LAVA job, an unused output prefix, and the pinned manifest version
-and SHA-256. This 27B plan creates one on-demand `ml.g5.2xlarge` training job, with a one-hour
-compute limit, a separate 24-hour capacity-acquisition limit, and no endpoint.
-The cost check uses a supplied hourly ceiling and contingency; it is not a live
-price quote or guaranteed invoice cap. Existing one-question execution proves the
-model can load; it does not guarantee capacity or memory fit for every pilot input.
+These commands start no GPU. Open `reports/oracle_reader/evaluation/index.html`
+or the [executed comparison notebook](../reports/notebooks/03_model_scaling_and_cost.ipynb)
+to inspect the completed scores, runtime, memory, coverage and provenance.
+A second 27B hardware run is unnecessary for the current reader decision.
 
 ## Published metric and saved-answer evaluation
 

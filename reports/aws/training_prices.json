@@ -1,0 +1,14 @@
+{
+  "service_code": "AmazonSageMaker",
+  "region": "us-west-2",
+  "checked_at_utc": "2026-09-06T23:30:26.640848+00:00",
+  "source": "AWS Price List API GetProducts",
+  "source_url": "https://aws.amazon.com/sagemaker/ai/pricing/",
+  "publication_date": "2026-09-04T22:33:58Z",
+  "effective_date": "2026-09-01T00:00:00Z",
+  "scope": "Public on-demand training compute only. Excludes Studio, storage, logs, transfer, taxes and account discounts. A dated estimate, not an invoice or account spending cap.",
+  "products": [
+    {"instance_type": "ml.g5.2xlarge", "component": "Training", "unit": "Hrs", "usd_per_hour": 1.515, "sku": "YGRNZSP6ZXPBABYR"},
+    {"instance_type": "ml.g6e.2xlarge", "component": "Training", "unit": "Hrs", "usd_per_hour": 2.8, "sku": "CXC9WEEADZ9W63G6"}
+  ]
+}

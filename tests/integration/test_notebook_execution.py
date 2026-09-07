@@ -49,3 +49,40 @@ def test_real_notebook_kernel_uses_ipc_and_cleans_up(tmp_path, capfd, fail):
     captured = capfd.readouterr()
     assert "without encryption" not in captured.err
     assert "TqdmWarning" not in captured.err
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Linux notebook runtime")
+@pytest.mark.parametrize("stem", ["02_verified_gpu_execution", "03_model_scaling_and_cost"])
+def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
+    """Run the actual employer-facing notebooks and verify completed stage evidence."""
+    import json
+
+    try:
+        with socket.socket(socket.AF_UNIX) as probe:
+            probe.bind(str(tmp_path / "notebook-socket"))
+    except PermissionError:
+        pytest.skip("Execution sandbox prohibits local IPC sockets; exercised in Linux CI")
+    path = ROOT / "notebooks" / f"{stem}.ipynb"
+    original = path.read_bytes()
+    execute = runpy.run_path(str(ROOT / "scripts/execute_notebook_smoke.py"))["execute_notebook"]
+    result = execute(path, ROOT, 90, kernel_name="python3")
+    code = [cell for cell in result.cells if cell.cell_type == "code"]
+    assert [cell.execution_count for cell in code] == list(range(1, len(code) + 1))
+    outputs = [output for cell in code for output in cell.outputs]
+    assert not any(output.output_type == "error" for output in outputs)
+    events = []
+    for output in outputs:
+        if output.output_type == "stream":
+            assert output.name == "stdout"
+            for line in output.text.splitlines():
+                if line.startswith("{"):
+                    events.append(json.loads(line))
+    assert events[-1]["event"].endswith("walkthrough.completed")
+    assert events[-1]["elapsed_seconds"] >= 0
+    assert all("timestamp_utc" in event for event in events)
+    assert not any(event["level"] != "INFO" for event in events)
+    html_outputs = [
+        output.data["text/html"] for output in outputs if "text/html" in output.get("data", {})
+    ]
+    assert any("Full pilot scored" in text for text in html_outputs)
+    assert path.read_bytes() == original

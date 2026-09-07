@@ -1,0 +1,36 @@
+{
+  "artifact_gate": {
+    "model_artifact_uri": "s3://<redacted-bucket>/experiments/oracle-reader/v3/23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61/qwen38_27b_nf4_g5_fused_direct/f9f6c4a8d7207e045eb4337a5483e8b884890e3a/benchmark/sagemaker-output/lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906233121/output/model",
+    "parser_error_counts": {
+      "invalid_abstention": 1
+    },
+    "raw_response_count": 16,
+    "schema_valid_rate": 0.9375
+  },
+  "billable_time_seconds": 962,
+  "git_commit_sha": "f9f6c4a8d7207e045eb4337a5483e8b884890e3a",
+  "instance_type": "ml.g5.2xlarge",
+  "job_name": "lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906233121",
+  "job_timing": {
+    "compute_started_at_utc": "2026-09-06T23:32:22.341000+00:00",
+    "created_at_utc": "2026-09-06T23:31:33.575000+00:00",
+    "elapsed_seconds": 1010.753,
+    "ended_at_utc": "2026-09-06T23:48:24.328000+00:00",
+    "phase_seconds": {
+      "Completed": 0.0,
+      "Downloading": 181.911,
+      "Pending": 48.432,
+      "Starting": 0.334,
+      "Training": 767.626,
+      "Uploading": 12.45
+    }
+  },
+  "model_id": "Qwen/Qwen3.8-27B",
+  "model_key": "qwen38_27b_nf4_g5_fused_direct",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "protocol_lock_id": "23cf9a605fcdc553c2948b1fd1001d8e300187f35a43f46083a3396cc7ac2b61",
+  "public_summary_sha256": "66bab6b0dd7143e5ce99c3138fbae9187be40d958ba8edfe8198a3f5d311d372",
+  "schema_version": 1,
+  "synced_at_utc": "2026-09-06T23:48:36+00:00",
+  "training_time_seconds": 962
+}

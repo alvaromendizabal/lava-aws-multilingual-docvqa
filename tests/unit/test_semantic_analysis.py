@@ -21,7 +21,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.fixture
 def pilots():
-    return [run for run in load_report(ROOT)["runs"] if run["complete"]]
+    return [
+        run
+        for run in load_report(ROOT)["current_models"]
+        if run["complete"] and run["model_key"].startswith("qwen35_")
+    ]
 
 
 def test_offline_report_does_not_import_model_download_or_widget_libraries():
