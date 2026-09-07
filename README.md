@@ -7,11 +7,41 @@ LAVA is a research-grade multilingual document-intelligence system built to sepa
 ## Read the executed notebooks
 
 Start with [02 — Verified GPU execution](reports/notebooks/02_verified_gpu_execution.ipynb),
-then [03 — Which reader should we use?](reports/notebooks/03_model_scaling_and_cost.ipynb).
+then [03 — Which reader should we use?](reports/notebooks/03_model_scaling_and_cost.ipynb)
+and [04 — Can we find the evidence?](reports/notebooks/04_evidence_retrieval.ipynb).
 These GitHub-viewable snapshots include actual outputs, timestamps, metric tables
 and charts from the completed three-model comparison. Each has a checksum manifest
 binding it to the editable source and analysis inputs. Canonical editable notebooks
 remain in `notebooks/`; publication snapshots are tested separately and retain outputs.
+
+## Full-document retrieval is now evaluated
+
+The frozen multilingual BM25 baseline searched **all 74 physical pages** in the
+five training PDFs, with **zero extraction errors**. It uses native PDF text and
+the question, without gold answers or evidence labels in ranking.
+
+| Page budget | BM25 evidence recall | BM25 all-evidence coverage | Page-order all-evidence coverage |
+| --- | ---: | ---: | ---: |
+| 1 | 53.65% | 31.25% | 12.50% |
+| 2 | 69.79% | 56.25% | 12.50% |
+| 3 | 83.85% | 68.75% | 25.00% |
+| 5 | **95.31%** | **87.50% (14/16)** | 37.50% |
+| 10 | 100.00% | 100.00% | 56.25% |
+
+At five pages, equal-document recall is **92.50%** and all-evidence coverage is
+**75.00%**. The single Vietnamese question still misses one evidence page. More
+pages improve coverage in this pilot but increase the reader's context and cost;
+100% retrieval coverage is not 100% answer accuracy or held-out generalization.
+For PDFs shorter than a budget, retrieval returns all their pages.
+
+The initial CPU run took **8.548 seconds**. A second process took **0.898 seconds**
+and reused all **5 document extractions and 16 rankings** from verified S3
+checkpoints. No GPU job was launched. See the [retrieval methodology](docs/retrieval.md),
+[public report](reports/retrieval/index.html), and
+[measured resume record](reports/retrieval/validation.json).
+
+**Next: evaluate 9B with retrieved pages.** Its oracle score below is unchanged;
+no new end-to-end answer score or Kaggle submission is claimed.
 
 ## Current verified results
 
@@ -88,7 +118,7 @@ Studio, storage, logs, transfer, taxes and discounts. Semantic scoring took
 The successful one-question 27B smoke remains in the historical run record.
 
 Only one reader is needed for deployment. Preserve all completed runs and move
-next to full-document retrieval and error analysis. The 27B candidate uses a
+next to reader evaluation with retrieved pages and error analysis. The 27B candidate uses a
 different model generation and NF4 quantization, so this comparison also changes
 precision, hardware and model family version. This small pilot does not establish
 SOTA quality or prove that 9B is universally better.
@@ -101,8 +131,8 @@ p-value **0.375**. Its remaining deficit is concentrated in string and unordered
 questions. These are measured score gaps, not causal explanations.
 
 The 16 questions are **all supplied training labels**. The separate test set has
-**624 questions / 200 documents**. The next model milestone is full-document
-evidence retrieval followed by reader evaluation with retrieved pages. A tested
+**624 questions / 200 documents**. Full-document text retrieval is now evaluated;
+the next model milestone is reader evaluation with retrieved pages. A tested
 [submission workflow](docs/submission.md) verifies the pinned test/template files
 and exports only complete, provenance-bound test predictions. No submission has
 been uploaded. Kaggle showed a Late Submission option on September 6, 2026;

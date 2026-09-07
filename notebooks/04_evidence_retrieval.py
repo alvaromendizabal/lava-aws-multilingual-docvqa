@@ -129,6 +129,7 @@ with logger.stage("03_inspect_frozen_method", heartbeat_seconds=15):
 # this project's AP@k denominator is `min(number of relevant pages, k)`.
 # nDCG@k compares ranked relevance with an ideal ordering. All budgets were fixed
 # before this run. Report the entire curve rather than choosing k from the best-looking row.
+# A PDF with fewer than k pages contributes all its physical pages.
 # %%
 with logger.stage("04_measure_retrieval", heartbeat_seconds=15):
     display(HTML(recall_chart(summary)))
