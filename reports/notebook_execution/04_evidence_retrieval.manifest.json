@@ -1,9 +1,9 @@
 {
   "analysis_inputs_sha256": "ad593b3e086a9b21f18f7aee883a0e8e56ff76d120be56e30cb6a05cab2057f4",
-  "code_revision": "d3abba25dd41de9f3dbd053e74a109e6a2f7883b",
+  "code_revision": "2ba834c92aa233067de5bee17274c29f793b223d",
   "executed_code_cells": 7,
   "notebook": "04_evidence_retrieval.ipynb",
-  "output_sha256": "6fd881aefaaf881f663e41986b2cfec5ac9af020a6ef1eb1cd52628cbf7e1acb",
+  "output_sha256": "bc1215d355c779c18b349214e9056f50ebba062d74ccc4bf4ef28e26abfa4314",
   "schema_version": 2,
-  "source_sha256": "c16ddb6b1d10761b64b2e1f7d5cbe8d2883da02f01445a00170875cebe6b468f"
+  "source_sha256": "e9c4136e8beb594433dc7f30d1c45e3a78365c84fa228bc1811582a20849aed5"
 }
