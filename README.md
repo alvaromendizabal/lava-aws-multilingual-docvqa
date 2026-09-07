@@ -2,108 +2,85 @@
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
 
-An evidence-grounded document-QA research project using open vision-language models, multilingual retrieval, reproducible AWS execution, and auditable evaluation.
+**Completed research benchmark · Python · Vision-language models · AWS · Reproducible evaluation**
 
-**Current position:** data acquisition and audit, the 4B/9B/27B reader comparison, and full-document retrieval are complete. **Final portfolio gate:** run the implemented, frozen 9B retrieved-page pilot and publish its measured results. Notebook 05 shows its actual status; no end-to-end score is claimed before real inference. Kaggle submission is optional.
+How do model size, quantization, and compute cost affect multilingual document question answering—and how reliably can a simple retriever find the supporting pages? This project answers those questions with three measured reader configurations and a separate full-document retrieval experiment.
 
-## Start in notebooks/
+The portfolio deliverable is complete: verified data, frozen experiments, generated metrics, executed notebooks, visual analysis, and tested recovery. All notebook outputs are included. **An employer can review the work without an account, installation, or GPU.**
 
-There is one canonical notebook folder: **[notebooks/](notebooks/)**. All six notebooks contain actual executed outputs. Read them in order; each can also run independently. Viewing them requires no GPU job, data download, or model-provider login.
+## Read the project
 
-| Notebook | What it explains | Current state |
-| --- | --- | --- |
-| [00 — Reproducibility and protocol](notebooks/00_reproducibility_and_protocol.ipynb) | Data already acquired, evaluation rules, project progress | Complete |
-| [01 — Reader benchmark design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Why these three model configurations were compared | Complete |
-| [02 — Verified GPU execution](notebooks/02_verified_gpu_execution.ipynb) | Run coverage, cloud execution, checkpoints | Three full pilots verified |
-| [03 — Model scaling and cost](notebooks/03_model_scaling_and_cost.ipynb) | Answer quality, evidence, latency, memory, cost | Three pilots scored; provisional 9B |
-| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Search all PDF pages and measure retrieval | Complete |
-| [05 — End-to-end evaluation](notebooks/05_end_to_end_system_evaluation.ipynb) | Input design, integrated score, failure analysis, recovery | Implemented; actual GPU run is explicitly gated |
+All six canonical notebooks live in [notebooks/](notebooks/). They can be read independently.
 
-In SageMaker Studio, open `/home/sagemaker-user/lava-aws-multilingual-docvqa/notebooks/`.
-Do not navigate into an `artifacts/.../checkout` directory to read the project.
-The obsolete validation checkouts and old installation bundles have been archived and removed from the active workspace.
+| Notebook | What to look for |
+| --- | --- |
+| [00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb) | Scope, verified headline results, and conclusions |
+| [01 — Experiment design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Comparable inputs, model configurations, and evaluation boundaries |
+| [02 — Cloud execution](notebooks/02_verified_gpu_execution.ipynb) | Actual runs, checkpoints, logging, and recovery |
+| [03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Answer quality, citations, document effects, latency, memory, and cost |
+| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Retrieval curves, document-level failures, and measured resumption |
+| [05 — Retrieved-evidence extension](notebooks/05_end_to_end_system_evaluation.ipynb) | Implemented integration, actual measurement status, failure analysis and recovery |
 
-## What has actually completed?
+**Short review:** read 00, then the results and conclusions in 03 and 04. Use 01 and 02 for methodological and engineering detail. No notebook needs to be run just to inspect the results.
 
-The full data audit verified **208 files, including 205 PDFs**: 16 training questions from five PDFs and 624 test questions from 200 PDFs. All available training labels are included in the pilots. Test answers are hidden; the sample submission is a template.
+## Measured findings
 
-Each reader received the correct evidence pages. These are **oracle-evidence** results:
+The data audit verified **208 files, including 205 PDFs**. The experiments cover **all 16 supplied training questions from five PDFs**. Fifteen questions are Japanese and one is Vietnamese. Hidden test answers are unavailable.
+
+Each reader received the correct evidence pages and their native text. These are **oracle-evidence** measurements of answering and citation behavior:
 
 | Reader configuration | Semantic answer credit | Evidence-page F1 | Local LAVA score | Valid responses |
 | --- | ---: | ---: | ---: | ---: |
-| Qwen3.5 4B | 50.63% | 97.02% | 73.82% | 16/16 |
-| Qwen3.5 9B | **80.15%** | 93.90% | **87.02%** | 16/16 |
-| Qwen3.8 27B NF4 | 70.98% | 89.73% | 80.36% | 15/16 |
+| Qwen3.5 4B · BF16 | 50.62% | 97.02% | 73.82% | 16/16 |
+| Qwen3.5 9B · BF16 | **80.15%** | 93.90% | **87.02%** | 16/16 |
+| Qwen3.8 27B · NF4 | 70.98% | 89.73% | 80.36% | 15/16 |
 
-The [published LAVA metric](https://lava-workshop.github.io/#evaluation) averages semantic answer credit and evidence-page F1 per question. Our local Gemma judge is pinned and passed 28 development controls; the organizer's exact prompt/runtime is unpublished. Local scores therefore carry an explicit organizer-parity limitation.
+**Finding:** 9B achieved the highest local score among these configurations. The 27B model did not improve this pilot; its invalid response remains a counted failure. Hardware, model generation, and precision differ, so parameter count alone cannot explain the result.
 
-Keep **9B as the provisional reader**. The 27B experiment is already complete. Hardware, model generation, and precision differ, and five PDFs cannot establish general superiority. The invalid 27B response remains a counted failure.
+The [published LAVA metric](https://lava-workshop.github.io/#evaluation) averages semantic answer credit and evidence-page F1 per question. This implementation uses a pinned Gemma-3 1B judge that passed 28 development controls. The organizer's exact prompt/runtime is unpublished: these are local formula-based scores, with an explicit organizer-parity limitation.
 
-The separate retrieval pilot searched **all 74 pages** in the five training PDFs, with zero extraction errors:
+The separate BM25 retrieval experiment searched **all 74 pages** in the training PDFs without using answer labels to rank pages:
 
-| Retrieved pages | BM25 evidence recall | Questions with all evidence found | Page-order all-evidence coverage |
+| Page budget | Evidence recall | Questions with all evidence | Page-order all-evidence coverage |
 | --- | ---: | ---: | ---: |
 | 1 | 53.65% | 5/16 | 12.50% |
 | 3 | 83.85% | 11/16 | 25.00% |
 | 5 | **95.31%** | **14/16** | 37.50% |
 | 10 | 100.00% | 16/16 | 56.25% |
 
-At five pages, equal-document recall is 92.50% and all-evidence coverage is 75.00%. The initial run took **8.548 seconds**; an independent resume took **0.898 seconds**, reusing all five PDF extractions and 16 rankings. These are small training diagnostics. Retrieval coverage does not establish answer accuracy or held-out performance.
+**Finding:** lexical retrieval substantially improves evidence coverage over page order on this pilot. At five pages, equal-document recall is 92.50% and complete-evidence coverage is 75.00%, exposing variation hidden by the question average. The initial CPU run took **8.548 seconds**; a separate resumed run took **0.898 seconds**, reusing all five extractions and 16 rankings.
 
-## Remaining delivery milestones
+## What this demonstrates
 
-The portfolio completion gate is **one frozen integrated pilot**, not another model sweep or a Kaggle upload. The canonical implementation supplies five BM25-selected pages to the existing 9B reader. Labels remain separate; every answer is independently parsed, checkpointed, and read back before progress is acknowledged. A deterministic job identity permits reconnection without duplicate jobs. New failed-job attempts require separate approval.
+- **Experimental judgment:** frozen model/data/prompt contracts, a common question set, counted failures, and explicit comparison limits.
+- **Evaluation depth:** the LAVA formula, answer and citation diagnostics, document/language/format slices, exploratory uncertainty, retrieval ranking metrics, and measured resource use.
+- **Reliable execution:** independent SageMaker GPU jobs, per-question S3 checkpoints, checksum verification, and recovery from interrupted work.
+- **Readable evidence:** six executed notebooks with explanations, tables, charts, UTC timestamps, elapsed time, progress, and heartbeats.
+- **Software quality:** unit and real-kernel integration tests, recovery tests, formatting, lint, types, and CI. Tests validate correctness; benchmark metrics describe model behavior.
 
-From the existing configured SageMaker workspace:
+## Scope and limitations
 
-```bash
-make system-preview          # Inspect only: no paid resource or private download.
-make finish CHARGES=YES       # Explicitly approve one bounded GPU attempt, then score and publish.
-```
+This release completes a **component-level research benchmark**. Five labeled PDFs support descriptive findings; they do not establish held-out performance, language-wide accuracy, or state-of-the-art task performance. The readers are frozen pretrained models; this project does not claim to train a new foundation model.
 
-The second command reuses completed document/ranking checkpoints, prepares only selected page assets, launches or reattaches to the 16-question job, scores saved answers with the unchanged judge, executes all six notebooks, runs the quality gate and archives successful notebook publications. The training attempt uses one `ml.g6e.2xlarge`, a 1,800-second runtime cap and a $5 per-attempt training-compute estimate guard. This is **not a total AWS billing cap**: existing Studio, storage, logs, transfer and prior attempts are separate. No automatic paid retry is allowed. See [final pilot operation](docs/system_evaluation.md) for recovery and the publication commands.
+The 87.02% reader score uses oracle pages. Retrieval was evaluated separately, so no end-to-end answer score is claimed. Native-text retrieval also does not establish visual understanding of every chart or scanned page.
 
-Completion evidence must include actual retrieved-page predictions and semantic/evidence/local LAVA scores, per-document diagnostics, measured runtime, durable provenance and a passing final quality gate. Pending inference is never reported as successful or as a zero score. A lower result than the oracle baseline is retained and explained rather than hidden.
+Reader evaluation with retrieved pages, a deployed application, full test inference, and Kaggle submission are **optional extensions outside this completed release**. No submission or leaderboard result is claimed. There are no additional experiments required to review or use this portfolio benchmark.
 
-**Optional Kaggle extension:** validate the full inference container/runtime, generate all 624 hidden-test predictions, verify schema and exact IDs, and confirm submission eligibility. These are not requirements to finish the scoped research portfolio. No leaderboard submission, production deployment or held-out generalization is claimed here.
+The retrieved-page pipeline is implemented; Notebook 05 reports its measurement status. Its actual answer score remains explicitly unmeasured until the GPU experiment runs. `make system-preview` inspects the plan without paid compute; `make finish CHARGES=YES` explicitly authorizes one bounded GPU attempt, then scores saved answers, executes all six notebooks, runs the quality gate and archives verified outputs. See [the operator guide](docs/system_evaluation.md) for cost limits and recovery. This extension does not invalidate the completed component benchmark.
 
-## Run and resume
+## Reproduce and inspect
 
-From the repository root:
+In the configured Studio environment, use `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Public analysis uses the pinned Python 3.12 environment. After installing it, `make notebooks` verifies and reuses current outputs or refreshes changed notebooks; `make quality` runs the explicit quality gate. Neither command launches a GPU.
 
-```bash
-# Verify or refresh the six canonical notebooks; reuse current outputs.
-make notebooks
+Notebook publication verifies source, input, and output hashes; interrupted writes recover from completed staging records, and failed execution preserves the previous publication. Private source data, responses, and model/retrieval/judge checkpoints persist in S3. GitHub preserves code, public aggregates, and executed notebooks.
 
-# Explicit tests, formatting, lint, types, compilation, and publication integrity.
-make quality
-
-# Inspect the CPU retrieval plan; no private download or paid compute.
-make retrieval-preview
-
-# Resume the existing retrieval evaluation from verified S3 checkpoints.
-make retrieval-evaluate
-```
-
-Notebook outputs are published directly in `notebooks/`; checksum manifests live in `reports/notebook_execution/`. Completed publications can be reused even after cloning or merging. Changed inputs execute into staging first; interrupted publication resumes from the completed staging record. Failed execution preserves the last published notebook.
-
-Reader checkpoints, retrieval checkpoints, and judge decisions persist in S3. Logs include UTC timestamps, elapsed time, progress, and heartbeats. Accepted SageMaker GPU jobs continue after browser disconnection; Studio CPU processes stop with the app and resume from saved checkpoints. Runtime limits still apply.
-
-## Repository map
-
-| Folder | Purpose |
+| Location | Purpose |
 | --- | --- |
-| `notebooks/` | The six canonical, executed walkthroughs |
-| `src/lava/` | Data, metrics, readers, retrieval, and observability implementation |
-| `scripts/` and `Makefile` | Canonical commands |
-| `configs/` | Pinned experiment, model, and evaluation contracts |
-| `tests/` | Unit, integration, recovery, and publication checks |
-| `pipelines/oracle_reader/` | Independent SageMaker GPU job entry point |
-| `reports/` | Verified public aggregates, run history, and notebook manifests |
-| `docs/` | Methodology and operating instructions |
-| `infra/iam/` | Scoped submission-storage policy template |
-| `artifacts/` | Ignored runtime files and caches; completed private work is preserved in S3 |
+| `notebooks/` | The complete employer reading path |
+| `src/lava/`, `scripts/`, `configs/` | Implementation, canonical commands, and frozen contracts |
+| `tests/` | Correctness, integration, recovery, and publication checks |
+| `reports/` | Measured public results, provenance, and notebook manifests |
+| `pipelines/oracle_reader/`, `infra/iam/` | GPU job entry point and scoped storage policy |
+| `docs/` | Detailed methodology and reproduction instructions |
 
-Empty scaffolding and duplicate notebook representations have been removed. Completed run history and source/model/data locks remain because they substantiate the results and enable resumption.
-
-[Evaluation and recovery](docs/evaluation.md) · [Reader execution](docs/benchmark.md) · [Retrieval](docs/retrieval.md) · [Final pilot](docs/system_evaluation.md) · [Optional submission](docs/submission.md) · [Architecture](docs/architecture.md)
+[Evaluation and recovery](docs/evaluation.md) · [Architecture](docs/architecture.md) · [Reader execution](docs/benchmark.md) · [Retrieval](docs/retrieval.md)

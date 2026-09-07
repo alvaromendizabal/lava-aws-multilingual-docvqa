@@ -1,6 +1,6 @@
-# Final retrieved-evidence pilot
+# Retrieved-evidence extension
 
-This is the final **scoped research-portfolio** milestone. It is not a trained model,
+The **component-level research portfolio is complete**. This guide operates the separately scoped retrieved-evidence extension. It is not a trained model,
 hidden-test benchmark, production deployment or Kaggle submission. Keep the measured
 oracle results and the completed retriever; do not repeat the model sweep.
 
@@ -100,13 +100,13 @@ If that branch already exists after an interrupted publication, use
 `git switch feat/system-results` rather than creating a duplicate branch.
 Open its pull request in GitHub, require CI to pass on the final head, review the
 notebook outputs and merge using a merge commit to retain experiment ancestry.
-After the measured results merge, tag that **merged commit** as `v1.0.0`:
+After the measured results merge, tag that **merged commit** as `v1.1.0`:
 
 ```bash
 git switch main
 git pull --ff-only
-git tag -a v1.0.0 -m "Measured retrieved-evidence document-QA portfolio"
-git push origin v1.0.0
+git tag -a v1.1.0 -m "Measured retrieved-evidence document-QA portfolio"
+git push origin v1.1.0
 ```
 
 Do not create the tag for the implementation-only change. A Kaggle extension still

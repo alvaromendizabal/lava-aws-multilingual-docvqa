@@ -5,7 +5,7 @@
 Start with [Notebook 00](../notebooks/00_reproducibility_and_protocol.ipynb) and continue through 04.
 The only canonical notebook folder is `notebooks/`. It includes verified outputs, so reading the project does not require cloud execution, another login, or another model run.
 
-The data audit, 4B/9B/27B oracle-reader pilots, and full-document retrieval pilot are complete. The next experiment is 9B inference using retrieved evidence. See the [remaining delivery milestones](../README.md#remaining-delivery-milestones).
+This release completes the data audit, 4B/9B/27B oracle-reader comparison, and full-document retrieval benchmark. Read 00 → 03 → 04 for a short employer review; 01 and 02 provide technical detail. Integrated reader/retrieval inference and Kaggle submission are optional extensions outside the [completed scope](../README.md#scope-and-limitations).
 
 ## Metric and interpretation
 
@@ -21,7 +21,7 @@ Our pinned Gemma-3 1B judge implements these formulas with a validated local pro
 
 All three pilots contain the same 16 questions and five PDFs with correct evidence supplied. 4B and 9B each produced 16 valid responses. 27B produced 15 valid responses; its contradictory abstention remains a counted model failure. The 27B candidate also differs in model generation, quantization, and hardware.
 
-Keep 9B provisional. Inspect question averages, equal-document averages, per-document effects, answer formats, language slices, validity, latency, memory, and cost together. Five PDFs provide limited evidence, and there is only one Vietnamese training question. Document-bootstrap intervals and exact paired sign-flip tests are exploratory. The frozen nested document-isolation protocol is a constraint for future tuning, not a claim that nested cross-validation has already been completed.
+9B has the highest observed local score among these configurations. Inspect question averages, equal-document averages, per-document effects, answer formats, language slices, validity, latency, memory, and cost together. Five PDFs provide limited evidence, and there is only one Vietnamese training question. Document-bootstrap intervals and exact paired sign-flip tests are exploratory. The frozen nested document-isolation protocol is a constraint for future tuning, not a claim that nested cross-validation has already been completed.
 
 The initial normalized-exact answer diagnostics remain available for comparison; they are not semantic LAVA scores. Reader citation F1 with oracle pages also does not measure retrieval. [Notebook 04](../notebooks/04_evidence_retrieval.ipynb) reports retrieval recall, all-evidence coverage, MRR, MAP, and nDCG separately.
 
@@ -47,8 +47,6 @@ Run these from the repository root. Review each command's scope before using it.
 | `make evaluate` | Judge compatible saved predictions on the current CPU, resuming S3 decisions |
 | `make retrieval-preview` | Inspect the retrieval configuration without private downloads |
 | `make retrieval-evaluate` | Resume full-document retrieval from S3 checkpoints |
-| `make submission-preview` | Inspect the submission contract |
-| `make submission-check` | Verify pinned test and template input files |
 
 Optional `JOB=<sagemaker-job-name>` narrows the applicable evaluator command. Existing scored pilots do not need another GPU run.
 
@@ -96,4 +94,4 @@ CPU judging and retrieval run on the current host. If Studio stops, the process 
 
 Cloud runtime limits and capacity constraints still apply. Two-job concurrent orchestration remains optional future work; the current job guard allows one active LAVA reader job.
 
-[Model comparison](../notebooks/03_model_scaling_and_cost.ipynb) · [Retrieval](retrieval.md) · [Submission](submission.md)
+[Model comparison](../notebooks/03_model_scaling_and_cost.ipynb) · [Retrieval](retrieval.md) · [Optional submission extension](submission.md)

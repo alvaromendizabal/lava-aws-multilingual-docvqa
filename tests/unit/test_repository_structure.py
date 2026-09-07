@@ -91,4 +91,5 @@ def test_project_entrance_links_every_canonical_notebook_in_order() -> None:
     positions = [readme.index(f"notebooks/{stem}.ipynb") for stem in NOTEBOOK_STEMS]
     assert positions == sorted(positions)
     assert "reports/notebooks/" not in readme
-    assert "## Remaining delivery milestones" in readme
+    assert "## Scope and limitations" in readme
+    assert "Completed research benchmark" in readme
