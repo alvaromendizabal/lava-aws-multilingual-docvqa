@@ -55,10 +55,8 @@ jobs:
           subprocess.run(["git", "restore", "--source", main, "--staged", "--worktree", "--", *files], check=True)
           p = Path("README.md")
           text = p.read_text().replace("All five canonical notebooks", "All six canonical notebooks").replace("**Readable evidence:** five executed notebooks", "**Readable evidence:** six executed notebooks")
-          # Reuse the same numeric formatting as the verified notebook table.
           summary = json.loads(Path("reports/oracle_reader/runs/lava-oracle-qwen35-4b-fused-direct-20260906180137/semantic_summary.json").read_text())
-          score = summary["metrics"]["question_micro"]["answer"]
-          text = text.replace("50.63%", f"{score:.2%}")
+          text = text.replace("50.63%", f"{summary['metrics']['question_micro']['answer']:.2%}")
           lines = text.splitlines()
           position = next(i for i, line in enumerate(lines) if line.startswith("| [04 —"))
           lines.insert(position + 1, "| [05 — Retrieved-evidence extension](notebooks/05_end_to_end_system_evaluation.ipynb) | Implemented integration, actual measurement status, failure analysis and recovery |")
@@ -73,19 +71,17 @@ jobs:
           p = Path("docs/system_evaluation.md")
           text = p.read_text().replace("# Final retrieved-evidence pilot", "# Retrieved-evidence extension")
           text = text.replace("This is the final **scoped research-portfolio** milestone.", "The **component-level research portfolio is complete**. This guide operates the separately scoped retrieved-evidence extension.")
-          text = text.replace("v1.0.0", "v1.1.0")
-          p.write_text(text)
+          p.write_text(text.replace("v1.0.0", "v1.1.0"))
           p = Path("notebooks/05_end_to_end_system_evaluation.ipynb")
           notebook = json.loads(p.read_text())
           for cell in notebook["cells"]:
               text = "".join(cell["source"]).replace("The next required action is", "The action that measures this optional extension is")
               cell["source"] = text.splitlines(keepends=True)
           p.write_text(json.dumps(notebook, indent=1, ensure_ascii=False) + "\n")
-          Path(".github/workflows/ci.yml").write_bytes(subprocess.check_output(["git", "show", f"{reviewed}:.github/workflows/ci.yml"]))
-          subprocess.run(["git", "add", "README.md", "notebooks", "docs", "tests", ".github/workflows/ci.yml"], check=True)
+          subprocess.run(["git", "add", "README.md", "notebooks", "docs", "tests"], check=True)
           if git("diff", "--name-only", "--diff-filter=U"):
               raise SystemExit("Unresolved conflicts remain")
-          subprocess.run(["git", "commit", "-m", "Merge completed portfolio presentation with optional retrieved-evidence integration", "-m", "Preserve the measured results-first overview and all concurrent regression tests. Use metric-consistent percentage formatting. Add the independently scoped sixth notebook and execution path without reopening the completed component benchmark. Preserve both branches' ancestry and restore normal read-only CI."], check=True)
+          subprocess.run(["git", "commit", "-m", "Merge completed portfolio presentation with optional retrieved-evidence integration", "-m", "Preserve the measured results-first overview and all concurrent regression tests. Use metric-consistent percentage formatting. Add the independently scoped sixth notebook and execution path without reopening the completed component benchmark. Preserve both branches' ancestry."], check=True)
           PY
 
       - name: Install uv
@@ -125,6 +121,7 @@ jobs:
           git fetch origin feat/complete-system-evaluation main
           test "$(git rev-parse origin/feat/complete-system-evaluation)" = "$GITHUB_SHA"
           test "$(git rev-parse origin/main)" = dc87745f9c63ddb009ee4436aac07d47d7105ad3
+          git diff --exit-code "$GITHUB_SHA" HEAD -- .github/workflows
           git push origin HEAD:refs/heads/feat/complete-system-evaluation
 
       - name: Package validation evidence
