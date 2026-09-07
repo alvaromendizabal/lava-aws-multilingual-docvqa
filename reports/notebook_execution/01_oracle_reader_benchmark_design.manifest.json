@@ -1,0 +1,9 @@
+{
+  "analysis_inputs_sha256": "0fd7409317db8ea8089a6395b1778131c0846e711e2cf2de4179061775acc925",
+  "code_revision": "9d2e20b63e0e1ab5812d49429a96a7e9369fce2d",
+  "executed_code_cells": 2,
+  "notebook": "01_oracle_reader_benchmark_design.ipynb",
+  "output_sha256": "66acb6304e0770f5d2bc9399fcdaea417aaa1aff96e19e6eecaa51f8de2b24cb",
+  "schema_version": 2,
+  "source_sha256": "5b261243bf504a5a0ac9076269841286ebffacf106809c1c1e2377c6fe6653fc"
+}
