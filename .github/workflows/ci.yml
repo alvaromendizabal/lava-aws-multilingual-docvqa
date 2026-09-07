@@ -14,84 +14,19 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-
-      - name: Import reviewed content-addressed source
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/complete-system-evaluation'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          python - <<'PY'
-          import base64, hashlib, json, lzma, os, subprocess, urllib.request
-          base = "c4f55837dbaed5fd225c28856261f4422252b569"
-          changed = subprocess.check_output(["git", "diff", "--name-only", base, "HEAD"], text=True).splitlines()
-          if changed != [".github/workflows/ci.yml"]:
-              raise SystemExit("Source import is bound to the reviewed source base")
-          def fetch(sha):
-              url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs/{sha}"
-              request = urllib.request.Request(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
-              with urllib.request.urlopen(request, timeout=60) as response:
-                  blob = json.load(response)
-              data = base64.b64decode(blob["content"])
-              identity = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
-              if identity != sha:
-                  raise SystemExit("Source transport content hash mismatch")
-              return data
-          chunks = [
-              "b2f05199bd2d0c8e004d9def0c0f21bed458726b",
-              "7d658af61a55f17139a7774fc8285d5ce1915897",
-              "c7946ebd4c5d42820d56dfc4c737faf1cafda07a",
-              "0bdd28793ab5b9e5309b934b76746c4ec4ef1a2d",
-              "fd60acfcb15e35ad6e0ad5c39f5aae71f95b0c90",
-              "a9d9d8ec6d0ec64842bf635d20e09220d1211237",
-              "93fd260ccc7ab8f4db754012bb08827c6b87acf5",
-              "bf9e37db853f75ac80aed493bdb0e099089e6da5",
-          ]
-          payload = lzma.decompress(base64.b64decode(b"".join(fetch(sha) for sha in chunks)))
-          if hashlib.sha256(payload).hexdigest() != "df89af25e55ed8b45f3480069fc5bae6b1e817eb9f1a2503600035e80f9b898a":
-              raise SystemExit("Reviewed source digest mismatch")
-          review = fetch("d9dce259904606a0db9622f1ff46330e37e9a6f7")
-          if hashlib.sha256(review).hexdigest() != "3badfea601625b262f1c6487bf4a2ce08af06d2b4c9fbec475d0dcb1ac0ce154":
-              raise SystemExit("Source review digest mismatch")
-          for change in (payload, review):
-              subprocess.run(["git", "apply", "--check", "-"], input=change, check=True)
-              subprocess.run(["git", "apply", "--index", "-"], input=change, check=True)
-          subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
-          subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
-          subprocess.run(["git", "commit", "-m", "feat: integrate durable retrieved-evidence evaluation\n\nSeparate inference inputs from labels; reuse verified retrieval and reader checkpoints. Add charge-gated idempotent SageMaker execution, final semantic analysis, explicit regressions and the canonical sixth notebook. Existing reader results and evaluation locks remain unchanged."], check=True)
-          PY
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
+          version: "0.12.10"
           python-version: "3.12"
           enable-cache: true
-
-      - name: Prepare locked notebook environment
-        shell: bash
-        run: |
-          uv sync --frozen --group judge
-          uv run --frozen python -m ipykernel install --user --name lava --display-name LAVA
-          uv run --frozen ruff check --select I,F401 --fix src tests scripts pipelines notebooks
-          uv run --frozen ruff format src tests scripts pipelines notebooks
-          git add src tests scripts pipelines notebooks
-          if ! git diff --cached --quiet; then
-            git commit -m "style: format the integrated evaluation implementation"
-          fi
-
-      - name: Execute and verify all canonical notebooks
-        shell: bash
-        run: |
-          set -o pipefail
-          make notebooks 2>&1 | tee "$RUNNER_TEMP/notebooks.log"
-          make notebooks 2>&1 | tee -a "$RUNNER_TEMP/notebooks.log"
 
       - name: Run canonical quality gate
         shell: bash
@@ -99,37 +34,22 @@ jobs:
           set -o pipefail
           bash scripts/quality_gate.sh 2>&1 | tee "$RUNNER_TEMP/quality.log"
 
-      - name: Collect remaining diagnostics after a failed gate
-        if: failure()
+      - name: Verify canonical notebook reuse
         shell: bash
         run: |
-          set +e
-          uv run --frozen mypy src scripts > "$RUNNER_TEMP/diagnostics.log" 2>&1
-          uv run --frozen pytest -q >> "$RUNNER_TEMP/diagnostics.log" 2>&1
-          cat "$RUNNER_TEMP/diagnostics.log"
-
-      - name: Publish only validated canonical source and notebook outputs
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/complete-system-evaluation'
-        shell: bash
-        run: |
-          git add notebooks reports/notebook_execution
-          if ! git diff --cached --quiet; then
-            git commit -m "docs: publish six executed evaluation notebooks" -m "Execute the canonical notebooks against frozen public measurements. Preserve source/input/output checksums. Notebook 05 explicitly distinguishes pending end-to-end inference from measured oracle and retrieval results. Full quality gate passed before publication; no AWS job or submission was launched."
-          fi
-          git fetch origin feat/complete-system-evaluation
-          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
-          git push origin HEAD:refs/heads/feat/complete-system-evaluation
+          set -o pipefail
+          make notebooks 2>&1 | tee "$RUNNER_TEMP/notebooks.log"
 
       - name: Package public validation evidence
         if: always()
         shell: bash
         run: |
-          touch "$RUNNER_TEMP/quality.log" "$RUNNER_TEMP/notebooks.log" "$RUNNER_TEMP/diagnostics.log"
+          touch "$RUNNER_TEMP/quality.log" "$RUNNER_TEMP/notebooks.log"
           git bundle create "$RUNNER_TEMP/source.bundle" HEAD
           git rev-parse HEAD > "$RUNNER_TEMP/source_commit.txt"
           tar -czf "$RUNNER_TEMP/notebooks.tar.gz" notebooks reports/notebook_execution
           cd "$RUNNER_TEMP"
-          sha256sum source.bundle quality.log notebooks.log notebooks.tar.gz diagnostics.log source_commit.txt > evidence.sha256
+          sha256sum source.bundle quality.log notebooks.log notebooks.tar.gz source_commit.txt > evidence.sha256
 
       - name: Retain public validation evidence
         if: always()
@@ -142,7 +62,6 @@ jobs:
             ${{ runner.temp }}/quality.log
             ${{ runner.temp }}/notebooks.log
             ${{ runner.temp }}/notebooks.tar.gz
-            ${{ runner.temp }}/diagnostics.log
             ${{ runner.temp }}/evidence.sha256
           if-no-files-found: error
           retention-days: 30
