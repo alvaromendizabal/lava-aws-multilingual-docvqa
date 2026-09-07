@@ -1,0 +1,9 @@
+{
+  "analysis_inputs_sha256": "db2ad0a5350be2c2cc6cebfebd67a2d4c9543b46e277fcdb7800041f100fc87b",
+  "code_revision": "b67aa20ddfcc4a421df57cba16724084f5f40924",
+  "executed_code_cells": 3,
+  "notebook": "02_verified_gpu_execution.ipynb",
+  "output_sha256": "c5ea4e674e39439e5388d8f9d13b8ecc6286be127534adfbaa1573fa44afca1d",
+  "schema_version": 1,
+  "source_sha256": "e9c8aaf1bcc4b59ac94d466116b938750e2e624b7d4efa940241445af283d6c9"
+}

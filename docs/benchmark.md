@@ -103,3 +103,11 @@ remaining ones. The command records UTC stages and total time in `events.jsonl`.
 The `smoke` name here refers to notebook execution testing, not a one-question
 model evaluation. Archive the entire run directory to the approved S3 artifact
 prefix; local persistence alone does not protect against deleting a Studio space.
+
+
+Reviewed execution snapshots are published under `reports/notebooks/` with the
+same normal filenames. Git retains their outputs using a path-specific attribute;
+source notebooks under `notebooks/` remain output-free. Publication tests require
+matching source, input and output hashes, complete execution and no error/stderr
+outputs. Do not edit snapshots to change results: execute the canonical source
+again after the inputs change, then publish the newly verified files and manifests.

@@ -4,6 +4,15 @@
 
 LAVA is a research-grade multilingual document-intelligence system built to separate **reader quality**, **retrieval quality**, and **systems cost** under a frozen, leakage-resistant evaluation protocol. The project combines open vision-language models, immutable model/data lineage, AWS SageMaker GPU execution, structured artifact verification, and reproducible public analysis notebooks.
 
+## Read the executed notebooks
+
+Start with [02 — Verified GPU execution](reports/notebooks/02_verified_gpu_execution.ipynb),
+then [03 — Which reader should we use?](reports/notebooks/03_model_scaling_and_cost.ipynb).
+These GitHub-viewable snapshots include actual outputs, timestamps, metric tables
+and charts from the completed three-model comparison. Each has a checksum manifest
+binding it to the editable source and analysis inputs. Canonical editable notebooks
+remain in `notebooks/`; publication snapshots are tested separately and retain outputs.
+
 ## Current verified results
 
 | Reader | SageMaker target | Verified scope | Billable seconds |
