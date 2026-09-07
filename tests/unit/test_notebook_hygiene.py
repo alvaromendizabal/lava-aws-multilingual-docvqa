@@ -12,6 +12,7 @@ EXPECTED = (
     "01_oracle_reader_benchmark_design",
     "02_verified_gpu_execution",
     "03_model_scaling_and_cost",
+    "04_evidence_retrieval",
 )
 ACCOUNT_ID = re.compile(r"(?<!\d)\d{12}(?!\d)")
 

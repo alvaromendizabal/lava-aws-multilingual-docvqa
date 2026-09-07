@@ -165,11 +165,13 @@ def render_table(
 TABLE_STYLE = """<style>
 .lava-table{overflow-x:auto;margin:18px 0;border:1px solid #dce4e9;border-radius:12px;
 background:#fff;color:#192e40;font:14px/1.6 system-ui,sans-serif}
-.lava-table table{border-collapse:collapse;width:100%;text-align:left!important}
+.lava-table table{border-collapse:collapse;width:100%;min-width:0!important;
+table-layout:fixed;text-align:left!important}
 .lava-table caption{text-align:left;padding:18px 16px;font-size:16px;font-weight:650;
 color:#147d92;caption-side:top}
 .lava-table th{background:#eef5f7;font-weight:600;text-align:left!important}
 .lava-table th,.lava-table td{padding:12px 16px;border-bottom:1px solid #e2e8ed;
-font-variant-numeric:tabular-nums;vertical-align:top;overflow-wrap:anywhere}
+font-variant-numeric:tabular-nums;vertical-align:top;overflow-wrap:anywhere;
+text-align:left!important;white-space:normal!important;min-width:0!important}
 .lava-table tbody tr:last-child td{border-bottom:0}
 </style>"""

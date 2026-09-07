@@ -67,7 +67,7 @@ with logger.stage("01_load_verified_results", heartbeat_seconds=15):
 #
 # The reader receives the known evidence pages plus their extracted native text.
 # This isolates answering and citation behavior. It does not test finding evidence
-# in a whole PDF. Full-document retrieval is the next distinct experiment.
+# in a whole PDF. Notebook 04 evaluates that separate retrieval experiment.
 # %%
 with logger.stage("02_explain_coverage", heartbeat_seconds=15):
     coverage = [
@@ -194,10 +194,10 @@ with logger.stage("07_render_visual_report", heartbeat_seconds=15):
 #
 # 1. Read the measured 27B-versus-9B result below. Only complete, compatible
 #    semantic evaluations enter this decision; a one-question smoke cannot rank it.
-# 2. If 27B gains answer credit, inspect document regressions and extra latency.
-#    A small gain on five PDFs does not automatically justify the larger reader.
-# 3. Keep the best justified reader as a provisional baseline. Evaluate page
-#    retrieval over whole documents, then rerun the reader with retrieved pages.
+# 2. Keep 9B as the provisional reader for the current pilot. Inspect the document
+#    comparisons and latency before treating a larger model as an improvement.
+# 3. Read Notebook 04 for the completed full-document retrieval baseline. The next
+#    reader experiment must use retrieved pages and retain the frozen judge contract.
 # 4. Measure the complete pipeline against the organizer's two-hour budget on
 #    one A100 40GB. These generation-only timings do not prove that requirement.
 # 5. Generate all 624 test predictions with non-oracle provenance; validate the

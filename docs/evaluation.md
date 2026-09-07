@@ -243,8 +243,9 @@ the configuration that passed its smoke. It took 1010.753 seconds wall time and
 Saved-answer semantic scoring took 18.33 seconds, with 15 new judge decisions and
 53 reused. The original 4B and 9B inference did not need to run again.
 
-The next research step is full-document evidence retrieval followed by 9B reader
-evaluation with retrieved pages. Analyze raw failures privately against source
+The full-document text-retrieval baseline is now evaluated in
+[Notebook 04](../reports/notebooks/04_evidence_retrieval.ipynb). The next research
+step is 9B reader evaluation with retrieved pages. Analyze raw failures privately against source
 pages and reference answers, distinguishing reading, evidence selection and
 equivalent representations. Keep the frozen pilot and judge contract unchanged.
 Use representative documents and languages with a document-isolated held-out

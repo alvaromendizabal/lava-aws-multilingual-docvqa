@@ -30,6 +30,8 @@ review those before adding or distributing external training material.
 1. Freeze a full-document page-retrieval baseline using only the PDF and question.
    Evaluate evidence recall at k, all-evidence coverage, MRR, MAP and nDCG on the
    labeled training documents. Keep failed or textless pages in coverage reports.
+   **Completed:** the native-text BM25 and page-order comparison covers all 74
+   physical pages. See [the retrieval experiment](retrieval.md) and Notebook 04.
 2. Compare a multilingual text-retrieval baseline with an appropriate visual
    retrieval method for scanned pages, tables and figures. Use separate public
    labeled development data and document-isolated evaluation when expanding
@@ -44,8 +46,9 @@ review those before adding or distributing external training material.
 5. Build and validate the CSV below, confirm authenticated late-submission
    availability, and upload the reviewed file. No upload is performed by this code.
 
-These steps describe outstanding model work. Retrieval, complete test inference,
-organizer-hardware verification and an accepted submission are not yet completed.
+The text-retrieval baseline is complete. Reader evaluation with retrieved pages,
+visual-retrieval comparison, complete test inference, organizer-hardware verification
+and an accepted submission remain outstanding.
 
 ## Inspect and verify the submission inputs
 

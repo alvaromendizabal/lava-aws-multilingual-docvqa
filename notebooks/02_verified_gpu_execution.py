@@ -85,6 +85,8 @@ with logger.stage("02_saved_run_history", heartbeat_seconds=15):
 #
 # Run these commands in the project terminal. Replace `<job-name>` with the
 # exact name printed at submission or shown above.
+# These are operational references for the completed runs. Continue to Notebook 04
+# for the current evidence-retrieval experiment; inspecting results needs no new GPU.
 #
 # ```bash
 # make benchmark-preflight MODEL=qwen38_27b_nf4_g5_fused_direct
