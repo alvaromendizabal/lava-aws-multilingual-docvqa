@@ -4,18 +4,17 @@ LAVA separates data/protocol, reader execution, retrieval, and evaluation so eac
 
 ```mermaid
 flowchart TD
-    P["Pinned data and protocol"] --> O["Oracle evidence"]
-    P --> R["Full-document retrieval"]
-    O --> M["Reader pilot"]
-    R --> I["Retrieved-page reader · next"]
-    M --> E["Verified predictions and evaluation"]
-    I --> E
-    E --> N["Canonical notebooks and reports"]
+    P["Pinned data and protocol"] --> O["Oracle reader pilots"]
+    P --> R["Full-document BM25 retrieval"]
+    O --> E["Answer and citation evaluation"]
+    R --> Q["Retrieval metrics and failures"]
+    E --> N["Executed notebooks and public reports"]
+    Q --> N
 ```
 
 ## Completed components
 
-The data audit verified 208 raw files and all 205 PDFs. Reader pilots ran on all 16 training questions; retrieval searched all 74 training-PDF pages. The retrieved-page reader is the next integration milestone.
+The data audit verified 208 raw files and all 205 PDFs. Reader pilots ran on all 16 training questions; retrieval searched all 74 training-PDF pages. Reader and retrieval performance are measured independently in this completed component benchmark.
 
 | Compared configuration | Verified instance |
 | --- | --- |
@@ -37,4 +36,4 @@ All five notebooks live directly in `notebooks/`. Each includes verified outputs
 
 The active Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Historical validation checkouts and installation bundles have been archived and removed. Empty app, serving, agent, and infrastructure scaffolding has been removed; those capabilities are not represented as implemented.
 
-See [the remaining delivery milestones](../README.md#remaining-delivery-milestones) for complete-system evaluation, the final inference container, and submission.
+See [scope and limitations](../README.md#scope-and-limitations). Integrated reader/retrieval evaluation, deployment, and submission are optional extensions; no end-to-end score is claimed.
