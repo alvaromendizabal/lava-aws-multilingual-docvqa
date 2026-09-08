@@ -131,18 +131,14 @@ def fusion_grid() -> tuple[FusionSpec, ...]:
         if len(systems) == 2:
             weights = tuple((base, 1.0) for base in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0))
         elif len(systems) == 3:
-            weights = tuple(
-                (base, 1.0, 1.0) for base in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0)
-            ) + (
+            weights = tuple((base, 1.0, 1.0) for base in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0)) + (
                 (2.0, 2.0, 1.0),
                 (2.0, 1.0, 2.0),
                 (3.0, 2.0, 1.0),
                 (3.0, 1.0, 2.0),
             )
         else:
-            weights = tuple(
-                (base, 1.0, 1.0, 1.0) for base in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0)
-            ) + (
+            weights = tuple((base, 1.0, 1.0, 1.0) for base in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0)) + (
                 (2.0, 2.0, 1.0, 1.0),
                 (2.0, 1.0, 2.0, 1.0),
                 (2.0, 1.0, 1.0, 2.0),
@@ -330,9 +326,7 @@ def evidence_metrics(order: Sequence[int], gold: Iterable[int], *, k: int = 5) -
     recall = hits / len(gold_set)
     oracle_f1 = 2 * hits / (hits + len(gold_set)) if hits else 0.0
     dcg = sum(
-        1.0 / math.log2(position + 2)
-        for position, page in enumerate(top)
-        if page in gold_set
+        1.0 / math.log2(position + 2) for position, page in enumerate(top) if page in gold_set
     )
     ideal = sum(1.0 / math.log2(position + 2) for position in range(min(k, len(gold_set))))
     return EvidenceMetrics(
