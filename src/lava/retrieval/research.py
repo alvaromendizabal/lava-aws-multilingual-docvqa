@@ -1,8 +1,8 @@
 """Executable, checkpointed feature research with document-isolated selection.
 
-This audit is separate from the archived exploratory aggregate. It fixes every
-fusion view at k1=1.2, b=0.75 and records the complete selection rule in source.
-It cannot change the production retriever or claim an independent test result.
+This audit fixes every fusion view at k1=1.2, b=0.75 and records the complete
+selection rule in source. It supersedes the early exploratory aggregate; it
+cannot change the production retriever or claim an independent test result.
 """
 
 from __future__ import annotations
@@ -309,14 +309,68 @@ def evaluate_candidates(
         "fusion": families["conservative_fusion"],
     }.items():
         unique_by_stage[name] = len({tuple(tuple(order) for order in rankings[n]) for n in names})
+
+    def pooled(name: str) -> dict[str, float]:
+        values = [
+            asdict(evidence_metrics(order, reference.evidence_pages))
+            for order, reference in zip(rankings[name], references, strict=True)
+        ]
+        return {
+            metric.replace("_at_k", "_at_5"): fmean(value[metric] for value in values)
+            for metric in METRICS
+        }
+
+    pooled_scores = {name: pooled(name) for name in families["free_bm25"]}
+    family_diagnostics = []
+    for representation in REPRESENTATIONS:
+        names = [s.name for s in bm25_feature_grid() if s.representation == representation]
+        best = max(names, key=lambda name: tuple(pooled_scores[name].values()))
+        family_diagnostics.append(
+            {
+                "representation": representation,
+                "candidate": best,
+                "promoted": False,
+                **pooled_scores[best],
+            }
+        )
+    global_unique = len({tuple(tuple(order) for order in orders) for orders in rankings.values()})
     return {
         "question_count": len(references),
         "document_count": len(aliases),
         "candidate_count": len(rankings),
         "unique_rankings_by_stage": unique_by_stage,
-        "globally_unique_rankings": len(
-            {tuple(tuple(order) for order in orders) for orders in rankings.values()}
-        ),
+        "globally_unique_rankings": global_unique,
+        "baseline": {"candidate": BASELINE, **pooled_scores[BASELINE]},
+        "candidate_space": {
+            "scalar_bm25_features_generated": len(families["free_bm25"]),
+            "fusion_and_exploration_policies_generated": len(families["conservative_fusion"]),
+            "total_candidate_configurations_generated": len(rankings),
+            "unique_bm25_ranking_signatures": unique_by_stage["bm25"],
+            "unique_fusion_ranking_signatures": unique_by_stage["fusion"],
+            "duplicate_bm25_rankings_rejected": len(families["free_bm25"])
+            - unique_by_stage["bm25"],
+            "duplicate_fusion_rankings_rejected": len(families["conservative_fusion"])
+            - unique_by_stage["fusion"],
+            "globally_unique_ranking_signatures": global_unique,
+            "global_duplicate_rankings": len(rankings) - global_unique,
+            "cross_stage_duplicates": sum(unique_by_stage.values()) - global_unique,
+        },
+        "nested_leave_one_document_out": {
+            label: {
+                **{key.replace("_at_k", "_at_5"): value for key, value in policies[policy].items()},
+                "fold_count": len(aliases),
+            }
+            for policy, label in (
+                ("free_bm25", "free_bm25_candidate_selection"),
+                ("conservative_fusion", "conservative_fusion_selection_with_baseline_option"),
+            )
+        },
+        "feature_family_diagnostics_pooled_only": family_diagnostics,
+        "decision": {
+            "changed": False,
+            "production_retriever": BASELINE,
+            "reason": "The source-bound development audit does not automatically promote a challenger. Inspect all document folds and retain the fixed production contract.",
+        },
         "selection_results": policies,
         "document_folds": folds,
         "production_changed": False,

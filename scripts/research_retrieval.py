@@ -109,7 +109,7 @@ def main() -> int:
             store.write("summary.json", summary)
             if store.read("summary.json") != summary:
                 raise ValueError("Research summary failed durable read-back")
-            path = root / "reports/retrieval/feature_validation.json"
+            path = root / "reports/retrieval/feature_search.json"
             payload = encode(summary)
             atomic_write(path, payload)
             atomic_write(path.with_suffix(".sha256"), (digest(payload) + "\n").encode())
