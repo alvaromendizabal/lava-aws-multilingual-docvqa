@@ -109,6 +109,10 @@ system-prepare:
 system-evaluate:
 	uv run --frozen --group judge python scripts/evaluate_system.py --mode evaluate
 
+.PHONY: system-report
+system-report:
+	uv run --isolated --no-project --with matplotlib==3.10.8 python scripts/report_system.py
+
 finish:
 	@test "$(CHARGES)" = "YES" || (echo "New GPU work requires CHARGES=YES. Preview with make system-preview." >&2; exit 2)
 	uv run --frozen --group judge python scripts/evaluate_system.py --mode finish --acknowledge-charges $(CHARGES) --attempt $(ATTEMPT) --retry $(RETRY)

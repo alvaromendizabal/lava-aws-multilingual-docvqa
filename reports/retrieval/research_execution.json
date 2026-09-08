@@ -1,0 +1,21 @@
+{
+  "attempts": [
+    {
+      "attempt": "20260908T040841Z-b5503079",
+      "contract_id": "55057515cea165de974bbccf3490bd8e65c50ed36da8245511dab9f6ebba1a0a",
+      "elapsed_seconds": 10.97281001600004,
+      "families": 12,
+      "reused_families": 0,
+      "summary_sha256": "04e35dc665855165e2ebbac114979a142ed197e21ced29354846ce530c68a00b"
+    },
+    {
+      "attempt": "20260908T040853Z-71f5f7f6",
+      "contract_id": "55057515cea165de974bbccf3490bd8e65c50ed36da8245511dab9f6ebba1a0a",
+      "elapsed_seconds": 1.7825338399998145,
+      "families": 12,
+      "reused_families": 12,
+      "summary_sha256": "04e35dc665855165e2ebbac114979a142ed197e21ced29354846ce530c68a00b"
+    }
+  ],
+  "source": "Verified SageMaker Studio CPU execution; immutable S3 receipts"
+}

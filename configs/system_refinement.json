@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "base_contract_id": "fd24e61f112be2eee0cff954cb8b6239c8ab25d14efeeac1b25599ca8dd4753f",
+  "base_inference_sha256": "c748815e38f4c42158f977696e91332f33d4af9c3d9e0f4b5f38965ecca3e842",
+  "policy": "reread_self_cited_pages",
+  "empty_or_invalid_first_pass": "retain_original_pages",
+  "final_answer": "always_second_pass",
+  "labels_used_for_page_selection": false,
+  "hypothesis": "Reduce distractor context by rereading only the model\u2019s first-pass citations. Post-hoc development experiment, not independent validation."
+}
