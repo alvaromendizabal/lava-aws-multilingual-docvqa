@@ -68,6 +68,15 @@ Reader evaluation with retrieved pages, a deployed application, full test infere
 
 The retrieved-page pipeline is implemented; Notebook 05 reports its measurement status. Its actual answer score remains explicitly unmeasured until the GPU experiment runs. `make system-preview` inspects the plan without paid compute; `make finish CHARGES=YES` explicitly authorizes one bounded GPU attempt, then scores saved answers, executes all six notebooks, runs the quality gate and archives verified outputs. See [the operator guide](docs/system_evaluation.md) for cost limits and recovery. This extension does not invalidate the completed component benchmark.
 
+## Generate and download your own CSV
+
+Notebook 05 contains explicit controls for the integrated pilot, full test
+inference, and verified local CSV export. Defaults do not allocate compute.
+You run the code, download `artifacts/submission/submission.csv`, and decide
+whether to upload it yourself. No automatic Kaggle upload is implemented.
+See [the notebook-operated workflow](docs/submission.md) for cost, recovery,
+coverage and privacy boundaries. Actual full-test inference is not yet measured.
+
 ## Reproduce and inspect
 
 In the configured Studio environment, use `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Public analysis uses the pinned Python 3.12 environment. After installing it, `make notebooks` verifies and reuses current outputs or refreshes changed notebooks; `make quality` runs the explicit quality gate. Neither command launches a GPU.

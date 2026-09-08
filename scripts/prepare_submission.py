@@ -29,11 +29,19 @@ from lava.readers.runtime_logging import RuntimeEventLogger
 def main() -> int:
     """Keep cloud access explicit and log progress without displaying test content."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("preview", "check", "build"), default="preview")
+    parser.add_argument(
+        "--mode", choices=("preview", "check", "build", "test", "export"), default="preview"
+    )
     parser.add_argument("--predictions", type=Path)
     parser.add_argument("--page-counts", type=Path)
     parser.add_argument("--provenance", type=Path)
+    parser.add_argument("--acknowledge-charges", choices=("NO", "YES"), default="NO")
+    parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument("--retry", choices=("NO", "YES"), default="NO")
+    parser.add_argument("--maximum-training-usd", type=float, default=15.0)
     args = parser.parse_args()
+    if args.mode == "test" and args.acknowledge_charges != "YES":
+        parser.error("Full test inference requires explicit --acknowledge-charges YES")
     if args.mode == "build" and any(
         value is None for value in (args.predictions, args.page_counts, args.provenance)
     ):
@@ -88,7 +96,28 @@ def main() -> int:
                     payloads["test.csv"], payloads["sample_submission.csv"], contract
                 )
                 logger.emit("submission.inputs.verified", question_count=len(inputs.order))
-                if args.mode == "build":
+                if args.mode in {"test", "export"}:
+                    from lava.readers.test_inference import (
+                        execute_test,
+                        export_test,
+                        prepare_test_inputs,
+                    )
+
+                    if args.mode == "test":
+                        prepare_test_inputs(root, s3, bucket, logger)
+                        execute_test(
+                            root,
+                            boto3.Session(region_name=os.environ.get("AWS_REGION", "us-west-2")),
+                            bucket,
+                            os.environ.get("AWS_REGION", "us-west-2"),
+                            logger,
+                            acknowledge_charges=args.acknowledge_charges,
+                            attempt=args.attempt,
+                            allow_retry=args.retry == "YES",
+                            maximum_training_usd=args.maximum_training_usd,
+                        )
+                    export_test(root, s3, bucket, logger)
+                elif args.mode == "build":
                     assert args.predictions and args.page_counts and args.provenance
                     predictions = args.predictions.read_bytes()
                     counts = json.loads(args.page_counts.read_bytes())
@@ -105,6 +134,14 @@ def main() -> int:
                         "validation": check,
                     }
                     target = persist_submission(s3, bucket, root, csv_payload, manifest, logger)
+                    atomic_write(root / "artifacts/submission/submission.csv", csv_payload)
+                    atomic_write(root / "artifacts/submission/manifest.json", encode(manifest))
+                    logger.emit(
+                        "export.download.ready",
+                        filename="artifacts/submission/submission.csv",
+                        rows=len(inputs.order),
+                        uploaded_to_kaggle=False,
+                    )
                     print(target)
                 else:
                     readiness = {

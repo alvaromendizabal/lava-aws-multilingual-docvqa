@@ -7,6 +7,7 @@ import math
 import re
 import subprocess
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -55,10 +56,12 @@ def training_request(
     source_key: str,
     source_sha: str,
     commit: str,
+    *,
+    manifest_validator: Callable[..., Any] = validate_manifest,
 ) -> dict[str, Any]:
     """One pinned image, one GPU, a server-enforced runtime cap, and no endpoint."""
     contract = manifest["contract"]
-    validate_manifest(manifest, contract)
+    manifest_validator(manifest, contract)
     config = contract["config"]
     runtime = yaml.safe_load((root / "configs/oracle_reader_benchmark.yaml").read_bytes())[
         "training_runtime"
@@ -132,9 +135,13 @@ def describe_or_none(client: Any, name: str) -> dict[str, Any] | None:
     except ClientError as error:
         details = error.response.get("Error", {})
         message = details.get("Message", "").casefold()
-        if details.get("Code") == "ResourceNotFound" or (
+        if details.get("Code") in {"ResourceNotFound", "ResourceNotFoundException"} or (
             details.get("Code") == "ValidationException"
-            and ("could not find" in message or "does not exist" in message)
+            and (
+                message.strip().rstrip(".") == "requested resource not found"
+                or "could not find" in message
+                or "does not exist" in message
+            )
         ):
             return None
         raise
@@ -263,6 +270,23 @@ def stream_progress(logs: Any, name: str, logger: RuntimeEventLogger, seen: set[
         raise
 
 
+ARCHIVE_PATHS = ("src", "configs", "pipelines", "scripts", "uv.lock", "pyproject.toml")
+
+
+def verify_committed_source(root: Path) -> None:
+    """Reject uncommitted inference source, while allowing local notebook controls/outputs."""
+    tracked = subprocess.check_output(
+        ["git", "diff", "--name-only", "HEAD", "--", *ARCHIVE_PATHS], cwd=root, text=True
+    )
+    untracked = subprocess.check_output(
+        ["git", "ls-files", "--others", "--exclude-standard", "--", *ARCHIVE_PATHS],
+        cwd=root,
+        text=True,
+    )
+    if tracked.strip() or untracked.strip():
+        raise ValueError("Commit inference source/configuration changes before immutable GPU work")
+
+
 def execute_system(
     root: Path,
     session: Any,
@@ -276,15 +300,47 @@ def execute_system(
     hourly_usd_ceiling: float = 5.0,
     maximum_training_usd: float = 5.0,
 ) -> dict[str, Any]:
+    """Run the original frozen 16-question pilot without changing its saved contract."""
+    return execute_prepared(
+        root,
+        session,
+        bucket,
+        region,
+        logger,
+        contract=system_contract(root),
+        acknowledge_charges=acknowledge_charges,
+        attempt=attempt,
+        allow_retry=allow_retry,
+        hourly_usd_ceiling=hourly_usd_ceiling,
+        maximum_training_usd=maximum_training_usd,
+    )
+
+
+def execute_prepared(
+    root: Path,
+    session: Any,
+    bucket: str,
+    region: str,
+    logger: RuntimeEventLogger,
+    *,
+    contract: dict[str, Any],
+    request_factory: Callable[..., dict[str, Any]] = training_request,
+    manifest_validator: Callable[..., Any] = validate_manifest,
+    receipt_directory: str = "reports/system",
+    acknowledge_charges: str,
+    attempt: int = 1,
+    allow_retry: bool = False,
+    hourly_usd_ceiling: float = 5.0,
+    maximum_training_usd: float = 5.0,
+) -> dict[str, Any]:
     """Submit or reattach, monitor visibly, then independently verify durable inference."""
-    contract = system_contract(root)
     identity = contract["contract_id"]
     s3, client = session.client("s3"), session.client("sagemaker")
     store = store_for(s3, bucket, identity)
     manifest = store.read("inputs.json")
     if manifest is None:
         raise ValueError("Prepare reader inputs before submitting")
-    validate_manifest(manifest, contract)
+    manifest_validator(manifest, contract)
     if store.read("inference.json") is not None:
         logger.emit("system.inference.already_complete", new_gpu_job=False)
         return {"new_gpu_job": False, "status": "durable_inference_complete"}
@@ -301,24 +357,10 @@ def execute_system(
         maximum_training_usd=maximum_training_usd,
         scope="Per attempt only; not an AWS account billing cap",
     )
-    if subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True).strip():
-        raise ValueError(
-            "Commit source changes before launching or attaching to immutable GPU work"
-        )
+    verify_committed_source(root)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     source = subprocess.check_output(
-        [
-            "git",
-            "archive",
-            "--format=tar.gz",
-            "HEAD",
-            "src",
-            "configs",
-            "pipelines",
-            "scripts",
-            "uv.lock",
-            "pyproject.toml",
-        ],
+        ["git", "archive", "--format=tar.gz", "HEAD", *ARCHIVE_PATHS],
         cwd=root,
     )
     source_sha = digest(source)
@@ -330,15 +372,15 @@ def execute_system(
     )
 
     role = get_execution_role()
-    request = training_request(
+    request = request_factory(
         root, manifest, bucket, region, role, attempt, source_key, source_sha, commit
     )
     request_key = f"jobs/attempt-{attempt}/request.json"
     stored_request = store.read(request_key)
     if stored_request is not None:
         # A report-only commit must reattach using the original source archive/commit.
+        expected_name = request["TrainingJobName"]
         request = stored_request
-        expected_name = job_name(identity, attempt)
         if request["TrainingJobName"] != expected_name or request["RoleArn"] != role:
             raise ValueError("Stored launch identity does not match this execution")
     else:
@@ -360,10 +402,13 @@ def execute_system(
         logger=logger,
     )
     started = time.monotonic()
+    monitor_ceiling = (
+        sum(contract["config"][key] for key in ("max_pending_seconds", "max_runtime_seconds")) + 900
+    )
     seen_events: set[str] = set()
     logs = session.client("logs")
     while description["TrainingJobStatus"] not in TERMINAL:
-        if time.monotonic() - started > 89100:
+        if time.monotonic() - started > monitor_ceiling:
             raise TimeoutError("Monitor timed out; rerun to reattach. AWS job was not cancelled.")
         logger.emit(
             "system.job.heartbeat",
@@ -390,7 +435,7 @@ def execute_system(
     store.write(f"jobs/attempt-{attempt}/receipt.json", receipt)
     if store.read(f"jobs/attempt-{attempt}/receipt.json") != receipt:
         raise ValueError("Job receipt failed durable read-back")
-    receipt_folder = "reports/system" if receipt["status"] == "Completed" else "artifacts/system"
+    receipt_folder = receipt_directory if receipt["status"] == "Completed" else "artifacts/system"
     atomic_write(root / receipt_folder / f"attempt-{attempt}.json", encode(receipt))
     logger.emit("system.job.terminal", **receipt)
     if receipt["status"] != "Completed":

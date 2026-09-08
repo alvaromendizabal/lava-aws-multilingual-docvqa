@@ -52,7 +52,9 @@ def execute_notebook(
             manager = client.create_kernel_manager()
             manager.transport = "ipc"
             manager.ip = str(Path(socket_directory) / "kernel")
-        client.execute()
+        # Reporting/CI must never allocate cloud compute, even if someone saved
+        # interactive run controls as True in their local notebook.
+        client.execute(env={**os.environ, "LAVA_NOTEBOOK_PUBLICATION": "1"})
     return notebook
 
 
