@@ -1,0 +1,98 @@
+{
+  "baseline": {
+    "all_evidence_at_5": 0.875,
+    "candidate": "bm25|word_char23|k1=1.2|b=0.75",
+    "ndcg_at_5": 0.8575237195871845,
+    "oracle_grounding_f1_at_5": 0.9702380952380953,
+    "recall_at_5": 0.953125
+  },
+  "candidate_space": {
+    "duplicate_bm25_rankings_rejected": 108,
+    "duplicate_fusion_rankings_rejected": 241,
+    "fusion_and_exploration_policies_generated": 493,
+    "lexical_representations": 11,
+    "scalar_bm25_features_generated": 1089,
+    "total_candidate_configurations_generated": 1582,
+    "unique_bm25_ranking_signatures": 981,
+    "unique_fusion_ranking_signatures": 252
+  },
+  "decision": {
+    "changed": false,
+    "next_challenger": "visual document retrieval benchmark",
+    "production_retriever": "bm25|word_char23|k1=1.2|b=0.75",
+    "reason": "Pooled challengers overfit the 16-question diagnostic. Document-isolated selection did not produce a robust improvement, and conservative fusion selected the existing baseline in every outer fold."
+  },
+  "document_count": 5,
+  "feature_family_diagnostics_pooled_only": [
+    {
+      "all_evidence_at_5": 1.0,
+      "candidate": "bm25|flat3|k1=1|b=0",
+      "ndcg_at_5": 0.8228796361870309,
+      "oracle_grounding_f1_at_5": 1.0,
+      "promoted": false,
+      "recall_at_5": 1.0,
+      "representation": "flat3"
+    },
+    {
+      "all_evidence_at_5": 0.9375,
+      "candidate": "bm25|char234|k1=1|b=0.875",
+      "ndcg_at_5": 0.8722661843209709,
+      "oracle_grounding_f1_at_5": 0.9910714285714286,
+      "promoted": false,
+      "recall_at_5": 0.984375,
+      "representation": "char234"
+    },
+    {
+      "all_evidence_at_5": 0.9375,
+      "candidate": "bm25|word_char234|k1=0.4|b=1",
+      "ndcg_at_5": 0.849199293919187,
+      "oracle_grounding_f1_at_5": 0.9910714285714286,
+      "promoted": false,
+      "recall_at_5": 0.984375,
+      "representation": "word_char234"
+    },
+    {
+      "all_evidence_at_5": 0.5625,
+      "candidate": "bm25|word|k1=3|b=0.125",
+      "ndcg_at_5": 0.4876128379046878,
+      "oracle_grounding_f1_at_5": 0.6041666666666667,
+      "promoted": false,
+      "recall_at_5": 0.59375,
+      "representation": "word"
+    }
+  ],
+  "limitations": [
+    "The labeled diagnostic has only 16 questions from five documents.",
+    "Only one labeled question is Vietnamese, so language-level generalization is not estimable.",
+    "Pooled perfect retrieval is descriptive only and is not evidence of held-out performance.",
+    "Hidden test labels and leaderboard feedback were not used for feature selection."
+  ],
+  "nested_leave_one_document_out": {
+    "conservative_fusion_selection_with_baseline_option": {
+      "all_evidence_at_5": 0.875,
+      "baseline_selected_folds": 5,
+      "fold_count": 5,
+      "ndcg_at_5": 0.8575237195871845,
+      "oracle_grounding_f1_at_5": 0.9702380952380952,
+      "recall_at_5": 0.953125
+    },
+    "free_bm25_candidate_selection": {
+      "all_evidence_at_5": 0.8125,
+      "ndcg_at_5": 0.7975046429493369,
+      "oracle_grounding_f1_at_5": 0.9077380952380952,
+      "recall_at_5": 0.890625,
+      "selection_stable": false
+    }
+  },
+  "question_count": 16,
+  "schema_version": 1,
+  "source_retrieval_contract": "5f77186ef195dc569251d445110120a36bc43fd25daece679c3cba4babf7713c",
+  "split": "training_diagnostic",
+  "status": "Retrieval feature search evaluated",
+  "validation": {
+    "gold_introduced_after_ranking": true,
+    "hidden_test_feedback_used": false,
+    "label_blind_duplicate_rejection": true,
+    "outer_protocol": "leave-one-document-out"
+  }
+}
