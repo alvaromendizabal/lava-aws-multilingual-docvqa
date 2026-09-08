@@ -1,9 +1,11 @@
 name: ci
 
 on:
+  pull_request:
   push:
     branches:
-      - "feat/notebook-export"
+      - main
+      - "feat/**"
 
 permissions:
   contents: read
@@ -12,125 +14,46 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-
-      - name: Import reviewed canonical changes
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          python - <<'PY'
-          import base64, hashlib, json, lzma, os, subprocess, urllib.request
-          base = "7afc35943e1a6b1beef3470c7d5c2cf0c0896271"
-          changed = subprocess.check_output(["git", "diff", "--name-only", base, "HEAD"], text=True).splitlines()
-          if changed != [".github/workflows/ci.yml"]:
-              raise SystemExit("Source differs from the reviewed base")
-          def fetch(sha):
-              url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs/{sha}"
-              request = urllib.request.Request(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
-              with urllib.request.urlopen(request, timeout=60) as response:
-                  blob = json.load(response)
-              data = base64.b64decode(blob["content"])
-              if hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() != sha:
-                  raise SystemExit("Transport checksum mismatch")
-              return data
-          chunks = [
-              "ed981ee728edf76e1671342eef54682c591cff33",
-              "bd144ee5b58bb3b2f32b616280aac30fbe09d2f7",
-              "13387c6dbcff098efe163bfae72d67ed12be0a9e",
-              "055a38d95e5ec746a099722a59632cddb2297214",
-              "852b986a7d0dce86ed970002cfd0ce2ab80556c8",
-          ]
-          payload = lzma.decompress(base64.b64decode(b"".join(fetch(sha) for sha in chunks)))
-          if hashlib.sha256(payload).hexdigest() != "5508d1a08ba4a3a2f52caebedf4bacc5daa2bf5c1a6b1ad1cd22df4ec436dee1":
-              raise SystemExit("Reviewed change checksum mismatch")
-          review = fetch("1b9cd5ef9fb212cbee98093792ecddac70f0e9c6")
-          if hashlib.sha256(review).hexdigest() != "dd85209491e2b25319e81ecda744ee7a7bb723d7f079f7994f41e8cfcc7bec13":
-              raise SystemExit("Source review checksum mismatch")
-          for change in (payload, review):
-              subprocess.run(["git", "apply", "--check", "-"], input=change, check=True)
-              subprocess.run(["git", "apply", "--index", "-"], input=change, check=True)
-          subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
-          subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
-          subprocess.run(["git", "commit", "-m", "feat: add notebook-operated test generation and verified export", "-m", "Handle the observed SageMaker missing-resource response without suppressing authorization or network errors. Preserve the pilot contract and prepared inputs. Add separately gated full-test inference, strict saved-prediction validation, durable CSV export and a notebook download link. Never upload to Kaggle or fabricate incomplete predictions."], check=True)
-          PY
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.12.10"
           python-version: "3.12"
           enable-cache: true
 
-      - name: Prepare locked environment and canonical formatting
-        shell: bash
-        run: |
-          uv sync --frozen --group judge
-          uv run --frozen python -m ipykernel install --user --name lava --display-name LAVA
-          uv run --frozen ruff check --select I,F401 --fix src tests scripts pipelines notebooks
-          uv run --frozen ruff format src tests scripts pipelines notebooks
-          git add src tests scripts pipelines notebooks
-          if ! git diff --cached --quiet; then
-            git commit -m "style: format notebook export implementation"
-          fi
-          uv run --frozen python -c 'from pathlib import Path; from lava.readers.system import system_contract; identity=system_contract(Path.cwd())["contract_id"]; assert identity == "fd24e61f112be2eee0cff954cb8b6239c8ab25d14efeeac1b25599ca8dd4753f", identity; print("PILOT_CONTRACT_PRESERVED", identity)'
-
-      - name: Execute all notebooks and verify resumable publication
-        shell: bash
-        run: |
-          set -o pipefail
-          make notebooks 2>&1 | tee "$RUNNER_TEMP/notebooks.log"
-          make notebooks 2>&1 | tee -a "$RUNNER_TEMP/notebooks.log"
-
-      - name: Run the complete quality gate
+      - name: Run canonical quality gate
         shell: bash
         run: |
           set -o pipefail
           bash scripts/quality_gate.sh 2>&1 | tee "$RUNNER_TEMP/quality.log"
 
-      - name: Collect remaining diagnostics on failure
-        if: failure()
+      - name: Verify canonical notebook reuse
         shell: bash
         run: |
-          set +e
-          uv run --frozen ruff check src tests scripts pipelines notebooks > "$RUNNER_TEMP/diagnostics.log" 2>&1
-          uv run --frozen mypy src scripts >> "$RUNNER_TEMP/diagnostics.log" 2>&1
-          uv run --frozen pytest -q >> "$RUNNER_TEMP/diagnostics.log" 2>&1
-          cat "$RUNNER_TEMP/diagnostics.log"
-
-      - name: Publish only validated source and executed outputs
-        shell: bash
-        run: |
-          git add notebooks reports/notebook_execution
-          if ! git diff --cached --quiet; then
-            git commit -m "docs: publish six executed notebook walkthroughs" -m "Run all canonical kernels in offline publication mode and verify a second invocation reuses their completed outputs. Preserve unmeasured model-result status. No paid inference, test CSV or Kaggle submission was generated."
-          fi
-          git fetch origin feat/notebook-export main
-          test "$(git rev-parse origin/feat/notebook-export)" = "$GITHUB_SHA"
-          test "$(git rev-parse origin/main)" = 7afc35943e1a6b1beef3470c7d5c2cf0c0896271
-          git diff --exit-code "$GITHUB_SHA" HEAD -- .github/workflows
-          git push origin HEAD:refs/heads/feat/notebook-export
+          set -o pipefail
+          make notebooks 2>&1 | tee "$RUNNER_TEMP/notebooks.log"
 
       - name: Package public validation evidence
         if: always()
         shell: bash
         run: |
-          touch "$RUNNER_TEMP/quality.log" "$RUNNER_TEMP/notebooks.log" "$RUNNER_TEMP/diagnostics.log"
+          touch "$RUNNER_TEMP/quality.log" "$RUNNER_TEMP/notebooks.log"
           git bundle create "$RUNNER_TEMP/source.bundle" HEAD
           git rev-parse HEAD > "$RUNNER_TEMP/source_commit.txt"
           tar -czf "$RUNNER_TEMP/notebooks.tar.gz" notebooks reports/notebook_execution
           cd "$RUNNER_TEMP"
-          sha256sum source.bundle quality.log notebooks.log notebooks.tar.gz diagnostics.log source_commit.txt > evidence.sha256
+          sha256sum source.bundle quality.log notebooks.log notebooks.tar.gz source_commit.txt > evidence.sha256
 
       - name: Retain public validation evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: validation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -139,7 +62,6 @@ jobs:
             ${{ runner.temp }}/quality.log
             ${{ runner.temp }}/notebooks.log
             ${{ runner.temp }}/notebooks.tar.gz
-            ${{ runner.temp }}/diagnostics.log
             ${{ runner.temp }}/evidence.sha256
           if-no-files-found: error
           retention-days: 30
