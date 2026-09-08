@@ -128,6 +128,7 @@ def fusion_grid() -> tuple[FusionSpec, ...]:
         ("B", "C", "F", "W"),
     )
     for systems in groups:
+        weights: tuple[tuple[float, ...], ...]
         if len(systems) == 2:
             weights = tuple((base, 1.0) for base in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0))
         elif len(systems) == 3:
