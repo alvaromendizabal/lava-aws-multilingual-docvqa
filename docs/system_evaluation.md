@@ -4,6 +4,15 @@ The **component-level research portfolio is complete**. This guide operates the 
 hidden-test benchmark, production deployment or Kaggle submission. Keep the measured
 oracle results and the completed retriever; do not repeat the model sweep.
 
+## Release closeout — September 8, 2026
+
+The optional integrated attempt was stopped while waiting for capacity. It produced
+no verified retrieved-page score. Its terminal AWS record reports one billable
+second; do not interpret that as a completed inference run. The release is complete
+at the component-benchmark scope. These instructions are retained for a future
+operator and are not remaining portfolio acceptance criteria. A stopped attempt
+cannot be resumed by reusing its name; a deliberate new retry is required below.
+
 ## Notebook execution
 
 Notebook 05 exposes the pilot action through `RUN_PILOT=True` and explicit charge
@@ -13,13 +22,7 @@ own downloadable CSV; see [submission generation](submission.md). Public noteboo
 execution is always analysis-only. Updating notebook controls does not require
 committing them to start a job; inference source itself must remain committed.
 
-The initial `ValidationException: Requested resource not found.` from
-`DescribeTrainingJob` is a recognized absence response, not a failed GPU attempt.
-After updating this code, repeat attempt 1; saved inputs and launch intent remain
-valid. Permission, throttling, malformed-request and network failures are not
-silently treated as missing jobs.
-
-## The normal finish command
+## Optional extension command
 
 Use the existing Linux SageMaker `lava-dev` workspace and canonical repository.
 Its `.env`, AWS execution role and Hugging Face model access must remain configured.

@@ -39,7 +39,7 @@ Run these from the repository root. Review each command's scope before using it.
 
 | Command | What it does |
 | --- | --- |
-| `make notebooks` | Verify/reuse or refresh all five canonical executed notebooks |
+| `make notebooks` | Verify/reuse or refresh all six canonical executed notebooks |
 | `make quality` | Explicit tests, lint, format, types, compilation, and publication integrity |
 | `make evaluation-preview` | Inspect the saved-answer evaluation plan without loading a model |
 | `make evaluation-check` | Verify CPU memory, terminal authentication, and pinned Gemma access |
@@ -66,7 +66,7 @@ Each canonical notebook has a manifest under `reports/notebook_execution/`, bind
 4. Publishes the notebook atomically, then its completion manifest.
 5. Recovers from a publication interruption using the completed staging record.
 
-A failed refresh preserves the previous publication. Merging unchanged code does not invalidate analysis results merely because the commit SHA changed; implementation and data hashes govern reuse. Publication tests verify all five notebooks, privacy, complete execution, absence of error/stderr outputs, and the canonical folder layout.
+A failed refresh preserves the previous publication. Merging unchanged code does not invalidate analysis results merely because the commit SHA changed; implementation and data hashes govern reuse. Publication tests verify all six notebooks, privacy, complete execution, absence of error/stderr outputs, and the canonical folder layout.
 
 For a private standalone archive, `scripts/execute_notebooks.py` retains its `--output-dir artifacts/notebook_runs/<attempt>` interface. Runtime logs include UTC timestamps, total/stage time, progress, and heartbeats.
 
