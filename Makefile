@@ -11,6 +11,13 @@ retrieval-preview:
 retrieval-evaluate:
 	uv run --frozen python scripts/evaluate_retrieval.py --mode evaluate
 
+.PHONY: research-preview research-evaluate
+research-preview:
+	uv run --frozen python scripts/research_retrieval.py --mode preview
+
+research-evaluate:
+	uv run --frozen python scripts/research_retrieval.py --mode evaluate
+
 .PHONY: quality preflight preview submit monitor verify sync stop notebooks
 
 quality:

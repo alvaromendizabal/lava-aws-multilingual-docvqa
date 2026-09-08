@@ -183,6 +183,7 @@ def test_legacy_g6e_smoke_plan_passes() -> None:
         ("ml.g7e.12xlarge", "L-99850E94"),
         ("ml.g7e.48xlarge", "L-BE072D49"),
         ("ml.p5en.48xlarge", "L-1E48384D"),
+        ("ml.g6e.8xlarge", "L-812CA1D8"),
         ("ml.p6-b200.48xlarge", "L-60EA3D74"),
         ("ml.p6-b300.48xlarge", "L-82BE9A32"),
     ],

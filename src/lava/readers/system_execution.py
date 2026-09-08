@@ -21,6 +21,7 @@ from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.system import put_blob, store_for, system_contract, validate_manifest
 
 TERMINAL = {"Completed", "Failed", "Stopped"}
+SYSTEM_INSTANCES = {"ml.g6e.2xlarge", "ml.g6e.8xlarge"}
 
 
 def job_name(identity: str, attempt: int) -> str:
@@ -299,6 +300,7 @@ def execute_system(
     allow_retry: bool = False,
     hourly_usd_ceiling: float = 5.0,
     maximum_training_usd: float = 5.0,
+    instance_type: str = "ml.g6e.2xlarge",
 ) -> dict[str, Any]:
     """Run the original frozen 16-question pilot without changing its saved contract."""
     return execute_prepared(
@@ -313,6 +315,7 @@ def execute_system(
         allow_retry=allow_retry,
         hourly_usd_ceiling=hourly_usd_ceiling,
         maximum_training_usd=maximum_training_usd,
+        instance_type=instance_type,
     )
 
 
@@ -332,9 +335,12 @@ def execute_prepared(
     allow_retry: bool = False,
     hourly_usd_ceiling: float = 5.0,
     maximum_training_usd: float = 5.0,
+    instance_type: str = "ml.g6e.2xlarge",
 ) -> dict[str, Any]:
     """Submit or reattach, monitor visibly, then independently verify durable inference."""
     identity = contract["contract_id"]
+    if instance_type not in SYSTEM_INSTANCES:
+        raise ValueError("System execution requires an approved single 48-GB GPU instance")
     s3, client = session.client("s3"), session.client("sagemaker")
     store = store_for(s3, bucket, identity)
     manifest = store.read("inputs.json")
@@ -375,6 +381,7 @@ def execute_prepared(
     request = request_factory(
         root, manifest, bucket, region, role, attempt, source_key, source_sha, commit
     )
+    request["ResourceConfig"]["InstanceType"] = instance_type
     request_key = f"jobs/attempt-{attempt}/request.json"
     stored_request = store.read(request_key)
     if stored_request is not None:
@@ -383,10 +390,12 @@ def execute_prepared(
         request = stored_request
         if request["TrainingJobName"] != expected_name or request["RoleArn"] != role:
             raise ValueError("Stored launch identity does not match this execution")
+        if request["ResourceConfig"]["InstanceType"] != instance_type:
+            raise ValueError("A saved attempt cannot change instance type; use an explicit retry")
     else:
         verify_training_quota(
             service_quotas=session.client("service-quotas"),
-            instance_type="ml.g6e.2xlarge",
+            instance_type=instance_type,
             instance_count=1,
             managed_spot=False,
         )
@@ -425,6 +434,7 @@ def execute_prepared(
     receipt = {
         "job_name": request["TrainingJobName"],
         "status": description["TrainingJobStatus"],
+        "instance_type": description["ResourceConfig"]["InstanceType"],
         "billable_seconds": description.get("BillableTimeInSeconds"),
         "training_seconds": description.get("TrainingTimeInSeconds"),
         "creation_time": str(description.get("CreationTime")),

@@ -91,6 +91,7 @@ _EXACT_TRAINING_QUOTA_CODES: dict[tuple[str, bool], str] = {
     ("ml.g5.2xlarge", True): "L-CAEE7DB7",
     ("ml.g6e.2xlarge", False): "L-D1AFBF6F",
     ("ml.g6e.2xlarge", True): "L-29512C0F",
+    ("ml.g6e.8xlarge", False): "L-812CA1D8",
     ("ml.g7e.12xlarge", False): "L-99850E94",
     ("ml.g7e.48xlarge", False): "L-BE072D49",
     ("ml.p5en.48xlarge", False): "L-1E48384D",
