@@ -61,7 +61,22 @@ The original reader/visual verification and the later integrated verification ha
 
 The required gate covers the frozen environment, Ruff formatting/lint, mypy, all pipeline shell syntax, pytest, compilation, notebook hygiene and Git whitespace. Public notebooks must have complete sequential execution, no error or stderr outputs, current source/input/output hashes and safe default controls.
 
-The real-kernel run and final GitHub CI result are recorded with the release publication. Local execution alone is not sufficient: this scratch environment prohibits kernel IPC, so actual notebook and kernel integration verification use Linux Studio and GitHub runners.
+The final Studio gate completed at **2026-09-08 04:48:23 UTC**: **546 tests passed, with no skips or warnings**, in 41.28 seconds; the complete gate took 61 seconds. Ruff checked 149 files and mypy checked 84 source files. All six notebooks executed end to end, and the integration suite independently exercised their real kernels and source preservation. Published outputs contain no errors or stderr.
+
+| Canonical notebook | Executed code cells |
+| --- | ---: |
+| 00 — Research overview | 3 |
+| 01 — Experiment design | 2 |
+| 02 — Cloud execution | 3 |
+| 03 — Model quality and cost | 8 |
+| 04 — Evidence retrieval | 10 |
+| 05 — Complete system | 9 |
+
+The [executed publication commit](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/commit/8008bef2f902b92302c736450a9775f311b1fc9b) contains the six notebooks and six manifests. Their hashes match the independently read-back-verified S3 publication; the successful Studio log is archived with them. The publication manifest SHA-256 is `fd380f347a001b7236f953b35121325d0de7a382023c466267c59695e88d7e0b`.
+
+The generated HTML report was also opened in Studio: the static fallback rendered, Plotly loaded, and legend selection changed the displayed series. Static figures were rendered and visually inspected; embedded JavaScript passed syntax checking.
+
+[PR #16](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/pull/16) contains the implementation and reviewed outputs; its [checks](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/pull/16/checks) provide the independent Linux CI record. [GitHub validation run 34188449609](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/runs/34188449609) passed on the published notebook commit. Local checks alone are not the release gate. No stale-output or kernel test was disabled to publish the result.
 
 ## Completed scope
 
