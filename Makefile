@@ -111,7 +111,18 @@ system-evaluate:
 
 .PHONY: system-report
 system-report:
-	uv run --isolated --no-project --with matplotlib==3.10.8 python scripts/report_system.py
+	uv run --isolated --no-project --with matplotlib==3.10.8 --with pydantic==2.13.5 python scripts/report_system.py
+
+.PHONY: refine-preview refine-evaluate refine-finish
+refine-preview:
+	uv run --frozen python scripts/refine_system.py --mode preview
+
+refine-evaluate:
+	uv run --frozen --group judge python scripts/refine_system.py --mode evaluate
+
+refine-finish:
+	@test "$(CHARGES)" = "YES" || (echo "New GPU work requires CHARGES=YES. Preview with make refine-preview." >&2; exit 2)
+	uv run --frozen --group judge python scripts/refine_system.py --mode finish --acknowledge-charges $(CHARGES) --attempt $(ATTEMPT) --retry $(RETRY)
 
 finish:
 	@test "$(CHARGES)" = "YES" || (echo "New GPU work requires CHARGES=YES. Preview with make system-preview." >&2; exit 2)

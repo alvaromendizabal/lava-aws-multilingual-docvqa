@@ -1,0 +1,11 @@
+{
+  "billable_seconds": 355,
+  "completion_time": "2026-09-08 04:26:42.374000+00:00",
+  "creation_time": "2026-09-08 04:19:41.021000+00:00",
+  "instance_type": "ml.g6e.8xlarge",
+  "job_name": "lava-refine-9b-b9d23cfe228e248abcefb91e71b7d57b-a1",
+  "request_sha256": "1e47cb75f4814ea52304445424dc0244ce9a99a6128c3379c5c5f67c73a8b174",
+  "source_commit": "566fa6e17df40540fb9abe72fedc550d2302985b",
+  "status": "Completed",
+  "training_seconds": 355
+}

@@ -10,8 +10,11 @@ def verified_system_figure(root: Path, name: str) -> str:
         raise ValueError("Unknown published system figure")
     folder = root / "reports/system"
     manifest = json.loads((folder / "figures.json").read_bytes())
+    if manifest["summary_filename"] not in {"summary.json", "refinement.json"}:
+        raise ValueError("Unknown figure summary source")
     for path, expected in (
-        (folder / "summary.json", manifest["summary_sha256"]),
+        (folder / manifest["summary_filename"], manifest["summary_sha256"]),
+        (folder / "summary.json", manifest["first_pass_summary_sha256"]),
         (root / "scripts/report_system.py", manifest["source_sha256"]),
         (folder / name, manifest["files"][name]),
     ):

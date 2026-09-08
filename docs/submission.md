@@ -1,5 +1,7 @@
 # Generate a submission in your notebook
 
+The optional test exporter uses the first-pass BM25/9B configuration. The citation-guided reread in Notebook 05 is measured on the training diagnostic; no full-test reread result is claimed.
+
 Open `notebooks/05_end_to_end_system_evaluation.ipynb` using the locked LAVA kernel.
 Its **Generate and download your own submission** section runs the normal source
 implementation; you do not paste an assistant-provided predictions file.

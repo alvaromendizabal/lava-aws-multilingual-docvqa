@@ -1,39 +1,50 @@
 # Architecture and experiment lineage
 
-LAVA separates data/protocol, reader execution, retrieval, and evaluation so each can be verified independently.
+LAVA separates label-free inference from reference-based evaluation. The deployed cloud workloads are managed batch inference jobs; model weights are frozen.
 
 ```mermaid
 flowchart TD
-    P["Pinned data and protocol"] --> O["Oracle reader pilots"]
-    P --> R["Full-document BM25 retrieval"]
-    O --> E["Answer and citation evaluation"]
-    R --> Q["Retrieval metrics and failures"]
-    E --> N["Executed notebooks and public reports"]
-    Q --> N
+    P["Pinned PDFs and questions"] --> T["Native text extraction"]
+    T --> B["Full-document BM25"]
+    B --> R["9B reader: selected images and text"]
+    R --> C["Validated first-pass citations"]
+    C --> S["9B reread: cited pages"]
+    R --> E["Answer and citation evaluation"]
+    S --> E
+    G["Reference answers and pages"] --> E
+    E --> N["Verified reports and notebooks"]
+    R --> K["S3 answer checkpoints"]
+    S --> K
 ```
 
-## Completed components
+Reference answers and evidence pages enter evaluation only. The first pass ranks all physical pages of the question’s PDF, presents up to five pages, and validates that citations belong to the supplied input. The second pass retains valid self-cited pages, falling back to the original set when necessary. It always returns the second answer; no label-based per-question selection is performed.
 
-The data audit verified 208 raw files and all 205 PDFs. Reader pilots ran on all 16 training questions; retrieval searched all 74 training-PDF pages. Reader and retrieval performance are measured independently in this completed component benchmark.
+## Completed experiments
 
-| Compared configuration | Verified instance |
-| --- | --- |
-| Qwen3.5 4B fused direct | `ml.g5.2xlarge` |
-| Qwen3.5 9B fused direct | `ml.g6e.2xlarge` |
-| Qwen3.8 27B NF4 fused direct | `ml.g5.2xlarge` |
+The audit verified 208 raw files and all 205 PDFs. Oracle reader pilots covered all 16 training questions; retrieval searched all 74 pages of their five PDFs. Integrated first-pass and second-pass answers were subsequently generated and scored on those same questions.
 
-The immutable registry also retains unused historical candidates. Their presence does not require running them. Notebook 01 shows only the three completed configurations.
+| Configuration | Verified instance | Role |
+| --- | --- | --- |
+| Qwen3.5 4B BF16 | `ml.g5.2xlarge` | Oracle reader comparison |
+| Qwen3.5 9B BF16 | `ml.g6e.2xlarge` | Oracle reader comparison |
+| Qwen3.8 27B NF4 | `ml.g5.2xlarge` | Quantized larger-reader comparison |
+| Qwen3.5 9B BF16 | `ml.g6e.8xlarge` | Retrieved-page first pass and citation-guided reread |
+| colSmol-500M | `ml.m7i.2xlarge` | Exploratory page-image retrieval |
+
+The successful integrated attempts used an available larger host with the same single L40S GPU class and reader configuration. The model registry retains historical candidates for lineage; they are not unfinished experiments.
+
+## Feature research
+
+The lexical audit caches token statistics, checkpoints 11 BM25 families and one fusion/exploration family, and records all 1,582 candidate rankings before scoring. Candidate signatures used for selection contain only the four training documents in each outer fold. Global duplicate counts and pooled family scores are descriptive. The conservative gate requires improvement across multiple training documents; the fixed BM25 baseline survived every fold.
 
 ## Verification and durability
 
-A cloud job reaching Completed is not sufficient evidence of a valid result. Artifact verification checks lineage, scope, raw generations, structured responses, checkpoints, and independently derived metrics. Model failures remain visible in the evaluation denominator.
+A Completed job is followed by artifact verification: source lineage, complete unique question coverage, exact generation checksums, independently parsed citations, and the common semantic judge. Invalid model outputs remain in the denominator.
 
-Private documents, responses, and checkpoints remain in S3. Public Git history contains implementation, pinned contracts, sanitized aggregates, and executed notebooks. UTC events, elapsed time, heartbeats, checksum verification, and resume tests are part of the implementation.
+Private documents, page images, generations and judge decisions remain in S3. Conditional writes and read-back checks protect checkpoints. Deterministic job names allow reattachment after monitor interruption; failed or stopped attempts require an explicit retry. UTC events report stage and total elapsed time, progress and heartbeats.
 
-## One notebook interface
+All six notebooks live directly in `notebooks/`. Manifests in `reports/notebook_execution/` bind executable source, public inputs and completed outputs. Successful staging records recover interrupted publication; a failed execution preserves the previous publication.
 
-All six notebooks live directly in `notebooks/`. Each includes verified outputs and runs independently against public results. Manifests in `reports/notebook_execution/` bind source, inputs, and outputs. Completed staging records support recovery from interrupted publication.
+The canonical Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Source lives in `src/lava/`, operator commands in `scripts/`, frozen settings in `configs/`, and batch entry points in `pipelines/`. No endpoint or application service is required to review the release.
 
-The active Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Historical validation checkouts and installation bundles have been archived and removed. Empty app, serving, agent, and infrastructure scaffolding has been removed; those capabilities are not represented as implemented.
-
-See [scope and limitations](../README.md#scope-and-limitations). Integrated reader/retrieval evaluation, deployment, and submission are optional extensions; no end-to-end score is claimed.
+[Measured results and limitations](../README.md#scope-and-limitations) · [System operation](system_evaluation.md)

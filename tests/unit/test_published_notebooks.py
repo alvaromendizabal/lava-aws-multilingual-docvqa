@@ -6,7 +6,10 @@ import nbformat
 import pytest
 
 from lava.evaluation.reporting import load_report
+from lava.evaluation.system import load_summary
+from lava.evaluation.system_reporting import verified_system_figure
 from lava.notebook_execution import NOTEBOOK_STEMS, validate_public_notebook
+from lava.readers.refinement import load_refinement
 from lava.retrieval.pipeline import load_public_report
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,4 +55,15 @@ def test_employer_headline_scores_match_the_verified_experiments():
     assert retrieval["reader_evaluated"] is False
     assert retrieval["local_lava_overall"] is None
     assert "submission optional" in rendered
-    assert "no end-to-end answer score is claimed" in readme
+    for loader in (load_summary, load_refinement):
+        system = loader(ROOT)
+        assert system is not None and system["metrics"]["question_count"] == 16
+        assert system["official_server_parity"] is False
+        for metric in ("answer", "grounding", "overall"):
+            score = f"{system['metrics']['question_micro'][metric]:.2%}"
+            assert score in readme
+        assert f"{system['metrics']['question_micro']['overall']:.2%}" in rendered
+    for figure in ("quality.svg", "documents.svg", "questions.svg"):
+        assert "<svg" in verified_system_figure(ROOT, figure)
+    assert "post-hoc development finding" in readme
+    assert "not official server scores" in readme
