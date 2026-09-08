@@ -4,7 +4,7 @@ Notebook 04 asks whether the system can find the pages needed to answer a questi
 The earlier reader comparison received gold evidence pages. Its 9B score remains
 an oracle reader measurement until we actually run 9B on retrieved evidence.
 
-## Completed experiment
+## Completed baseline experiment
 
 The fixed BM25 baseline searched 74 pages from all five labeled training PDFs.
 All pages had some native text and no extraction error occurred. These facts do
@@ -31,42 +31,86 @@ ranker receives this question and every physical page of its PDF. Answers,
 answer formats, languages and gold evidence are not features. The evaluator
 introduces reference labels only after the rankings have been persisted.
 
-The text tokenizer applies Unicode NFKC and case folding, then emits words plus
-within-word character bigrams and trigrams. Japanese matching therefore does not
-depend on whitespace. Vietnamese diacritics are preserved. There is no learned
-vocabulary, stopword selection, query expansion or label-derived tuning.
+The production text tokenizer applies Unicode NFKC and case folding, then emits
+words plus within-word character bigrams and trigrams. Japanese matching therefore
+does not depend on whitespace. Vietnamese diacritics are preserved. There is no
+learned vocabulary, stopword selection, query expansion or label-derived tuning.
 
 BM25 uses k1=1.2, b=0.75 and positive log-IDF
 `log(1 + (N - df + 0.5) / (df + 0.5))`. Statistics come only from the target PDF.
 Query terms are deduplicated and sorted so summation is stable across processes.
 Ties use ascending physical page number. Blank/error pages stay in the candidate
 set with zero lexical signal. Zero-signal queries are counted explicitly.
-This is a diagnostic baseline, not a visual or trained semantic retriever.
 
-References: [BM25 scoring](https://lucene.apache.org/core/9_12_1/core/org/apache/lucene/search/similarities/BM25Similarity.html)
-and [PyMuPDF text extraction](https://pymupdf.readthedocs.io/en/latest/recipes-text.html).
+## Exhaustive lexical feature research
+
+The production baseline is intentionally simple, but the feature search is not.
+The research-only implementation in `src/lava/retrieval/feature_research.py`
+generates **1,089 scalar query-page BM25 features** across 11 multilingual lexical
+views, 11 k1 values and 9 length-normalization values. The views include words,
+within-token character n-grams, mixed word/character signals, and whitespace-free
+character n-grams that can bridge tokenization boundaries.
+
+Every complete ranking is generated before gold evidence is inspected. Ranking
+signatures are then deduplicated without labels: 981 of the 1,089 BM25 candidates
+were unique and 108 were rejected as redundant. A second search generated 493
+conservative RRF, Borda and baseline-preserving exploration policies; 252 produced
+unique rankings and 241 were rejected as duplicates. The full search therefore
+examined 1,582 candidate configurations while keeping selection separate from the
+hidden test set.
+
+Pooled diagnostics show why naive feature-count optimization is dangerous. A
+whitespace-free character-trigram BM25 variant retrieved every labeled evidence
+page within k=5 on all 16 questions, and character 2/3/4-gram views also improved
+pooled recall. Word-only retrieval was substantially worse, consistent with the
+multilingual document setting. Those results are descriptive, not selection proof.
+
+For selection, each outer fold holds out one complete document. Free selection
+among the broad BM25 grid dropped to 90.77% oracle grounding-F1@5, 81.25%
+complete-evidence@5 and 89.06% recall@5, below the fixed baseline. Candidate choices
+also changed across folds. In a separate conservative fusion search where the
+existing baseline remained an eligible no-change option, the baseline was selected
+on all five outer folds and reproduced its 97.02% oracle grounding-F1@5, 87.50%
+complete-evidence@5 and 95.31% recall@5.
+
+The decision is therefore to **retain the production BM25 baseline**. A perfect
+pooled result is rejected because it does not survive document-isolated validation.
+This is intentional feature selection: broad generation, label-blind redundancy
+removal, grouped holdout testing, and removal of complexity without robust gain.
+The exact aggregate evidence is checksum-bound in
+[`reports/retrieval/feature_search.json`](../reports/retrieval/feature_search.json).
+
+The next justified challenger is visual document retrieval, not more lexical
+hyperparameter search. ColPali/ColQwen-style late-interaction page-image retrieval
+is relevant because LAVA explicitly requires visual understanding of tables,
+figures, photographs and layout that native PDF text can miss. It will be compared
+as a challenger and will not replace BM25 without held-out evidence.
 
 ## Metrics and interpretation
 
-Budgets 1, 2, 3, 5 and 10 were specified before the live run. A short PDF contributes
-all its pages when k exceeds its length. Both methods rank the same full candidate
-set. All 16 questions remain in every denominator.
+Budgets 1, 2, 3, 5 and 10 were specified before the original baseline run. A short
+PDF contributes all its pages when k exceeds its length. All methods rank the same
+full candidate set, and all 16 questions remain in every denominator.
 
 - Recall@k: fraction of gold evidence pages retrieved.
 - All-evidence@k: one only when every gold page is present.
 - MRR@k: reciprocal rank of the first relevant page, or zero if none occurs.
 - MAP@k: mean AP@k, with AP divided by `min(number of gold pages, k)`.
 - nDCG@k: binary relevance discounted by rank, normalized to the ideal ranking.
+- Oracle grounding-F1@k: the best evidence F1 possible if a downstream reader could
+  perfectly keep only the gold pages that appeared in the retrieved candidate set.
 
 Reports include question averages, equal-document averages, document/language/
 answer-format slices, extraction coverage and anonymous per-question scores.
-The five PDFs provide a descriptive training diagnostic. No retriever tuning or
-cross-validation is claimed. The single Vietnamese example does not estimate
-language-level performance. Test labels are unavailable and are not used.
+The five PDFs remain a small training diagnostic. The feature search adds
+leave-one-document-out selection, but the single Vietnamese example still cannot
+estimate language-level generalization. Hidden test labels and leaderboard feedback
+are not used.
 
-These retrieval measures supplement the [published LAVA metric](https://lava-workshop.github.io/#evaluation).
-They cannot substitute for semantic answer credit and predicted evidence-page F1.
-The retrieval report stores `local_lava_overall: null` until a reader is evaluated.
+These retrieval measures supplement the published LAVA metric. They cannot
+substitute for semantic answer credit and predicted evidence-page F1. The main
+retrieval report stores `local_lava_overall: null` until a reader is evaluated on
+retrieved pages.
 
 ## Run and resume
 
@@ -92,19 +136,12 @@ from pinned versions if their local copies disappear or fail verification.
 
 The CPU process ends if Studio stops. S3 checkpoints survive; restarting the same
 command restores completed work. Longer GPU jobs use SageMaker's independent job
-lifecycle. The [executed notebook](../notebooks/04_evidence_retrieval.ipynb)
-can be viewed without running either workload.
+lifecycle. The executed Notebook 04 can be viewed without running either workload.
 
-## Optional research extensions
+## Research boundary
 
-Evaluate the provisional 9B reader with a declared retrieved-page budget, keeping
-the model revision, decoding and semantic judge unchanged. Measure the resulting
-LAVA answer/evidence/overall scores against the oracle run, including all failures.
-Document page selection and full runtime. Use failure analysis to decide whether
-multilingual embeddings, visual retrieval or reranking justify their added cost.
-Do not select a method from hidden test feedback.
-
-The component research benchmark is complete. Reader integration, complete test
-inference, organizer-hardware verification, and Kaggle submission are outside this
-release. Existing submission utilities remain available for optional future use;
-no accepted submission or leaderboard score is claimed.
+The lexical feature search is complete and did not justify changing production
+retrieval. The integrated 9B retrieved-evidence pilot is a separate measured system
+experiment. A visual-retrieval benchmark and complete 624-question test inference
+remain separate work until they have real measured outputs. No accepted Kaggle
+submission or leaderboard score is claimed by this repository.
