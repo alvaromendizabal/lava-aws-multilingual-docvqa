@@ -76,7 +76,7 @@ resume command; an active job should be monitored, not duplicated.
 
 ## Read the process in notebooks
 
-All five executed notebooks live in [notebooks/](../notebooks/README.md).
+All six executed notebooks live in [notebooks/](../notebooks/README.md).
 Read 00 through 04 to understand the data, design, verified execution, model
 comparison, and retrieval results. Each runs independently against local public
 aggregates. It creates no GPU job and repeats no model inference.

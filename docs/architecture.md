@@ -32,7 +32,7 @@ Private documents, responses, and checkpoints remain in S3. Public Git history c
 
 ## One notebook interface
 
-All five notebooks live directly in `notebooks/`. Each includes verified outputs and runs independently against public results. Manifests in `reports/notebook_execution/` bind source, inputs, and outputs. Completed staging records support recovery from interrupted publication.
+All six notebooks live directly in `notebooks/`. Each includes verified outputs and runs independently against public results. Manifests in `reports/notebook_execution/` bind source, inputs, and outputs. Completed staging records support recovery from interrupted publication.
 
 The active Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Historical validation checkouts and installation bundles have been archived and removed. Empty app, serving, agent, and infrastructure scaffolding has been removed; those capabilities are not represented as implemented.
 

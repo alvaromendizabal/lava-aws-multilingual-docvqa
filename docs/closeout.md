@@ -48,8 +48,19 @@ repeat GPU inference or download all raw PDFs again.
 
 PR #15 previously failed because its analysis inputs changed without refreshing
 the six published notebooks. The stale-output checks were correct and remain in
-place. Closeout refreshes the canonical publications from the new inputs, then
-requires the full quality gate and verified notebook reuse before merge.
+place. Closeout regenerated all six canonical publications on the GitHub Linux runner.
+[Validation run 34182979230](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/runs/34182979230)
+passed **537 tests, with no skips**, the frozen environment, formatting, lint,
+static typing, shell syntax, compilation, notebook hygiene and Git diff checks.
+All six notebooks executed end to end with no error or stderr outputs; the full
+suite also exercised real kernel cleanup and source-preserving notebook execution.
+
+The archive and its five component hashes were verified before importing the six
+notebooks and six publication manifests. All publications then passed local
+source/input/output verification and checksum-based reuse. The temporary
+publication step was removed before the final read-only checks and merge. Changes
+are reviewed and published through
+[PR #15](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/pull/15).
 
 The local execution environment prohibits kernel IPC sockets, so real-kernel
 execution and its eight integration tests run in GitHub's Linux environment.

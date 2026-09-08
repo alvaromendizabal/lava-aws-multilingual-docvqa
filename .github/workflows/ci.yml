@@ -28,13 +28,6 @@ jobs:
           python-version: "3.12"
           enable-cache: true
 
-      - name: Publish current notebook inputs for closeout review
-        shell: bash
-        run: |
-          uv sync --frozen --group judge
-          uv run --frozen python -m ipykernel install --user --name lava --display-name "Python (LAVA)"
-          make notebooks
-
       - name: Run canonical quality gate
         shell: bash
         run: |
