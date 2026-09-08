@@ -31,15 +31,7 @@ jobs:
           changed = subprocess.check_output(["git", "diff", "--name-only", base, "HEAD"], text=True).splitlines()
           if changed != [".github/workflows/ci.yml"]:
               raise SystemExit("Source differs from the reviewed base")
-          chunks = [
-              "ed981ee728edf76e1671342eef54682c591cff33",
-              "bd144ee5b58bb3b2f32b616280aac30fbe09d2f7",
-              "13387c6dbcff098efe163bfae72d67ed12be0a9e",
-              "055a38d95e5ec746a099722a59632cddb2297214",
-              "852b986a7d0dce86ed970002cfd0ce2ab80556c8",
-          ]
-          parts = []
-          for sha in chunks:
+          def fetch(sha):
               url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs/{sha}"
               request = urllib.request.Request(url, headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
               with urllib.request.urlopen(request, timeout=60) as response:
@@ -47,12 +39,23 @@ jobs:
               data = base64.b64decode(blob["content"])
               if hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() != sha:
                   raise SystemExit("Transport checksum mismatch")
-              parts.append(data)
-          payload = lzma.decompress(base64.b64decode(b"".join(parts)))
+              return data
+          chunks = [
+              "ed981ee728edf76e1671342eef54682c591cff33",
+              "bd144ee5b58bb3b2f32b616280aac30fbe09d2f7",
+              "13387c6dbcff098efe163bfae72d67ed12be0a9e",
+              "055a38d95e5ec746a099722a59632cddb2297214",
+              "852b986a7d0dce86ed970002cfd0ce2ab80556c8",
+          ]
+          payload = lzma.decompress(base64.b64decode(b"".join(fetch(sha) for sha in chunks)))
           if hashlib.sha256(payload).hexdigest() != "5508d1a08ba4a3a2f52caebedf4bacc5daa2bf5c1a6b1ad1cd22df4ec436dee1":
               raise SystemExit("Reviewed change checksum mismatch")
-          subprocess.run(["git", "apply", "--check", "-"], input=payload, check=True)
-          subprocess.run(["git", "apply", "--index", "-"], input=payload, check=True)
+          review = fetch("1b9cd5ef9fb212cbee98093792ecddac70f0e9c6")
+          if hashlib.sha256(review).hexdigest() != "dd85209491e2b25319e81ecda744ee7a7bb723d7f079f7994f41e8cfcc7bec13":
+              raise SystemExit("Source review checksum mismatch")
+          for change in (payload, review):
+              subprocess.run(["git", "apply", "--check", "-"], input=change, check=True)
+              subprocess.run(["git", "apply", "--index", "-"], input=change, check=True)
           subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
           subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
           subprocess.run(["git", "commit", "-m", "feat: add notebook-operated test generation and verified export", "-m", "Handle the observed SageMaker missing-resource response without suppressing authorization or network errors. Preserve the pilot contract and prepared inputs. Add separately gated full-test inference, strict saved-prediction validation, durable CSV export and a notebook download link. Never upload to Kaggle or fabricate incomplete predictions."], check=True)
