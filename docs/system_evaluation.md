@@ -4,6 +4,21 @@ The **component-level research portfolio is complete**. This guide operates the 
 hidden-test benchmark, production deployment or Kaggle submission. Keep the measured
 oracle results and the completed retriever; do not repeat the model sweep.
 
+## Notebook execution
+
+Notebook 05 exposes the pilot action through `RUN_PILOT=True` and explicit charge
+acknowledgment. It prepares/runs/scores the same 16-question contract without
+recursively publishing itself. The independent test/export controls create your
+own downloadable CSV; see [submission generation](submission.md). Public notebook
+execution is always analysis-only. Updating notebook controls does not require
+committing them to start a job; inference source itself must remain committed.
+
+The initial `ValidationException: Requested resource not found.` from
+`DescribeTrainingJob` is a recognized absence response, not a failed GPU attempt.
+After updating this code, repeat attempt 1; saved inputs and launch intent remain
+valid. Permission, throttling, malformed-request and network failures are not
+silently treated as missing jobs.
+
 ## The normal finish command
 
 Use the existing Linux SageMaker `lava-dev` workspace and canonical repository.

@@ -27,7 +27,7 @@ def main() -> int:
     """One recoverable operator command, with a separate and explicit new-compute gate."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--mode", choices=("preview", "prepare", "run", "evaluate", "finish"), default="preview"
+        "--mode", choices=("preview", "prepare", "run", "evaluate", "finish", "notebook"), default="preview"
     )
     parser.add_argument("--acknowledge-charges", choices=("YES", "NO"), default="NO")
     parser.add_argument("--attempt", type=int, default=1)
@@ -60,7 +60,7 @@ def main() -> int:
             current_result="scored" if summary else "not_yet_measured",
         )
         return 0
-    if args.mode in {"run", "finish"} and args.acknowledge_charges != "YES":
+    if args.mode in {"run", "finish", "notebook"} and args.acknowledge_charges != "YES":
         raise ValueError(
             "Run/finish requires CHARGES=YES; use preview or evaluate for no new GPU work"
         )
@@ -80,13 +80,13 @@ def main() -> int:
     )
     try:
         with logger.stage("system.finish", heartbeat_seconds=15):
-            if args.mode == "finish":
+            if args.mode in {"finish", "notebook"}:
                 # Detect judge login/memory problems before any new paid GPU work.
                 check_cpu_memory(logger)
                 check_judge_access(judge_contract(root)["config"], logger)
-            if args.mode in {"prepare", "finish"}:
+            if args.mode in {"prepare", "finish", "notebook"}:
                 prepare_inputs(root, s3, bucket, logger)
-            if args.mode in {"run", "finish"}:
+            if args.mode in {"run", "finish", "notebook"}:
                 execute_system(
                     root,
                     session,
@@ -99,7 +99,7 @@ def main() -> int:
                     hourly_usd_ceiling=args.hourly_usd_ceiling,
                     maximum_training_usd=args.maximum_training_usd,
                 )
-            if args.mode in {"evaluate", "finish"}:
+            if args.mode in {"evaluate", "finish", "notebook"}:
                 summary = evaluate_system(root, s3, bucket, logger)
                 logger.emit("system.results", **summary["metrics"]["question_micro"])
             if args.mode == "finish":

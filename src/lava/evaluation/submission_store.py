@@ -84,7 +84,14 @@ def persist_submission(
         if existing != payload or response.get("Metadata", {}).get("sha256") != sha256(payload):
             raise ValueError("Conflicting or corrupted immutable submission CSV") from None
         logger.emit("submission.csv.reused", bundle_id=identity)
-    ImmutableS3Objects(s3, bucket, prefix).write("manifest.json", manifest)
+    response = s3.get_object(Bucket=bucket, Key=key)
+    with response["Body"] as stream:
+        if stream.read() != payload or response.get("Metadata", {}).get("sha256") != sha256(payload):
+            raise ValueError("Conflicting or corrupted immutable submission CSV")
+    objects = ImmutableS3Objects(s3, bucket, prefix)
+    objects.write("manifest.json", manifest)
+    if objects.read("manifest.json") != manifest:
+        raise ValueError("Submission manifest failed durable read-back")
     target = root / "artifacts/submission" / identity / "submission.csv"
     atomic_write(target, payload)
     atomic_write(target.parent / "manifest.json", encode(manifest))
