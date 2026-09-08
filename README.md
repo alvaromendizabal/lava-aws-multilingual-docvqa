@@ -4,7 +4,7 @@
 
 **Completed research benchmark · Python · Vision-language models · AWS · Reproducible evaluation**
 
-How do model size, quantization, and compute cost affect multilingual document question answering—and how reliably can a simple retriever find the supporting pages? This project answers those questions with three measured reader configurations and a separate full-document retrieval experiment.
+How do model size, quantization, and compute cost affect multilingual document question answering—and how reliably can a simple retriever find the supporting pages? This project answers those questions with three measured reader configurations, full-document retrieval, a 1,582-configuration lexical search, and a visual retrieval challenger.
 
 The portfolio deliverable is complete: verified data, frozen experiments, generated metrics, executed notebooks, visual analysis, and tested recovery. All notebook outputs are included. **An employer can review the work without an account, installation, or GPU.**
 
@@ -18,7 +18,7 @@ All six canonical notebooks live in [notebooks/](notebooks/). They can be read i
 | [01 — Experiment design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Comparable inputs, model configurations, and evaluation boundaries |
 | [02 — Cloud execution](notebooks/02_verified_gpu_execution.ipynb) | Actual runs, checkpoints, logging, and recovery |
 | [03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Answer quality, citations, document effects, latency, memory, and cost |
-| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Retrieval curves, document-level failures, and measured resumption |
+| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Retrieval curves, 1,582 candidate configurations, visual challenger, and recovery |
 | [05 — Retrieved-evidence extension](notebooks/05_end_to_end_system_evaluation.ipynb) | Implemented integration, actual measurement status, failure analysis and recovery |
 
 **Short review:** read 00, then the results and conclusions in 03 and 04. Use 01 and 02 for methodological and engineering detail. No notebook needs to be run just to inspect the results.
@@ -50,6 +50,31 @@ The separate BM25 retrieval experiment searched **all 74 pages** in the training
 
 **Finding:** lexical retrieval substantially improves evidence coverage over page order on this pilot. At five pages, equal-document recall is 92.50% and complete-evidence coverage is 75.00%, exposing variation hidden by the question average. The initial CPU run took **8.548 seconds**; a separate resumed run took **0.898 seconds**, reusing all five extractions and 16 rankings.
 
+## Feature research and visual retrieval
+
+The lexical search generated **1,089 BM25 scoring features and 493 fusion/exploration
+policies**. Label-blind screening removed **349 duplicate rankings**, leaving 1,233
+ranking signatures within the two search stages. These are alternative retrieval
+configurations, not 1,582 inputs to a trained model. Free document-isolated selection
+reduced recall@5 to 89.06%; conservative selection retained the original BM25 on all
+five document folds. **No lexical challenger justified replacing the baseline.**
+
+A completed, pinned **colSmol-500M page-image retrieval** experiment tested four
+prespecified policies on the same 74 pages and 16 questions:
+
+| Retrieval policy | Evidence recall@5 | Questions with all evidence |
+| --- | ---: | ---: |
+| BM25 baseline | 95.31% | 14/16 |
+| colSmol-500M alone | 57.81% | 8/16 |
+| Reciprocal rank fusion | 92.19% | 13/16 |
+| Four BM25 pages + one novel visual page | **98.44%** | **15/16** |
+
+The hybrid recovered one additional question on this development pilot. It has no
+independent validation and is **not promoted to production**. The negative visual-only
+result and rejected lexical challengers show why more complexity needs evidence.
+[Notebook 04](notebooks/04_evidence_retrieval.ipynb) presents both searches;
+[retrieval methodology](docs/retrieval.md) records provenance and limitations.
+
 ## What this demonstrates
 
 - **Experimental judgment:** frozen model/data/prompt contracts, a common question set, counted failures, and explicit comparison limits.
@@ -66,20 +91,16 @@ The 87.02% reader score uses oracle pages. Retrieval was evaluated separately, s
 
 Reader evaluation with retrieved pages, a deployed application, full test inference, and Kaggle submission are **optional extensions outside this completed release**. No submission or leaderboard result is claimed. There are no additional experiments required to review or use this portfolio benchmark.
 
-The retrieved-page pipeline is implemented; Notebook 05 reports its measurement status. Its actual answer score remains explicitly unmeasured until the GPU experiment runs. `make system-preview` inspects the plan without paid compute; `make finish CHARGES=YES` explicitly authorizes one bounded GPU attempt, then scores saved answers, executes all six notebooks, runs the quality gate and archives verified outputs. See [the operator guide](docs/system_evaluation.md) for cost limits and recovery. This extension does not invalidate the completed component benchmark.
-
-## Generate and download your own CSV
-
-Notebook 05 contains explicit controls for the integrated pilot, full test
-inference, and verified local CSV export. Defaults do not allocate compute.
-You run the code, download `artifacts/submission/submission.csv`, and decide
-whether to upload it yourself. No automatic Kaggle upload is implemented.
-See [the notebook-operated workflow](docs/submission.md) for cost, recovery,
-coverage and privacy boundaries. Actual full-test inference is not yet measured.
+The retrieved-page pipeline and user-operated CSV export remain documented in
+[Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb) as optional extensions.
+The pending integrated GPU attempt was stopped during the September 8 closeout;
+no end-to-end answer score is claimed. No further compute is required for this
+portfolio release. The notebook defaults only inspect published results, and Kaggle
+upload remains a user decision. See [closeout evidence](docs/closeout.md).
 
 ## Reproduce and inspect
 
-In the configured Studio environment, use `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Public analysis uses the pinned Python 3.12 environment. After installing it, `make notebooks` verifies and reuses current outputs or refreshes changed notebooks; `make quality` runs the explicit quality gate. Neither command launches a GPU.
+In the configured Studio environment, use `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Public analysis uses the pinned Python 3.12 environment. Register its notebook kernel once with `uv run --frozen python -m ipykernel install --user --name lava --display-name "Python (LAVA)"`. Then `make notebooks` verifies and reuses current outputs or refreshes changed notebooks; `make quality` runs the explicit quality gate. Neither command launches a GPU.
 
 Notebook publication verifies source, input, and output hashes; interrupted writes recover from completed staging records, and failed execution preserves the previous publication. Private source data, responses, and model/retrieval/judge checkpoints persist in S3. GitHub preserves code, public aggregates, and executed notebooks.
 

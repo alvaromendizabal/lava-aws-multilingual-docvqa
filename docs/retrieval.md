@@ -80,11 +80,36 @@ removal, grouped holdout testing, and removal of complexity without robust gain.
 The exact aggregate evidence is checksum-bound in
 [`reports/retrieval/feature_search.json`](../reports/retrieval/feature_search.json).
 
-The next justified challenger is visual document retrieval, not more lexical
-hyperparameter search. ColPali/ColQwen-style late-interaction page-image retrieval
-is relevant because LAVA explicitly requires visual understanding of tables,
-figures, photographs and layout that native PDF text can miss. It will be compared
-as a challenger and will not replace BM25 without held-out evidence.
+## Completed visual challenger
+
+A pinned `vidore/colSmol-500M` model at revision
+`61b5e6ce33b42bf1976ef82cd1c721bb1f1e332c` encoded all 74 rendered page images and
+16 queries. The completed CPU SageMaker job used `ml.m7i.2xlarge`, with 319 billable
+seconds; the script measured 261.483 seconds. Pages were rendered at 1.25x scale,
+encoded in batches of one, and queries in batches of four. Model similarity scores
+ranked physical pages with deterministic page-number tie breaking. Gold pages were
+introduced after ranking. No hidden-test feedback or automatic promotion was used.
+
+| Policy | Recall@5 | Complete-evidence@5 | nDCG@5 |
+| --- | ---: | ---: | ---: |
+| Fixed BM25 | 95.31% | 87.50% | 0.858 |
+| Visual only | 57.81% | 50.00% | 0.492 |
+| Equal-weight RRF, k=60 | 92.19% | 81.25% | 0.737 |
+| Keep four BM25 pages, add highest-ranked novel visual page | 98.44% | 93.75% | 0.872 |
+
+Visual-only retrieval and equal-weight fusion underperformed. The conservative
+hybrid recovered one additional complete question in doc-01; doc-05 remained
+incomplete. This hybrid result is exploratory development evidence, not independent
+validation. The frozen inference configuration therefore remains BM25.
+
+The original aggregate bytes are published in
+[`visual_search.json`](../reports/retrieval/visual_search.json) with a SHA-256
+sidecar. Closeout verified the original object's SHA-256, its internal summary
+hash, the pinned source script, and the completed AWS job. Source and outputs remain
+in the private experiment archive; the public appendix can be re-executed without
+model access. The exploratory source was an archived standalone experiment, not a
+new canonical production retriever. Full environment re-creation and rerunning this
+visual model were not part of closeout verification.
 
 ## Metrics and interpretation
 
@@ -141,7 +166,7 @@ lifecycle. The executed Notebook 04 can be viewed without running either workloa
 ## Research boundary
 
 The lexical feature search is complete and did not justify changing production
-retrieval. The integrated 9B retrieved-evidence pilot is a separate measured system
-experiment. A visual-retrieval benchmark and complete 624-question test inference
-remain separate work until they have real measured outputs. No accepted Kaggle
+retrieval. The visual challenger is measured and archived. The integrated 9B retrieved-evidence
+answer score and full 624-question test inference remain unmeasured optional
+extensions. The pending integrated GPU attempt was stopped during closeout. No accepted Kaggle
 submission or leaderboard score is claimed by this repository.

@@ -1,0 +1,58 @@
+{
+  "active_lava_training_jobs": [],
+  "bucket_versioning": "Enabled",
+  "lava_endpoints": [],
+  "optional_system_job": {
+    "BillableTimeInSeconds": 1,
+    "SecondaryStatus": "Stopped",
+    "TrainingEndTime": "2026-09-08T03:11:38.602000+00:00",
+    "TrainingJobName": "lava-system-9b-fd24e61f112be2eee0cff954cb8b6239-a1",
+    "TrainingJobStatus": "Stopped",
+    "TrainingStartTime": "2026-09-08T03:11:38.331000+00:00"
+  },
+  "raw_data_objects_present": 208,
+  "reader_artifacts": {
+    "qwen35_4b_fused_direct": {
+      "private_records_sha256": "0b8c8d6313a1de9bd8ebe51fe2d350bb64a952913a0be1443ecbc6d85ed5b0ce",
+      "private_records_verified": 16,
+      "public_summary_path": "reports/oracle_reader/runs/lava-oracle-qwen35-4b-fused-direct-20260906180137/public_summary.json",
+      "public_summary_sha256": "ccbfc5f8f3c43549a3c559715fd06e5239316178f08d5a763b2d8e3d749a3926",
+      "question_checkpoints_verified": 0
+    },
+    "qwen35_9b_fused_direct": {
+      "private_records_sha256": "8ecff0b63955b147509749f523b52748f45dbf6732d0f4794bb71ca58523395b",
+      "private_records_verified": 16,
+      "public_summary_path": "reports/oracle_reader/runs/lava-oracle-qwen35-9b-fused-direct-20260906190503/public_summary.json",
+      "public_summary_sha256": "dd60d8668b69ec82e5aaa90b4311c12534852b43112e36e687aeb5c3db3ad0cc",
+      "question_checkpoints_verified": 16
+    },
+    "qwen38_27b_nf4_g5_fused_direct": {
+      "private_records_sha256": "ec3365b9c6d9a953f9ebfaf34b44c3af747488fbf5ba1dd1a2dab3ae06884d60",
+      "private_records_verified": 16,
+      "public_summary_path": "reports/oracle_reader/runs/lava-oracle-qwen38-27b-nf4-g5-fused-direct-20260906233121/public_summary.json",
+      "public_summary_sha256": "66bab6b0dd7143e5ce99c3138fbae9187be40d958ba8edfe8198a3f5d311d372",
+      "question_checkpoints_verified": 16
+    }
+  },
+  "region": "us-west-2",
+  "schema_version": 1,
+  "scope": "Completed component-level portfolio benchmark",
+  "verification_limits": [
+    "Raw data presence checked against the live object listing; all 208 source files were not downloaded again.",
+    "The earlier 4B run has verified 16-row saved results but no per-question checkpoint objects in its benchmark prefix.",
+    "Visual model inference was completed before closeout; closeout verified its output, source hash and AWS job rather than rerunning the model.",
+    "No end-to-end answer score, full-test inference, deployment or Kaggle result is claimed.",
+    "Compute status covers LAVA training jobs and LAVA-named endpoints in us-west-2; it is not an account-wide billing audit."
+  ],
+  "verified_at_utc": "2026-09-08T03:16:13.651017+00:00",
+  "visual_retrieval": {
+    "billable_seconds": 319,
+    "instance_type": "ml.m7i.2xlarge",
+    "job_name": "lava-visual-colsmol500m-61b5e6c-a3",
+    "model_revision": "61b5e6ce33b42bf1976ef82cd1c721bb1f1e332c",
+    "source_sha256": "ee059a40af13c3a1faac88ea231c641786f509b96b511b83835b4742733b0938",
+    "status": "Completed",
+    "summary_sha256": "08c4e314fca8ab575383894abbb9e1b2fdd96264aa3f03276f66a6eab152563c",
+    "summary_version_id": "ZjvRHODuiqGGXq5Q9sAcaZCLhVi4AQWe"
+  }
+}
