@@ -1,154 +1,91 @@
-# Retrieved-evidence extension
+# Complete-system evaluation and reproduction
 
-The **component-level research portfolio is complete**. This guide operates the separately scoped retrieved-evidence extension. It is not a trained model,
-hidden-test benchmark, production deployment or Kaggle submission. Keep the measured
-oracle results and the completed retriever; do not repeat the model sweep.
+The release includes two completed 16-question inference conditions: full-PDF BM25 retrieval followed by Qwen3.5 9B answering, and a second read of that model’s own cited pages. Both use the original pinned reader, deterministic decoding, image assets and semantic judge.
 
-## Release closeout — September 8, 2026
+| Condition | Answer credit | Evidence F1 | Local LAVA |
+| --- | ---: | ---: | ---: |
+| Oracle pages | 80.15% | 93.90% | 87.02% |
+| Retrieved pages | 48.90% | 86.25% | 67.57% |
+| Self-cited reread | 67.65% | 88.33% | 77.99% |
 
-The optional integrated attempt was stopped while waiting for capacity. It produced
-no verified retrieved-page score. Its terminal AWS record reports one billable
-second; do not interpret that as a completed inference run. The release is complete
-at the component-benchmark scope. These instructions are retained for a future
-operator and are not remaining portfolio acceptance criteria. A stopped attempt
-cannot be resumed by reusing its name; a deliberate new retry is required below.
+The second read improves the question average by 10.42 percentage points and the equal-document average by 9.17 points. Three documents improved, two tied. This hypothesis was designed after inspecting first-pass errors on the training pilot; it is not independent validation. The exact two-sided document sign-flip p-value is 0.25. Five clusters support descriptive, exploratory uncertainty only.
 
-## Notebook execution
+## Fixed refinement policy
 
-Notebook 05 exposes the pilot action through `RUN_PILOT=True` and explicit charge
-acknowledgment. It prepares/runs/scores the same 16-question contract without
-recursively publishing itself. The independent test/export controls create your
-own downloadable CSV; see [submission generation](submission.md). Public notebook
-execution is always analysis-only. Updating notebook controls does not require
-committing them to start a job; inference source itself must remain committed.
+The first pass receives up to five BM25-selected pages. The second pass keeps its valid cited pages in physical order. Empty or invalid citations retain the original input. The final answer is always the second output. No answer label, gold page or per-question score selects the page subset or final prediction.
 
-## Optional extension command
+The second pass presents 27 pages across 16 questions, versus 76 in the first pass. It cannot recover evidence omitted upstream. Complete input-evidence coverage falls from 14/16 to 12/16 because some self-citations omit relevant pages. The failure table and all predictions remain counted.
 
-Use the existing Linux SageMaker `lava-dev` workspace and canonical repository.
-Its `.env`, AWS execution role and Hugging Face model access must remain configured.
-The linked ChatGPT account is not a replacement for this terminal's credentials.
-The command checks Gemma access and available CPU memory before any new GPU launch.
+## Verified lineage
+
+| Artifact | Contract or checksum |
+| --- | --- |
+| First-pass inference contract | `fd24e61f112be2eee0cff954cb8b6239c8ab25d14efeeac1b25599ca8dd4753f` |
+| First-pass public summary SHA-256 | `05fd5b926205307cb7c5f078227a9212d1eb75372da7cd4e7c8e17a0eb912313` |
+| Refinement inference contract | `b9d23cfe228e248abcefb91e71b7d57bb0822f2f6a17285f709098c911e911ea` |
+| Refinement public summary SHA-256 | `545691e6d35815fd5bdf89c91cc834ae20d78060084e5817ab151f437da66913` |
+
+Public results are in `reports/system/summary.json` and `refinement.json`, with SHA-256 sidecars. Job receipts are `attempt-3.json` and `refinement/attempt-1.json`. Source-bound loaders reject stale inference, judge or scoring lineage. The public reports use stable anonymous question/document aliases; exact questions, generations, answers and PDF content remain private.
+
+## Runtime and cost
+
+| Completed pass | Instance | Billable seconds | Estimated Training USD |
+| --- | --- | ---: | ---: |
+| First pass, attempt 3 | `ml.g6e.8xlarge` | 409 | 0.6430 |
+| Reread, attempt 1 | `ml.g6e.8xlarge` | 355 | 0.5581 |
+| Both completed passes | One GPU per job | 764 | 1.2012 |
+
+The dated AWS Price List Training rate is $5.66/hour in us-west-2. These estimates exclude Studio, storage, logs, transfers, taxes, discounts and earlier attempts. They are not an invoice or an account-wide cap.
+
+Mean generation was 6.357 seconds in the first pass and 3.768 seconds in the reread; p95 was 7.751 and 6.493 seconds. Peak allocated GPU memory was 21.48 and 20.65 GiB. The two-pass system incurs both passes. Reader telemetry excludes retrieval, provisioning and checkpoint I/O, and the first uncached question includes model load. These numbers do not establish full competition-runtime compliance.
+
+The initial first-pass attempts were stopped during capacity acquisition. The successful third attempt used another available host size with the same single L40S GPU class. No endpoint or larger reader was needed.
+
+## Inspect without cloud access
+
+Read [Notebook 05](../notebooks/05_end_to_end_system_evaluation.ipynb) with its saved outputs. All notebook run controls default to false. To verify the current public contracts locally:
 
 ```bash
-cd /home/sagemaker-user/lava-aws-multilingual-docvqa
 make system-preview
-make finish CHARGES=YES
-```
-
-`system-preview` is offline and creates no paid resource. `finish` explicitly approves
-one bounded GPU attempt, uses the frozen 9B/BM25 five-page configuration on all 16
-questions, scores real answers with the unchanged semantic judge, executes all six
-notebooks, runs the full quality gate, and read-back verifies successful notebook
-publications in private S3. It never uploads a Kaggle submission.
-
-The AWS training job uses one `ml.g6e.2xlarge`, the existing image pinned by digest,
-a 1,800-second runtime cap and a 24-hour server-side capacity-acquisition limit.
-Default cost guard: $5/hour ceiling × 0.5 runtime hours × 1.25 contingency = $3.125,
-against a $5 **per-attempt estimate limit**. The recorded September 6 training price
-is $2.80/hour; it is not a live billing quote. These controls are not an account-wide
-hard dollar cap. Existing Studio, storage, logs, transfer, taxes and other attempts
-are separate. No resize, endpoint or IAM change is performed.
-
-The service limits each container argument to 256 characters. A short entrypoint
-verifies the SHA-256 Git archive before invoking `pipelines/oracle_reader/run.sh`.
-The bootstrap installs the pinned GPU requirements and then runs the existing
-canonical `job_entry.py` in `system` mode. Source input uses the already-authorized
-oracle-reader prefix; checkpoints use the existing submission prefix. New page
-assets use content-addressed keys and exact-byte verification, without requiring
-ungranted `GetObjectVersion` or `ListBucket` permissions in that prefix.
-
-## See progress and recover
-
-The terminal prints UTC events with stage/total elapsed time and 15-second
-heartbeats. Reader events and dependency/model logs are also retained by SageMaker
-in CloudWatch under `/aws/sagemaker/TrainingJobs` for the printed job name. Local
-operator logs are in `artifacts/system/runtime/`; they are archived to S3 on exit.
-Successful notebook outputs are published in `notebooks/`, not a duplicate folder.
-
-A browser or monitor interruption does not cancel an accepted training job. Repeat
-**the same command with the same attempt number** to reconnect. An ambiguous create
-response is resolved by the same deterministic job name, never a random second job.
-Each compatible completed answer is read back and independently parsed before reuse.
-A question interrupted before its checkpoint commits may need to run again.
-
-A **Failed/Stopped** attempt is not automatically relaunched. Inspect its CloudWatch
-log first. A deliberately approved second attempt reuses the first attempt's saved
-answers under the unchanged input contract:
-
-```bash
-make finish CHARGES=YES ATTEMPT=2 RETRY=YES
-```
-
-Changing inference source, model revision, source manifest, page budget or rendering
-changes the contract and correctly invalidates incompatible results. Report-only
-commits and merges do not invalidate compatible answers. Changes to the judge or
-scoring code cannot silently reuse a current public score. Never delete existing
-checkpoints to make a gate pass.
-
-When only semantic scoring or notebook publication was interrupted, use:
-
-```bash
-make system-evaluate
+make refine-preview
 make notebooks
 make quality
 ```
 
-These commands create no new GPU resource. `finish` also detects completed inference
-and skips allocation, but its explicit `CHARGES=YES` guard remains visible.
+None of these commands allocates a GPU. To regenerate figures, `make system-report` uses an isolated, pinned Matplotlib environment so the frozen semantic-judge dependency lock remains unchanged. It produces three SVGs, a Plotly HTML report with static fallbacks, and a checksum manifest.
 
-## Publish the measured result
+## Reproduce on the configured Studio host
 
-Only after `system.portfolio.ready` and `QUALITY_GATE_PASSED`, review Notebook 05's
-actual metrics and failure table. Do not mark this milestone complete while the
-notebook says that inference is unmeasured. No minimum score is used to suppress
-unfavorable results; all 16 questions and any invalid outputs remain counted.
-
-Create one results branch and commit **only** public aggregates and reviewed outputs:
+Use `/home/sagemaker-user/lava-aws-multilingual-docvqa` with its existing AWS role, storage configuration and Hugging Face judge access. The operator checks judge access and CPU memory before new paid inference.
 
 ```bash
-git switch -c feat/system-results
-git add reports/system notebooks reports/notebook_execution
-git diff --cached --check
-git commit -m "feat: publish measured retrieved-evidence 9B evaluation" \
-  -m "Evaluate all 16 labeled questions with frozen BM25-selected pages and the unchanged local semantic judge. Preserve failures, paired document diagnostics, resource telemetry and executed notebook provenance. Kaggle submission remains optional."
-git push -u origin feat/system-results
+make system-evaluate
+make refine-evaluate
+make system-report
+make notebooks
+make quality
 ```
 
-If that branch already exists after an interrupted publication, use
-`git switch feat/system-results` rather than creating a duplicate branch.
-Open its pull request in GitHub, require CI to pass on the final head, review the
-notebook outputs and merge using a merge commit to retain experiment ancestry.
-After the measured results merge, tag that **merged commit** as `v1.1.0`:
+The scoring commands reuse completed inference and verified semantic decisions. They do not create a new GPU job. The fixed research audit can also be repeated with `make research-evaluate`; complete families are reused after verification.
 
-```bash
-git switch main
-git pull --ff-only
-git tag -a v1.1.0 -m "Measured retrieved-evidence document-QA portfolio"
-git push origin v1.1.0
-```
+For intentional new inference, `make finish CHARGES=YES` operates the base condition, and `make refine-finish CHARGES=YES` operates the frozen second read. Both skip allocation when compatible inference is already complete. Refinement requires the saved first pass.
 
-Do not create the tag for the implementation-only change. A Kaggle extension still
-needs all 624 test predictions, complete container/runtime validation and verified
-submission eligibility; none is claimed by this portfolio milestone.
+The base launcher supports `ml.g6e.2xlarge` and `ml.g6e.8xlarge`; the latter is exposed by `scripts/evaluate_system.py --instance-type`. Refinement uses `ml.g6e.8xlarge`. Each new attempt has a 1,800-second runtime cap, a server pending limit of 24 hours and an explicit $5 per-attempt estimate guard. The refinement hourly estimate ceiling is $6, with 25% contingency. These are runtime and estimate controls, not account-wide spending limits.
 
-## Evaluation and privacy
+## Progress and recovery
 
-Primary metric: question-average `(semantic answer credit + evidence-page F1) / 2`.
-Supporting views: equal-document score, answer/evidence components, precision and
-recall, complete evidence coverage, validity/abstention, per-document and answer-format
-slices, failure categories and measured reader latency/memory. All five PDFs were
-previously examined; intervals over five document clusters are exploratory.
+Operator logs emit UTC events with stage/total elapsed time and 15-second heartbeats. SageMaker retains container logs in CloudWatch. Per-question answer checkpoints, manifests, job requests, completed receipts and operator logs persist in S3.
 
-`ReaderInput` contains no reference answer or gold-page field. The original
-`OracleExample` keeps its gold-alignment checks. Physical page IDs are retained
-through retrieval, rendering, prompting and parsing. References enter only after
-complete inference. Exact generations remain private; public diagnostics use stable
-question/document aliases and contain no questions, answers or PDF content.
+Repeat the same command and attempt number after a monitor interruption. A deterministic job name resolves an ambiguous create response without creating another job. Completed compatible answers are read back and independently parsed. A question interrupted before checkpoint commit may need to run again.
 
-The published LAVA formula is reproduced locally; organizer prompt/runtime parity
-and official server scores are not claimed. The existing 28 judge controls remain
-mandatory and unchanged.
+Failed or stopped attempts are never relaunched automatically. Inspect the recorded failure, then explicitly request a new attempt with `ATTEMPT=2 RETRY=YES` (or the next unused number). Existing completed answers are retained.
 
-References: [LAVA evaluation](https://lava-workshop.github.io/#evaluation),
-[SageMaker container specification](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_AlgorithmSpecification.html),
-[server stopping conditions](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_StoppingCondition.html).
+Changes to model revision, page policy, source manifest, inference implementation or dependency lock invalidate incompatible inference. Changes to the judge or scoring code invalidate stale scores. Report-only changes do not require new GPU inference. Never delete checkpoints to make a gate pass.
+
+## Evaluation boundary
+
+`ReaderInput` has no reference answer or gold-evidence fields. Citations must belong to supplied physical pages, not to a reference set. References enter only after inference is complete.
+
+The primary score averages semantic answer credit and evidence-page F1 per question. Supporting views include equal-document scores, language and answer-format slices, precision/recall, input-evidence coverage, validity, abstention, failure categories and runtime. The unchanged pinned judge passes 28 development controls.
+
+The [published LAVA formula](https://lava-workshop.github.io/#evaluation) is implemented locally. Exact organizer prompt/runtime parity, hidden-test accuracy, full-test throughput and leaderboard performance are not established. The separate [CSV export workflow](submission.md) remains an optional operator action and never automatically uploads to Kaggle.

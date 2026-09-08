@@ -1,0 +1,14 @@
+{
+  "summary_filename": "refinement.json",
+  "summary_sha256": "545691e6d35815fd5bdf89c91cc834ae20d78060084e5817ab151f437da66913",
+  "first_pass_summary_sha256": "05fd5b926205307cb7c5f078227a9212d1eb75372da7cd4e7c8e17a0eb912313",
+  "source_sha256": "8f6040001fd40e97bf5dcf086882191fbf4bcf42d5fca89cd6b079f907234b32",
+  "matplotlib_version": "3.10.8",
+  "plotly_js_version": "4.0.0",
+  "files": {
+    "quality.svg": "ff868d599f0e9e26e20cbd75a7b12d75f525d850fb05edf0811e2f8f6e978c24",
+    "documents.svg": "ada6b80c2aa1238bc34835e19c7694359d6c8bf770528539e24b3dc51cac8891",
+    "questions.svg": "b9d3b06a95a3f80ef18b67e60fe7c9da6e39aa317bda1fd11f649b2b31c756ba",
+    "index.html": "a3e44dae92ecbd8332d424780ffc2cff8f0f97cd724f75cbb34421d154c9c2be"
+  }
+}

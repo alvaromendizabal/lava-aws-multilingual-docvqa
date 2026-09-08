@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 
 from lava.retrieval.feature_research import bm25_feature_grid, exploration_grid, fusion_grid
+from lava.retrieval.research import research_contract
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -36,6 +37,24 @@ def test_research_candidate_accounting_matches_executable_catalog():
         + counts["fusion_and_exploration_policies_generated"]
     )
     assert not report["decision"]["changed"]
+    assert report["contract"] == research_contract(
+        ROOT, report["contract"]["source_retrieval_contract"]
+    )
+    assert counts["total_candidate_configurations_generated"] == (
+        counts["globally_unique_ranking_signatures"] + counts["global_duplicate_rankings"]
+    )
+    assert counts["global_duplicate_rankings"] == (
+        counts["duplicate_bm25_rankings_rejected"]
+        + counts["duplicate_fusion_rankings_rejected"]
+        + counts["cross_stage_duplicates"]
+    )
+    assert len(report["document_folds"]) == 10
+    for fold in report["document_folds"]:
+        audit = fold["selection_audit"]
+        assert audit["training_documents"] == 4
+        assert audit["training_questions"] + fold["held_out_questions"] == 16
+        assert audit["unique_training_rankings"] <= audit["generated"]
+    assert len(report["feature_family_diagnostics_pooled_only"]) == 11
 
 
 def test_visual_result_matches_cloud_provenance_and_baseline():

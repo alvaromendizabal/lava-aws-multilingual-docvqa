@@ -4,3 +4,4 @@ notebooks/*.ipynb -filter
 
 # Public rendered reports support the Python/notebook portfolio.
 reports/**/*.html linguist-generated=true
+reports/**/*.svg linguist-generated=true

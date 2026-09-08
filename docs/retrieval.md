@@ -2,7 +2,8 @@
 
 Notebook 04 asks whether the system can find the pages needed to answer a question.
 The earlier reader comparison received gold evidence pages. Its 9B score remains
-an oracle reader measurement until we actually run 9B on retrieved evidence.
+an oracle reader measurement. Notebook 05 separately measures the complete system:
+67.57% local LAVA on retrieved pages and 77.99% after a self-cited reread.
 
 ## Completed baseline experiment
 
@@ -51,13 +52,23 @@ views, 11 k1 values and 9 length-normalization values. The views include words,
 within-token character n-grams, mixed word/character signals, and whitespace-free
 character n-grams that can bridge tokenization boundaries.
 
-Every complete ranking is generated before gold evidence is inspected. Ranking
-signatures are then deduplicated without labels: 981 of the 1,089 BM25 candidates
-were unique and 108 were rejected as redundant. A second search generated 493
-conservative RRF, Borda and baseline-preserving exploration policies; 252 produced
-unique rankings and 241 were rejected as duplicates. The full search therefore
-examined 1,582 candidate configurations while keeping selection separate from the
-hidden test set.
+The canonical execution is `scripts/research_retrieval.py`, backed by
+`src/lava/retrieval/research.py`. It exhaustively evaluates the declared finite
+grid, caching token statistics and checkpointing 12 families. Every complete
+ranking is saved before reference labels are scored.
+
+The source-bound audit generated 1,089 BM25 candidates: 983 ranking signatures were
+unique and 106 redundant. The 493 RRF, Borda and baseline-preserving exploration
+policies produced 408 unique signatures and 85 duplicates within that stage.
+One signature also overlaps between stages. Globally, **1,390 signatures are
+unique and 192 are duplicates** across 1,582 configurations. Global counts are
+descriptive; each selector deduplicates using its four training documents only.
+
+Fusion views are explicitly fixed at k1=1.2, b=0.75: words, words plus character
+2/3-grams, character 2/3/4-grams, and whitespace-free character trigrams. This
+fully specified execution supersedes the earlier exploratory aggregate in Git
+history, which did not encode every fusion-view setting. Counts from those two
+implementations must not be combined.
 
 Pooled diagnostics show why naive feature-count optimization is dangerous. A
 whitespace-free character-trigram BM25 variant retrieved every labeled evidence
@@ -72,6 +83,21 @@ also changed across folds. In a separate conservative fusion search where the
 existing baseline remained an eligible no-change option, the baseline was selected
 on all five outer folds and reproduced its 97.02% oracle grounding-F1@5, 87.50%
 complete-evidence@5 and 95.31% recall@5.
+
+The conservative gate requires at least two improved training documents, no
+regressed training documents, and at least 0.02 mean oracle-grounding-F1 gain.
+Selection orders candidates by document-average oracle F1, complete coverage,
+recall and nDCG, with deterministic ties and preference for the unchanged baseline.
+The gate is a documented development choice, not a statistically calibrated
+guarantee. Tests change held-out labels and verify that its fold's selected
+candidate remains unchanged.
+
+The public report records all ten outer-fold selections and training-only
+screening counts, plus pooled diagnostics for all 11 text representations.
+Those pooled family comparisons are descriptive; they are not independent
+feature-importance estimates or proof of improvement in the final answer metric.
+The full CPU execution took 10.973 seconds; an independent resume reused all 12
+families in 1.783 seconds and reproduced the exact summary checksum.
 
 The decision is therefore to **retain the production BM25 baseline**. A perfect
 pooled result is rejected because it does not survive document-isolated validation.
@@ -134,8 +160,9 @@ are not used.
 
 These retrieval measures supplement the published LAVA metric. They cannot
 substitute for semantic answer credit and predicted evidence-page F1. The main
-retrieval report stores `local_lava_overall: null` until a reader is evaluated on
-retrieved pages.
+retrieval-only report retains `local_lava_overall: null` because it scores page
+rankings. Actual integrated answer scores live in the separate verified system
+reports, preserving the original retrieval artifact and its scope.
 
 ## Run and resume
 
@@ -144,6 +171,8 @@ From the project root in Studio:
 ```bash
 make retrieval-preview
 make retrieval-evaluate
+make research-preview
+make research-evaluate
 ```
 
 Preview is offline. Evaluate uses the current CPU host, pinned S3 source versions
@@ -165,8 +194,8 @@ lifecycle. The executed Notebook 04 can be viewed without running either workloa
 
 ## Research boundary
 
-The lexical feature search is complete and did not justify changing production
-retrieval. The visual challenger is measured and archived. The integrated 9B retrieved-evidence
-answer score and full 624-question test inference remain unmeasured optional
-extensions. The pending integrated GPU attempt was stopped during closeout. No accepted Kaggle
-submission or leaderboard score is claimed by this repository.
+The lexical feature search is complete and did not justify changing the default
+retriever. The visual challenger is measured and archived. The integrated 9B
+first pass and citation-guided reread are completed and scored in Notebook 05.
+Full 624-question test inference and Kaggle submission remain outside the
+measured release. No leaderboard score is claimed.

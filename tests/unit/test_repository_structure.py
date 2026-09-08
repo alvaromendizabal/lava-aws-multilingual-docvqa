@@ -88,8 +88,9 @@ def test_project_entrance_links_every_canonical_notebook_in_order() -> None:
     from lava.notebook_execution import NOTEBOOK_STEMS
 
     readme = (ROOT / "README.md").read_text()
-    positions = [readme.index(f"notebooks/{stem}.ipynb") for stem in NOTEBOOK_STEMS]
+    catalog = "\n".join(line for line in readme.splitlines() if line.startswith("| ["))
+    positions = [catalog.index(f"notebooks/{stem}.ipynb") for stem in NOTEBOOK_STEMS]
     assert positions == sorted(positions)
     assert "reports/notebooks/" not in readme
     assert "## Scope and limitations" in readme
-    assert "Completed research benchmark" in readme
+    assert "Completed applied ML research system" in readme

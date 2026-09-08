@@ -162,6 +162,73 @@ def test_label_free_input_rejects_gold_fields_and_five_pages_are_accepted():
             ReaderInput.model_validate({**value, field: "untrusted label"})
 
 
+def test_refinement_uses_only_validated_first_pass_citations():
+    from lava.readers.refinement import focus_inputs
+
+    manifest, contract, raws, predict = fixture()
+    first = infer_requests(
+        manifest,
+        contract,
+        MemoryStore(),
+        predict,
+        RuntimeEventLogger("test"),
+        read_raw=raws.__getitem__,
+    )
+    focused = focus_inputs(manifest, first)
+    assert len(focused) == 16
+    for original, current in zip(manifest["inputs"], focused, strict=True):
+        assert current == {**original, "pages": [original["pages"][0]]}
+        assert not {"answer", "evidence_pages", "gold_evidence_pages"}.intersection(current)
+    # A reordered or different question's first pass cannot be reused.
+    changed = deepcopy(first)
+    changed["records"][0], changed["records"][1] = changed["records"][1], changed["records"][0]
+    with pytest.raises(ValueError, match="different reader inputs"):
+        focus_inputs(manifest, changed)
+
+
+def test_refinement_keeps_context_for_empty_first_pass_citations():
+    from lava.readers.refinement import focus_inputs
+
+    manifest, contract, raws, predict = fixture()
+    raws[manifest["inputs"][0]["question_id"]] = (
+        '{"answer":"","evidence_pages":[],"confidence":0,"abstain":true}'
+    )
+    first = infer_requests(
+        manifest,
+        contract,
+        MemoryStore(),
+        predict,
+        RuntimeEventLogger("test"),
+        read_raw=raws.__getitem__,
+    )
+    focused = focus_inputs(manifest, first)
+    assert focused[0] == manifest["inputs"][0]
+    assert len(focused[1]["pages"]) == 1
+
+
+def test_refinement_job_retains_cloud_limits_with_distinct_source_and_identity():
+    from lava.readers.refinement import refinement_training_request
+
+    manifest, _, _, _ = fixture()
+    body = refinement_training_request(
+        ROOT,
+        manifest,
+        "bucket",
+        "us-west-2",
+        "arn:aws:iam::123456789012:role/test",
+        1,
+        "source.tar.gz",
+        "a" * 64,
+        "b" * 40,
+    )
+    service = boto3.Session()._session.get_service_model("sagemaker")
+    validate_parameters(body, service.operation_model("CreateTrainingJob").input_shape)
+    assert body["TrainingJobName"].startswith("lava-refine-")
+    assert body["StoppingCondition"]["MaxRuntimeInSeconds"] == 1800
+    assert "/refinement/run.sh" in body["AlgorithmSpecification"]["ContainerArguments"][1]
+    validate_remote({**body, "TrainingJobStatus": "Completed"}, body)
+
+
 def test_existing_oracle_contract_remains_gold_aligned_and_four_page_bounded():
     row = request(pages=(1,))
     original = OracleExample(

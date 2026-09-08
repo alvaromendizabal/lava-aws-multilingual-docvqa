@@ -20,7 +20,7 @@ from lava.evaluation.system import evaluate_system, load_summary
 from lava.notebook_support import find_repo_root
 from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.system import prepare_inputs, put_blob, store_for, system_contract
-from lava.readers.system_execution import execute_system
+from lava.readers.system_execution import SYSTEM_INSTANCES, execute_system
 
 
 def main() -> int:
@@ -36,6 +36,9 @@ def main() -> int:
     parser.add_argument("--retry", choices=("YES", "NO"), default="NO")
     parser.add_argument("--hourly-usd-ceiling", type=float, default=5.0)
     parser.add_argument("--maximum-training-usd", type=float, default=5.0)
+    parser.add_argument(
+        "--instance-type", choices=sorted(SYSTEM_INSTANCES), default="ml.g6e.2xlarge"
+    )
     args = parser.parse_args()
     root = find_repo_root(Path(__file__).resolve())
     os.chdir(root)
@@ -100,6 +103,7 @@ def main() -> int:
                     allow_retry=args.retry == "YES",
                     hourly_usd_ceiling=args.hourly_usd_ceiling,
                     maximum_training_usd=args.maximum_training_usd,
+                    instance_type=args.instance_type,
                 )
             if args.mode in {"evaluate", "finish", "notebook"}:
                 summary = evaluate_system(root, s3, bucket, logger)

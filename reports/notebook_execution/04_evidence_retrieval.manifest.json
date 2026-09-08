@@ -1,9 +1,9 @@
 {
-  "analysis_inputs_sha256": "503feee38693b8064949c3469a409c9fca6da1aa610dd8d6f871d028795e4a42",
-  "code_revision": "c3b74133a0d0e4146386dcdd98955a97f05721c7",
-  "executed_code_cells": 9,
+  "analysis_inputs_sha256": "5b2d2484e9f1be829e66d0efd061502f8983fddc6ba837ea4841bc7b99f5d407",
+  "code_revision": "93722cb2b56ba1eecf05ab822258ecc5e21829ed",
+  "executed_code_cells": 10,
   "notebook": "04_evidence_retrieval.ipynb",
-  "output_sha256": "3bc1218387ac058d8cf2bb3195b9494bab0be17722ce09d0415318be2693284f",
+  "output_sha256": "cdc4204bd0fb2a8729a7deb1cc040e4eca0ba9be05a41d398b1ddfaa93c30f71",
   "schema_version": 2,
-  "source_sha256": "4397748b31f1ffd574f434dd4ce4637e7a3811c88e80e01f2bc50cba0e0467ee"
+  "source_sha256": "6b524be8015918b952be9d86afd25e3aa3965bb4495aecca92629ee08010a7bd"
 }

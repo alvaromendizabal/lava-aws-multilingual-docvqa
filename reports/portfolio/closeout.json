@@ -1,15 +1,68 @@
 {
   "active_lava_training_jobs": [],
   "bucket_versioning": "Enabled",
-  "lava_endpoints": [],
-  "optional_system_job": {
-    "BillableTimeInSeconds": 1,
-    "SecondaryStatus": "Stopped",
-    "TrainingEndTime": "2026-09-08T03:11:38.602000+00:00",
-    "TrainingJobName": "lava-system-9b-fd24e61f112be2eee0cff954cb8b6239-a1",
-    "TrainingJobStatus": "Stopped",
-    "TrainingStartTime": "2026-09-08T03:11:38.331000+00:00"
+  "capacity_attempts": [
+    {
+      "BillableTimeInSeconds": 1,
+      "SecondaryStatus": "Stopped",
+      "TrainingEndTime": "2026-09-08T03:11:38.602000+00:00",
+      "TrainingJobName": "lava-system-9b-fd24e61f112be2eee0cff954cb8b6239-a1",
+      "TrainingJobStatus": "Stopped",
+      "TrainingStartTime": "2026-09-08T03:11:38.331000+00:00"
+    },
+    {
+      "SecondaryStatus": "Stopped",
+      "TrainingEndTime": "2026-09-08T04:00:23.172000+00:00",
+      "TrainingJobName": "lava-system-9b-fd24e61f112be2eee0cff954cb8b6239-a2",
+      "TrainingJobStatus": "Stopped"
+    }
+  ],
+  "component_verification_at_utc": "2026-09-08T03:16:13.651017+00:00",
+  "integrated_system": {
+    "first_pass": {
+      "completed_job": {
+        "billable_seconds": 409,
+        "completion_time": "2026-09-08 04:09:14.202000+00:00",
+        "creation_time": "2026-09-08 04:01:22.332000+00:00",
+        "instance_type": "ml.g6e.8xlarge",
+        "job_name": "lava-system-9b-fd24e61f112be2eee0cff954cb8b6239-a3",
+        "request_sha256": "4dcef39d64b3a4109508ac773ce779fca4dd51ac1709c9b5fae66cc2273f4df4",
+        "source_commit": "6f6cfcb8c9def603ade93cb65e889d4ee6dce985",
+        "status": "Completed",
+        "training_seconds": 409
+      },
+      "contract_id": "fd24e61f112be2eee0cff954cb8b6239c8ab25d14efeeac1b25599ca8dd4753f",
+      "independent_parsing_verified": true,
+      "input_pages": 76,
+      "private_inference_sha256": "c748815e38f4c42158f977696e91332f33d4af9c3d9e0f4b5f38965ecca3e842",
+      "private_records_verified": 16,
+      "public_summary_path": "reports/system/summary.json",
+      "public_summary_sha256": "05fd5b926205307cb7c5f078227a9212d1eb75372da7cd4e7c8e17a0eb912313",
+      "question_checkpoints_verified": 16
+    },
+    "refinement": {
+      "completed_job": {
+        "billable_seconds": 355,
+        "completion_time": "2026-09-08 04:26:42.374000+00:00",
+        "creation_time": "2026-09-08 04:19:41.021000+00:00",
+        "instance_type": "ml.g6e.8xlarge",
+        "job_name": "lava-refine-9b-b9d23cfe228e248abcefb91e71b7d57b-a1",
+        "request_sha256": "1e47cb75f4814ea52304445424dc0244ce9a99a6128c3379c5c5f67c73a8b174",
+        "source_commit": "566fa6e17df40540fb9abe72fedc550d2302985b",
+        "status": "Completed",
+        "training_seconds": 355
+      },
+      "contract_id": "b9d23cfe228e248abcefb91e71b7d57bb0822f2f6a17285f709098c911e911ea",
+      "independent_parsing_verified": true,
+      "input_pages": 27,
+      "private_inference_sha256": "2cdababc7877ced1804e43af833fce42f5b2af34f91fe0173045d69342fe1ac9",
+      "private_records_verified": 16,
+      "public_summary_path": "reports/system/refinement.json",
+      "public_summary_sha256": "545691e6d35815fd5bdf89c91cc834ae20d78060084e5817ab151f437da66913",
+      "question_checkpoints_verified": 16
+    }
   },
+  "lava_endpoints": [],
   "raw_data_objects_present": 208,
   "reader_artifacts": {
     "qwen35_4b_fused_direct": {
@@ -35,16 +88,50 @@
     }
   },
   "region": "us-west-2",
-  "schema_version": 1,
-  "scope": "Completed component-level portfolio benchmark",
+  "retrieval_research": {
+    "candidate_accounting": {
+      "cross_stage_duplicates": 1,
+      "duplicate_bm25_rankings_rejected": 106,
+      "duplicate_fusion_rankings_rejected": 85,
+      "fusion_and_exploration_policies_generated": 493,
+      "global_duplicate_rankings": 192,
+      "globally_unique_ranking_signatures": 1390,
+      "scalar_bm25_features_generated": 1089,
+      "total_candidate_configurations_generated": 1582,
+      "unique_bm25_ranking_signatures": 983,
+      "unique_fusion_ranking_signatures": 408
+    },
+    "contract_id": "55057515cea165de974bbccf3490bd8e65c50ed36da8245511dab9f6ebba1a0a",
+    "executions": [
+      {
+        "attempt": "20260908T040841Z-b5503079",
+        "contract_id": "55057515cea165de974bbccf3490bd8e65c50ed36da8245511dab9f6ebba1a0a",
+        "elapsed_seconds": 10.97281001600004,
+        "families": 12,
+        "reused_families": 0,
+        "summary_sha256": "04e35dc665855165e2ebbac114979a142ed197e21ced29354846ce530c68a00b"
+      },
+      {
+        "attempt": "20260908T040853Z-71f5f7f6",
+        "contract_id": "55057515cea165de974bbccf3490bd8e65c50ed36da8245511dab9f6ebba1a0a",
+        "elapsed_seconds": 1.7825338399998145,
+        "families": 12,
+        "reused_families": 12,
+        "summary_sha256": "04e35dc665855165e2ebbac114979a142ed197e21ced29354846ce530c68a00b"
+      }
+    ],
+    "summary_sha256": "04e35dc665855165e2ebbac114979a142ed197e21ced29354846ce530c68a00b"
+  },
+  "schema_version": 2,
+  "scope": "Completed retrieval-to-answer research system with measured citation-guided rereading",
   "verification_limits": [
-    "Raw data presence checked against the live object listing; all 208 source files were not downloaded again.",
+    "Raw data presence and original reader/visual verification were completed at component_verification_at_utc; this update independently verifies both integrated runs, all 32 answer checkpoints, exact citation-based input selection and the executed lexical audit.",
     "The earlier 4B run has verified 16-row saved results but no per-question checkpoint objects in its benchmark prefix.",
     "Visual model inference was completed before closeout; closeout verified its output, source hash and AWS job rather than rerunning the model.",
-    "No end-to-end answer score, full-test inference, deployment or Kaggle result is claimed.",
-    "Compute status covers LAVA training jobs and LAVA-named endpoints in us-west-2; it is not an account-wide billing audit."
+    "All measured quality uses the same 16 previously examined training questions from five PDFs. The refinement is a post-hoc development experiment; no held-out, official leaderboard or state-of-the-art claim is made.",
+    "Compute status covers LAVA training jobs and LAVA-named endpoints in us-west-2; it is not an account-wide billing audit. The existing Studio host and stored artifacts are separate resources."
   ],
-  "verified_at_utc": "2026-09-08T03:16:13.651017+00:00",
+  "verified_at_utc": "2026-09-08T04:37:43.923621+00:00",
   "visual_retrieval": {
     "billable_seconds": 319,
     "instance_type": "ml.m7i.2xlarge",
