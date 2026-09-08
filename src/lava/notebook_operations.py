@@ -44,7 +44,11 @@ def run_operation(
         return {"operation": operation, "status": "disabled", "uploaded_to_kaggle": False}
     if operation in {"pilot", "test"} and acknowledge_charges != "YES":
         raise ValueError("Set ACKNOWLEDGE_AWS_CHARGES = 'YES' to authorize a new GPU attempt")
-    if isinstance(maximum_training_usd, bool) or not math.isfinite(maximum_training_usd) or maximum_training_usd <= 0:
+    if (
+        isinstance(maximum_training_usd, bool)
+        or not math.isfinite(maximum_training_usd)
+        or maximum_training_usd <= 0
+    ):
         raise ValueError("Training estimate limit must be finite and positive")
     command = [sys.executable, "-u"]
     if operation == "pilot":
@@ -52,11 +56,25 @@ def run_operation(
     else:
         command += ["scripts/prepare_submission.py", "--mode", operation]
     if operation in {"pilot", "test"}:
-        command += ["--acknowledge-charges", acknowledge_charges, "--attempt", str(attempt),
-                    "--retry", "YES" if retry else "NO", "--maximum-training-usd", str(maximum_training_usd)]
+        command += [
+            "--acknowledge-charges",
+            acknowledge_charges,
+            "--attempt",
+            str(attempt),
+            "--retry",
+            "YES" if retry else "NO",
+            "--maximum-training-usd",
+            str(maximum_training_usd),
+        ]
     with logger.stage("notebook.operation", heartbeat_seconds=15):
-        with subprocess.Popen(command, cwd=root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                              text=True, bufsize=1) as process:
+        with subprocess.Popen(
+            command,
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        ) as process:
             try:
                 assert process.stdout is not None
                 for line in process.stdout:
@@ -87,7 +105,9 @@ def download_link(root: Path) -> str:
     if not target.is_file() or not manifest_path.is_file():
         return "No verified submission.csv exists yet. Generate test predictions, then export."
     manifest = json.loads(manifest_path.read_bytes())
-    expected_count = json.loads((root / "configs/submission.json").read_bytes())["expected_question_count"]
+    expected_count = json.loads((root / "configs/submission.json").read_bytes())[
+        "expected_question_count"
+    ]
     validation = manifest.get("validation", {})
     if digest(target.read_bytes()) != manifest.get("submission_sha256") or (
         validation.get("schema_valid") is not True or validation.get("row_count") != expected_count
@@ -96,4 +116,9 @@ def download_link(root: Path) -> str:
     # FileLink checks local existence at rendering time; links are relative to
     # notebooks/, not the kernel's arbitrary launch directory. No data URI.
     with chdir(root / "notebooks"):
-        return str(FileLink("../artifacts/submission/submission.csv", result_html_prefix="Download your generated CSV: ")._repr_html_())
+        return str(
+            FileLink(
+                "../artifacts/submission/submission.csv",
+                result_html_prefix="Download your generated CSV: ",
+            )._repr_html_()
+        )

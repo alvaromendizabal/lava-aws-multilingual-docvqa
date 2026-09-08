@@ -86,7 +86,9 @@ def persist_submission(
         logger.emit("submission.csv.reused", bundle_id=identity)
     response = s3.get_object(Bucket=bucket, Key=key)
     with response["Body"] as stream:
-        if stream.read() != payload or response.get("Metadata", {}).get("sha256") != sha256(payload):
+        if stream.read() != payload or response.get("Metadata", {}).get("sha256") != sha256(
+            payload
+        ):
             raise ValueError("Conflicting or corrupted immutable submission CSV")
     objects = ImmutableS3Objects(s3, bucket, prefix)
     objects.write("manifest.json", manifest)

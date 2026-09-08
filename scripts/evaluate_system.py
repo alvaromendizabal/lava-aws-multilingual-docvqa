@@ -27,7 +27,9 @@ def main() -> int:
     """One recoverable operator command, with a separate and explicit new-compute gate."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--mode", choices=("preview", "prepare", "run", "evaluate", "finish", "notebook"), default="preview"
+        "--mode",
+        choices=("preview", "prepare", "run", "evaluate", "finish", "notebook"),
+        default="preview",
     )
     parser.add_argument("--acknowledge-charges", choices=("YES", "NO"), default="NO")
     parser.add_argument("--attempt", type=int, default=1)

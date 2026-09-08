@@ -29,7 +29,9 @@ from lava.readers.runtime_logging import RuntimeEventLogger
 def main() -> int:
     """Keep cloud access explicit and log progress without displaying test content."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("preview", "check", "build", "test", "export"), default="preview")
+    parser.add_argument(
+        "--mode", choices=("preview", "check", "build", "test", "export"), default="preview"
+    )
     parser.add_argument("--predictions", type=Path)
     parser.add_argument("--page-counts", type=Path)
     parser.add_argument("--provenance", type=Path)
@@ -96,7 +98,9 @@ def main() -> int:
                 logger.emit("submission.inputs.verified", question_count=len(inputs.order))
                 if args.mode in {"test", "export"}:
                     from lava.readers.test_inference import (
-                        execute_test, export_test, prepare_test_inputs,
+                        execute_test,
+                        export_test,
+                        prepare_test_inputs,
                     )
 
                     if args.mode == "test":
@@ -132,7 +136,12 @@ def main() -> int:
                     target = persist_submission(s3, bucket, root, csv_payload, manifest, logger)
                     atomic_write(root / "artifacts/submission/submission.csv", csv_payload)
                     atomic_write(root / "artifacts/submission/manifest.json", encode(manifest))
-                    logger.emit("export.download.ready", filename="artifacts/submission/submission.csv", rows=len(inputs.order), uploaded_to_kaggle=False)
+                    logger.emit(
+                        "export.download.ready",
+                        filename="artifacts/submission/submission.csv",
+                        rows=len(inputs.order),
+                        uploaded_to_kaggle=False,
+                    )
                     print(target)
                 else:
                     readiness = {

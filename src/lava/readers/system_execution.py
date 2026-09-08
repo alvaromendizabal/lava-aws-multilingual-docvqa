@@ -7,8 +7,8 @@ import math
 import re
 import subprocess
 import time
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -56,7 +56,8 @@ def training_request(
     source_key: str,
     source_sha: str,
     commit: str,
-    *, manifest_validator: Callable[..., Any] = validate_manifest,
+    *,
+    manifest_validator: Callable[..., Any] = validate_manifest,
 ) -> dict[str, Any]:
     """One pinned image, one GPU, a server-enforced runtime cap, and no endpoint."""
     contract = manifest["contract"]
@@ -279,22 +280,39 @@ def verify_committed_source(root: Path) -> None:
     )
     untracked = subprocess.check_output(
         ["git", "ls-files", "--others", "--exclude-standard", "--", *ARCHIVE_PATHS],
-        cwd=root, text=True,
+        cwd=root,
+        text=True,
     )
     if tracked.strip() or untracked.strip():
         raise ValueError("Commit inference source/configuration changes before immutable GPU work")
 
 
 def execute_system(
-    root: Path, session: Any, bucket: str, region: str, logger: RuntimeEventLogger, *,
-    acknowledge_charges: str, attempt: int = 1, allow_retry: bool = False,
-    hourly_usd_ceiling: float = 5.0, maximum_training_usd: float = 5.0,
+    root: Path,
+    session: Any,
+    bucket: str,
+    region: str,
+    logger: RuntimeEventLogger,
+    *,
+    acknowledge_charges: str,
+    attempt: int = 1,
+    allow_retry: bool = False,
+    hourly_usd_ceiling: float = 5.0,
+    maximum_training_usd: float = 5.0,
 ) -> dict[str, Any]:
     """Run the original frozen 16-question pilot without changing its saved contract."""
     return execute_prepared(
-        root, session, bucket, region, logger, contract=system_contract(root),
-        acknowledge_charges=acknowledge_charges, attempt=attempt, allow_retry=allow_retry,
-        hourly_usd_ceiling=hourly_usd_ceiling, maximum_training_usd=maximum_training_usd,
+        root,
+        session,
+        bucket,
+        region,
+        logger,
+        contract=system_contract(root),
+        acknowledge_charges=acknowledge_charges,
+        attempt=attempt,
+        allow_retry=allow_retry,
+        hourly_usd_ceiling=hourly_usd_ceiling,
+        maximum_training_usd=maximum_training_usd,
     )
 
 
@@ -384,7 +402,9 @@ def execute_prepared(
         logger=logger,
     )
     started = time.monotonic()
-    monitor_ceiling = sum(contract["config"][key] for key in ("max_pending_seconds", "max_runtime_seconds")) + 900
+    monitor_ceiling = (
+        sum(contract["config"][key] for key in ("max_pending_seconds", "max_runtime_seconds")) + 900
+    )
     seen_events: set[str] = set()
     logs = session.client("logs")
     while description["TrainingJobStatus"] not in TERMINAL:
