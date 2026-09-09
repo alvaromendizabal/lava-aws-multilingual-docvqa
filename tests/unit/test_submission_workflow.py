@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import importlib.util
 import io
 import json
 import runpy
@@ -33,6 +34,284 @@ from lava.readers.system import store_for
 from lava.readers.system_execution import describe_or_none, ensure_job, verify_committed_source
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture
+def recovery_module(monkeypatch):
+    # Register a real module, matching multiprocessing/import behavior in the container.
+    # The managed entrypoint adds the repository root to its module search path.
+    monkeypatch.syspath_prepend(str(ROOT))
+    spec = importlib.util.spec_from_file_location(
+        "lava_submission_recovery", ROOT / "pipelines/submission/recovery.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, module)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_recovery_page_search_keeps_full_pdf_coverage_and_bounded_context(recovery_module):
+    ranking = tuple((n, 10 - i) for i, n in enumerate([3, 8, 2, 1, 4, 5, 6, 7]))
+    sets = recovery_module.page_search_order(ranking, 8)
+    assert sets[0] == (1, 2, 3, 8)
+    assert (2, 3, 4) in sets and (7, 8) in sets
+    assert {page for pages in sets for page in pages} == set(range(1, 9))
+    assert all(1 <= len(pages) <= 4 for pages in sets)
+    assert len(sets) == len(set(sets))
+    with pytest.raises(ValueError, match="each physical"):
+        recovery_module.page_search_order(((1, 1.0), (1, 0.0)), 2)
+    assert recovery_module.normalize_ocr("防 災 対 策 water supply") == "防災対策 water supply"
+
+
+@pytest.fixture
+def recovery_case(prepared, recovery_module, monkeypatch):
+    p, module = prepared, recovery_module
+    workflow.infer_test(
+        p.root, p.s3, "bucket", p.contract["contract_id"], RuntimeEventLogger("test")
+    )
+    inference = deepcopy(
+        store_for(p.s3, "bucket", p.contract["contract_id"]).read("inference.json")
+    )
+    requests = workflow.validate_test_manifest(p.manifest, p.contract)
+    original = requests[0]
+    raw = '{"answer":"","evidence_pages":[],"confidence":0.0,"abstain":true}'
+    inference["records"][0].update(
+        raw_response=raw,
+        prediction=parse_reader_response(
+            question_id=original.question_id,
+            answer_format=original.answer_format,
+            raw_response=raw,
+            allowed_pages=original.available_pages,
+        ).model_dump(mode="json"),
+    )
+    monkeypatch.setattr(module, "test_contract", lambda _: deepcopy(p.contract))
+    (p.root / "pipelines/submission").mkdir(parents=True)
+    for name in ("recovery.py", "run_recovery.sh", "inference.py"):
+        shutil.copy(ROOT / "pipelines/submission" / name, p.root / "pipelines/submission" / name)
+    contract = module.recovery_contract(p.root, p.contract, digest(encode(inference)))
+    context = {
+        n: {"number": n, "native": f"native page {n}", "ocr": f"OCR page {n}"} for n in (1, 2, 3)
+    }
+    candidate = workflow.TestReaderInput.model_validate(
+        {
+            **original.model_dump(mode="json"),
+            "pages": [original.pages[1].model_dump(mode="json")],
+        }
+    )
+    raw = '{"answer":"RECOVERED_VALUE","evidence_pages":[2],"confidence":0.8,"abstain":false}'
+    saved = deepcopy(inference["records"][0])
+    saved.update(
+        contract_id=contract["contract_id"],
+        request=candidate.model_dump(mode="json"),
+        input_sha256=digest(encode(candidate.model_dump(mode="json"))),
+        context_sha256=digest(encode({"2": context[2]})),
+        raw_response=raw,
+        inference_code_commit="c" * 40,
+        prediction=parse_reader_response(
+            question_id=candidate.question_id,
+            answer_format=candidate.answer_format,
+            raw_response=raw,
+            allowed_pages=candidate.available_pages,
+        ).model_dump(mode="json"),
+    )
+    saved["telemetry"]["image_count"] = 1
+    saved["telemetry"]["raw_response_characters"] = len(raw)
+    monkeypatch.setenv("LAVA_GIT_COMMIT_SHA", "c" * 40)
+    return SimpleNamespace(
+        p=p,
+        module=module,
+        inference=inference,
+        contract=contract,
+        original=original,
+        context=context,
+        saved=saved,
+    )
+
+
+def test_recovery_export_preserves_complete_base_answers_and_exact_template_order(recovery_case):
+    c = recovery_case
+    before = deepcopy(c.p.s3.values)
+    result = c.module.export_recovered(
+        c.p.root,
+        c.p.s3,
+        "bucket",
+        c.p.manifest,
+        c.inference,
+        c.contract,
+        {c.original.question_id: c.saved},
+        {c.original.document_id: c.context},
+        RuntimeEventLogger("test"),
+    )
+    for key, value in before.items():
+        assert c.p.s3.values[key] == value
+    payload = (c.p.root / "artifacts/submission/submission.csv").read_bytes()
+    rows = list(csv.DictReader(io.StringIO(payload.decode())))
+    assert [row["id"] for row in rows] == ["q3", "q2", "q1", "q0"]
+    assert [row["answer"] for row in rows] == ["PRIVATE_ANSWER"] * 3 + ["RECOVERED_VALUE"]
+    assert rows[-1]["evidence_page_number"] == "[2]"
+    assert result["validation"]["row_count"] == 4
+    assert result["submission_sha256"] == digest(payload)
+    manifest = json.loads((c.p.root / "artifacts/submission/manifest.json").read_bytes())
+    assert manifest["provenance"]["preserved_answer_count"] == 3
+    assert manifest["provenance"]["recovered_answer_count"] == 1
+    assert manifest["provenance"]["inference_code_commits"] == ["b" * 40, "c" * 40]
+    assert store_for(c.p.s3, "bucket", c.contract["contract_id"]).read("export.json") == result
+
+
+@pytest.mark.parametrize(
+    "mutation", ["missing", "question", "source", "context", "prediction", "base"]
+)
+def test_recovery_rejects_missing_or_tampered_answers_before_csv_creation(recovery_case, mutation):
+    c = recovery_case
+    recovered = {c.original.question_id: deepcopy(c.saved)}
+    if mutation == "missing":
+        recovered.clear()
+    elif mutation == "question":
+        recovered[c.original.question_id]["request"]["question"] = "different question"
+    elif mutation == "source":
+        recovered[c.original.question_id]["request"]["pages"][0]["source_pdf_sha256"] = "f" * 64
+    elif mutation == "context":
+        recovered[c.original.question_id]["context_sha256"] = "f" * 64
+    elif mutation == "prediction":
+        recovered[c.original.question_id]["prediction"]["answer"] = "fabricated"
+    else:
+        c.inference["records"].pop()
+    with pytest.raises(ValueError):
+        c.module.export_recovered(
+            c.p.root,
+            c.p.s3,
+            "bucket",
+            c.p.manifest,
+            c.inference,
+            c.contract,
+            recovered,
+            {c.original.document_id: c.context},
+            RuntimeEventLogger("test"),
+        )
+    assert not (c.p.root / "artifacts/submission/submission.csv").exists()
+
+
+def test_recovery_never_converts_abstention_to_a_complete_answer(recovery_case):
+    c = recovery_case
+    _, failed = c.module.inspect_base(c.p.manifest, c.inference, c.p.contract)
+    assert failed == [c.original.question_id]
+    prediction, _ = workflow.validate_prediction(c.original, c.inference["records"][0])
+    assert not c.module.complete_answer(prediction)
+
+
+def test_recovery_worker_only_reads_failed_questions_and_resumes_verified_export(
+    recovery_case, monkeypatch
+):
+    from concurrent.futures import Future
+
+    c = recovery_case
+    real_store_for = c.module.store_for
+
+    def stores(s3, bucket, identity):
+        if identity == c.p.contract["contract_id"]:
+            return SimpleNamespace(
+                read=lambda name: {"inputs.json": c.p.manifest, "inference.json": c.inference}[name]
+            )
+        return real_store_for(s3, bucket, identity)
+
+    class InlinePool:
+        def __init__(self, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def submit(self, function, *args):
+            future = Future()
+            future.set_result(function(*args))
+            return future
+
+    calls = []
+
+    def predict(request):
+        calls.append(request.question_id)
+        return c.p.predict(request)
+
+    monkeypatch.setattr(c.module, "store_for", stores)
+    monkeypatch.setattr(c.module, "ProcessPoolExecutor", InlinePool)
+    monkeypatch.setattr(c.module, "prepare_ocr_models", lambda _: None)
+    monkeypatch.setattr(
+        c.module,
+        "ocr_page",
+        lambda path, number, language, models: {
+            "number": number,
+            "native": f"synthetic target {number}",
+            "ocr": f"synthetic target {number}",
+            "ocr_confidence": 90,
+        },
+    )
+    monkeypatch.setattr(c.module, "load_resolved_model", lambda *a: None)
+    monkeypatch.setattr(
+        c.module, "RecoveryReader", lambda *a, **k: SimpleNamespace(predict=predict)
+    )
+    monkeypatch.setattr(
+        c.module,
+        "read_raw_response",
+        lambda _: (
+            '{"answer":"PRIVATE_ANSWER","evidence_pages":[1],"confidence":0.5,"abstain":false}'
+        ),
+    )
+    monkeypatch.setenv("LAVA_BASE_CONTRACT", c.p.contract["contract_id"])
+    monkeypatch.setenv("LAVA_BASE_INFERENCE_SHA256", digest(encode(c.inference)))
+    monkeypatch.setenv("LAVA_RECOVERY_CONTRACT", c.contract["contract_id"])
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-west-2")
+    before = deepcopy(c.p.s3.values)
+    result = c.module.run(c.p.root, c.p.s3, "bucket", RuntimeEventLogger("test"))
+    assert calls == [c.original.question_id]
+    assert all(c.p.s3.values[key] == value for key, value in before.items())
+    target = c.p.root / "artifacts/submission/submission.csv"
+    target.unlink()
+    fail = Mock(side_effect=AssertionError("Completed recovery must not recompute"))
+    monkeypatch.setattr(c.module, "prepare_ocr_models", fail)
+    monkeypatch.setattr(c.module, "RecoveryReader", fail)
+    assert c.module.run(c.p.root, c.p.s3, "bucket", RuntimeEventLogger("test")) == result
+    assert digest(target.read_bytes()) == result["submission_sha256"]
+    c.p.s3.values[result["csv_key"]] = (b"corrupted", {})
+    with pytest.raises(ValueError, match="failed verification"):
+        c.module.run(c.p.root, c.p.s3, "bucket", RuntimeEventLogger("test"))
+
+
+def test_recovery_real_ocr_finds_text_in_an_image_only_pdf(tmp_path, recovery_module, monkeypatch):
+    import os
+
+    pytest.importorskip("tesserocr", reason="Optional OCR integration runtime")
+    tessdata = os.environ.get("LAVA_TEST_TESSDATA")
+    if not tessdata:
+        pytest.skip("Set LAVA_TEST_TESSDATA to checksum-pinned OCR models")
+    from PIL import Image, ImageDraw, ImageFont
+
+    from lava.retrieval.lexical import BM25Index, PageText
+
+    monkeypatch.setenv("OMP_THREAD_LIMIT", "1")
+    image = Image.new("RGB", (1600, 400), "white")
+    ImageDraw.Draw(image).text(
+        (80, 120),
+        "Emergency water supply 31415",
+        fill="black",
+        font=ImageFont.truetype("DejaVuSans.ttf", 64),
+    )
+    stream = io.BytesIO()
+    image.save(stream, format="PNG")
+    path = tmp_path / "scanned.pdf"
+    with pymupdf.open() as pdf:
+        for _ in range(2):
+            pdf.new_page(width=800, height=200)
+        pdf[1].insert_image(pdf[1].rect, stream=stream.getvalue())
+        assert pdf[1].get_text() == ""
+        pdf.save(path)
+    page = recovery_module.ocr_page(str(path), 2, "en", tessdata)
+    assert page["native"] == ""
+    assert "31415" in page["ocr"] and "water" in page["ocr"].lower()
+    index = BM25Index((PageText(1, ""), PageText(2, page["ocr"])))
+    assert index.rank("Emergency water supply")[0][0] == 2
 
 
 def test_bounded_launch_resolves_real_reader_forward_annotations(prepared):

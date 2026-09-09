@@ -43,6 +43,45 @@ is not evidence of eligibility, official runtime compliance, or model quality.
 
 ## Resume and validate
 
+### Recover unanswered test questions
+
+`pipelines/submission/recovery.py` adds a separate, explicitly authorized recovery
+pass after complete first-pass inference. It preserves every structurally complete
+base answer. Only invalid, empty, or abstained questions receive additional model
+calls. It uses the same pinned Qwen3.5-9B weights and decoding configuration.
+
+For affected PDFs, it extracts native text and runs Tesseract OCR on every physical
+page. The OCR adapter (`tesserocr==2.9.2`, Tesseract 5.5.1) and English, Japanese,
+and Vietnamese language models are pinned; downloaded model bytes are verified by
+SHA-256. OCR runs in eight isolated processes and commits each page separately.
+BM25 ranks the combined text. The reader then considers four-page context,
+adjacent pages, focused single pages, and remaining ranked page groups until it
+produces a complete non-abstaining response. OCR text is labelled as fallible;
+the page image remains authoritative. See the upstream
+[OCR API](https://github.com/sirfz/tesserocr) and
+[language model repository](https://github.com/tesseract-ocr/tessdata_fast).
+
+The recovery contract binds the original inference checksum, source files, OCR
+models, reader, and fixed search policy. Every model attempt and accepted decision
+is private and immutable. The export independently reparses chosen raw responses,
+checks unchanged questions and PDF sources, and applies the canonical 624-row CSV
+validator. Remaining abstentions still block export. No missing answer is filled
+with a placeholder. Recovery is operational completion work; its quality is not
+established by the earlier 16-question development scores.
+
+The managed entrypoint is `pipelines/submission/run_recovery.sh`. A reviewed launch
+must supply `LAVA_BASE_CONTRACT`, `LAVA_BASE_INFERENCE_SHA256`,
+`LAVA_RECOVERY_CONTRACT`, `LAVA_GIT_COMMIT_SHA`, `LAVA_BUCKET`, and
+`AWS_DEFAULT_REGION`. Use the same one-device/36-GiB guard, a 7,200-second managed
+runtime limit, and a recorded cost estimate. The worker additionally caps new model
+calls at 700 and work time at 6,600 seconds. Completed attempts resume without
+regeneration. The final `export.json` resides under the **recovery contract**;
+its immutable CSV manifest records both inference revisions and the numbers of
+preserved and recovered answers. Original manifests retain their generation-state
+`uploaded_to_kaggle:false`; a real upload receipt is recorded separately.
+
+### Resume the frozen first pass
+
 For an explicitly reviewed hardware fallback, the canonical GPU entrypoint is
 `pipelines/submission/inference.py`. With `CUDA_VISIBLE_DEVICES=0`, it requires
 exactly one visible accelerator and caps PyTorch's allocator at 36 GiB before
