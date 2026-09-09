@@ -43,6 +43,19 @@ is not evidence of eligibility, official runtime compliance, or model quality.
 
 ## Resume and validate
 
+For an explicitly reviewed hardware fallback, the canonical GPU entrypoint is
+`pipelines/submission/inference.py`. With `CUDA_VISIBLE_DEVICES=0`, it requires
+exactly one visible accelerator and caps PyTorch's allocator at 36 GiB before
+loading the unchanged reader. The launch registers the module namespace so that
+Pydantic resolves the test page schemas correctly. A fresh-interpreter regression
+test checks that startup path. This memory boundary does not certify A100 runtime
+equivalence. Source archives and job requests must record the actual hardware,
+runtime limit, source revision, and archive checksum.
+After inference succeeds, this entrypoint runs the same strict exporter and saves
+the CSV plus an immutable `export.json` receipt under its private test contract.
+Incomplete or invalid predictions block export. This avoids a separate manual
+export step after the managed GPU job; it still never uploads to Kaggle.
+
 Keep the same attempt number after browser disconnection. The stored launch intent,
 source archive, per-document extraction, per-query ranking, selected-page images,
 and every committed answer are verified and reused. A question whose checkpoint
