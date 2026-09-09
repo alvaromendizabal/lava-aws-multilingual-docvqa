@@ -39,6 +39,8 @@ ROOT = Path(__file__).resolve().parents[2]
 @pytest.fixture
 def recovery_module(monkeypatch):
     # Register a real module, matching multiprocessing/import behavior in the container.
+    # The managed entrypoint adds the repository root to its module search path.
+    monkeypatch.syspath_prepend(str(ROOT))
     spec = importlib.util.spec_from_file_location(
         "lava_submission_recovery", ROOT / "pipelines/submission/recovery.py"
     )
