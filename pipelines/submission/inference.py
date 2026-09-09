@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import runpy
+from pathlib import Path
 from typing import Any
 
 
@@ -31,11 +33,46 @@ def run_inference() -> None:
     runpy.run_module("lava.readers.test_inference", run_name="__main__", alter_sys=True)
 
 
+def export_outputs(root: Path, s3: Any, bucket: str, identity: str, logger: Any) -> dict[str, Any]:
+    """Persist the validated CSV and a stable receipt after complete inference."""
+    from lava.readers.system import store_for
+    from lava.readers.test_inference import export_test
+
+    target = export_test(root, s3, bucket, logger)
+    manifest = json.loads(target.with_name("manifest.json").read_bytes())
+    result = {
+        "bundle_id": target.parent.name,
+        "submission_sha256": manifest["submission_sha256"],
+        "csv_key": f"experiments/submissions/lava-challenge-2026/{target.parent.name}/submission.csv",
+        "validation": manifest["validation"],
+        "uploaded_to_kaggle": False,
+    }
+    store = store_for(s3, bucket, identity)
+    store.write("export.json", result)
+    if store.read("export.json") != result:
+        raise ValueError("Submission export receipt failed durable read-back")
+    return result
+
+
 def main() -> int:
+    import boto3
     import torch
+
+    from lava.readers.runtime_logging import RuntimeEventLogger
 
     print(json.dumps(configure_runtime(torch), sort_keys=True), flush=True)
     run_inference()
+    logger = RuntimeEventLogger(
+        "submission.export", jsonl_path=Path("/opt/ml/model/private/events.jsonl")
+    )
+    with logger.stage("submission.export", heartbeat_seconds=15):
+        export_outputs(
+            Path(__file__).resolve().parents[2],
+            boto3.client("s3", region_name=os.environ["AWS_DEFAULT_REGION"]),
+            os.environ["LAVA_BUCKET"],
+            os.environ["LAVA_SYSTEM_CONTRACT"],
+            logger,
+        )
     return 0
 
 

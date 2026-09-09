@@ -97,6 +97,25 @@ def test_bounded_launch_checks_gpu_and_memory_before_model_loading(
         cuda.set_per_process_memory_fraction.assert_not_called()
 
 
+def test_bounded_job_exports_complete_predictions_and_a_durable_receipt(prepared):
+    p = prepared
+    entrypoint = runpy.run_path(str(ROOT / "pipelines/submission/inference.py"))
+    identity = p.contract["contract_id"]
+    logger = RuntimeEventLogger("test")
+    with pytest.raises(ValueError, match="not complete"):
+        entrypoint["export_outputs"](p.root, p.s3, "bucket", identity, logger)
+    assert store_for(p.s3, "bucket", identity).read("export.json") is None
+
+    workflow.infer_test(p.root, p.s3, "bucket", identity, logger)
+    receipt = entrypoint["export_outputs"](p.root, p.s3, "bucket", identity, logger)
+    assert receipt["validation"]["row_count"] == 4
+    assert receipt["validation"]["schema_valid"] is True
+    assert store_for(p.s3, "bucket", identity).read("export.json") == receipt
+    csv_payload = (p.root / "artifacts/submission/submission.csv").read_bytes()
+    assert digest(csv_payload) == receipt["submission_sha256"]
+    assert p.s3.get_object(Bucket="bucket", Key=receipt["csv_key"])["Body"].read() == csv_payload
+
+
 @pytest.mark.parametrize(
     "code,message",
     [
