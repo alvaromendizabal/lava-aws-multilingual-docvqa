@@ -8,6 +8,7 @@ import json
 import runpy
 import shutil
 import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
@@ -32,6 +33,68 @@ from lava.readers.system import store_for
 from lava.readers.system_execution import describe_or_none, ensure_job, verify_committed_source
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_bounded_launch_resolves_real_reader_forward_annotations(prepared):
+    # A fresh interpreter reproduces the container without pytest's test-file import hook.
+    code = """
+import json
+import runpy
+import sys
+entrypoint = runpy.run_path(sys.argv[1])
+run_module = runpy.run_module
+sample = json.loads(sys.stdin.read())
+def load_without_starting_inference(module_name, *, run_name, **kwargs):
+    assert run_name == "__main__"
+    namespace = run_module(module_name, run_name="__lava_schema_check__", **kwargs)
+    model = namespace["TestReaderInput"]
+    assert model.__pydantic_complete__
+    request = model.model_validate(sample)
+    assert request.document_alias == "doc-001"
+    assert request.pages[0].page_number >= 1
+runpy.run_module = load_without_starting_inference
+entrypoint["run_inference"]()
+print("SUBMISSION_LAUNCH_SCHEMA_VERIFIED")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(ROOT / "pipelines/submission/inference.py")],
+        input=json.dumps(prepared.manifest["inputs"][0]),
+        text=True,
+        capture_output=True,
+        check=True,
+        cwd=ROOT,
+    )
+    assert result.stdout.strip() == "SUBMISSION_LAUNCH_SCHEMA_VERIFIED"
+
+
+@pytest.mark.parametrize(
+    "available,count,memory_gib,accepted",
+    [
+        (True, 1, 96, True),
+        (True, 1, 48, True),
+        (True, 2, 96, False),
+        (False, 0, 96, False),
+        (True, 1, 24, False),
+    ],
+)
+def test_bounded_launch_checks_gpu_and_memory_before_model_loading(
+    available, count, memory_gib, accepted
+):
+    entrypoint = runpy.run_path(str(ROOT / "pipelines/submission/inference.py"))
+    cuda = Mock()
+    cuda.is_available.return_value = available
+    cuda.device_count.return_value = count
+    cuda.get_device_properties.return_value = SimpleNamespace(
+        total_memory=memory_gib * 1024**3, name="synthetic GPU"
+    )
+    if accepted:
+        result = entrypoint["configure_runtime"](SimpleNamespace(cuda=cuda))
+        cuda.set_per_process_memory_fraction.assert_called_once_with(36 / memory_gib, 0)
+        assert result["visible_cuda_devices"] == 1
+    else:
+        with pytest.raises(RuntimeError):
+            entrypoint["configure_runtime"](SimpleNamespace(cuda=cuda))
+        cuda.set_per_process_memory_fraction.assert_not_called()
 
 
 @pytest.mark.parametrize(
