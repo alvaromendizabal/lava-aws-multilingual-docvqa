@@ -53,11 +53,26 @@ Japanese terms specified in the private audit. Four additional scanned pages in
 three relevant hazard-map PDFs were visually reviewed and did not contain the
 requested designation-status table.
 
-**Limits:** 155 native-textless pages elsewhere lack both saved OCR and a visual
-review in this follow-up. OCR itself can corrupt or omit text. This is not a
-claim that every pixel in the corpus was read, that the dataset has confirmed
-errors, or that the two questions are intentionally unanswerable. Cross-document
-topic matches are diagnostic leads, not verified source substitutions.
+**Remaining-page review, September 10 at 19:55 UTC:** all 155 previously
+unreviewed native-textless pages were rendered from 34 exact-version PDFs. Each
+PDF matched its frozen SHA-256 and page count. All 26 contact sheets were visually
+screened and reconciled to the 155-page queue, with no omitted or duplicate pages.
+Eleven pages were blank. The remaining pages contained questionnaires, transport
+schedules, construction forms, laboratory water-quality tables, education and
+health material, covers and corporate proceedings. No supporting revenue chart
+or flood-designation table was established. This review recovered **zero** new
+answers; **622/624** complete predictions and both abstentions remain preserved.
+Preparation took 61.93 seconds on local CPU; that excludes interactive visual
+review time. No new OCR, deployed-reader calls or paid training jobs were used.
+Private page-review outcome SHA-256:
+`1198ab05c2abe6ecbc6a1fca0de11d1b67415504a520f33605977fd9c191b283`.
+
+**Limits:** the remaining queue is now visually screened, but contact-sheet
+inspection is not full OCR or character-by-character transcription. Existing OCR
+can corrupt or omit text. This is not a claim that every pixel in the corpus was
+read, that the dataset has confirmed errors, or that the two questions are
+intentionally unanswerable. Cross-document topic matches are diagnostic leads,
+not verified source substitutions.
 
 **Decision:** preserve all **622** complete predictions and both abstentions.
 This audit recovered **zero** additional answers and used **zero** new reader
