@@ -6,6 +6,30 @@ OCR-recovered answers and three targeted recoveries are preserved, giving 622 of
 have suspected question/PDF mismatches; these are not organizer-confirmed data
 corrections. No complete CSV or verified Kaggle upload receipt is available.
 
+**Source audit, September 10, 2026:** a model-free follow-up independently
+verified all 200 frozen test-document extraction checkpoints and searched their
+4,698 physical pages. It also reverified the 63 saved OCR pages covering the two
+assigned PDFs, including byte hashes, object versions and complete page coverage.
+No supporting source correction was established. Eight pages elsewhere matched
+the financial query's two anchor terms; none establishes an authoritative remap.
+No native-text page matched both flood-table anchor terms. The corpus contains
+798 pages with no native text, so this is not an exhaustive visual search.
+
+The assigned PDFs' checksums and page counts still match the frozen inputs.
+Their visible subject matter remains inconsistent with the questions. This is
+evidence for suspected source mismatch, not proof of a dataset error or evidence
+that the questions intentionally lack answers. The current Kaggle data description
+still maps each `file_id` to its corresponding PDF. No correction was found in
+the inspected discussion list and `data`/`question` searches. A fresh browser
+download did not complete, so no new Kaggle-download checksum is claimed.
+
+Coverage remains **622/624**, with zero new model calls, OCR runs or GPU jobs in
+this follow-up. No predictions or immutable inference receipts were changed.
+Completion needs valid evidence in the assigned sources or authoritative
+clarification of the source mapping or unanswerable-question policy. A private
+clarification draft is prepared; no test questions have been publicly posted.
+See [the source-audit protocol](DATA_AUDIT_PROTOCOL.md#source-consistency-follow-up).
+
 A submission remains an acceptance requirement. All 624 answers must pass the
 canonical validator, including non-abstention, exact template IDs/order, answer
 serialization and evidence-page bounds. The training feature ablations in

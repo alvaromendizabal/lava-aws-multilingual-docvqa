@@ -269,7 +269,7 @@ The broader feature gate remains **open**.
 | Multilingual dense text and reranking | No measured challenger in this repository | Frozen embedding/reranker comparison on independent documents |
 | Question decomposition and semantic expansion | No measured automatic policy | Answer-blind prompt contract, budget and grouped ablation |
 | Learned table/chart relationships | Native layout proxies and three operator-routed test cases | Automatic extraction/routing and controlled reader evaluation |
-| Source consistency | Frozen data verified; two suspected question/PDF mismatches | Valid evidence or corrected authoritative mappings for those cases |
+| Source consistency | All 200 test extractions and 63 assigned-PDF OCR pages reverified; source search did not establish a correction | Valid evidence or authoritative clarification; 798 native-textless pages prevent exhaustive visual-search claims |
 | Independent validation | Sixteen previously examined questions from five PDFs | Additional trustworthy labeled documents; hidden test answers cannot fill this gap |
 
 A family must have a declared hypothesis, leakage boundary, reproducible execution,
@@ -281,3 +281,21 @@ development documents prevent a claim of state-of-the-art generalization.
 The 624-question test entry and verified Kaggle upload remain project acceptance
 criteria. They will not be marked complete from partial coverage or a feature
 count. Existing model, judge, prompt and inference contracts remain frozen.
+
+The next representation experiment should isolate **OCR/native fusion and OCR
+quality signals** on permitted labeled documents: text coverage, confidence,
+native/OCR agreement, multilingual normalization and table/header preservation.
+The hypothesis is that OCR adds missing content but also adds noise, so gated
+fusion can improve evidence retrieval more reliably than unconditional merging.
+The test corpus's 798 native-textless pages motivate investigating coverage; they
+are not labels, a validation set, or evidence that this proposed policy works.
+
+Start with cached inputs and one document, then the five-document diagnostic.
+Compare native-only, OCR-only, fixed fusion and a prespecified coverage gate at the
+same page budget. Save rankings before scoring; select within document folds and
+report add/remove ablations, each document, language limitations and elapsed time.
+Stop before reader compute if the conservative retrieval gate fails. If it passes,
+measure actual answer and grounding changes under the frozen reader/judge before
+considering promotion. Additional independently labeled documents are required
+before claiming robust generalization or a competitive-score improvement. This
+experiment is planned, not executed or promoted by the source audit.

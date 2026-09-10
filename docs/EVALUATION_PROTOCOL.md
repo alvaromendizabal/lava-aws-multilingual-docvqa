@@ -58,3 +58,39 @@ A challenger is promoted only when it:
 ## Test-set policy
 
 The 624 unlabeled test questions are never used for architecture selection, prompt selection, retrieval-weight tuning, threshold selection, or error-driven iteration. Test predictions are generated only from a frozen candidate. Any late-leaderboard score is an external final measurement, not a development fold.
+
+## Bounded execution and progress accountability
+
+Each substantial research stage follows: research, hypothesis, implementation,
+tests, bounded experiment, inspection, decision, durable checkpoint, progress
+report, and only then continuation. Diagnose a failure before retrying; preserve
+valid completed computation and stop directions that fail their declared gate.
+
+Before expensive compute, record the specific question, resource/time/call caps,
+cost estimate, expected information gain and continue/stop/change criteria.
+Verify schemas, exact required input artifacts, permissions under the execution
+role, local smoke tests and independent checkpoint resumption. Stage work from
+smoke test to small sample, one document fold, representative validation and full
+experiment. Use UTC heartbeats and completed/total counters during long stages.
+No automatic chain of paid retries is permitted.
+
+Each milestone report states what was attempted and actually completed; what
+passed and failed; the actual metric and validation scope; saved checkpoints;
+GitHub publication status; the methodological conclusion; and the next step with
+its expected information gain and compute justification. Activity, feature counts
+and structurally complete answers do not substitute for validated predictive gains.
+
+Feature research stays open until the major plausible domain-informed families
+in the [coverage table](retrieval.md#feature-research-completion-gate) have an
+evidence-backed retain, reject or defer decision. Research must cover relevant
+literature, permitted competition solutions, target-generation mechanisms and
+information available at inference. Candidate families need explicit leakage
+assumptions, reproducible implementation, training-only screening, ablations,
+document/language stability and downstream answer/evidence measurement.
+Thousands of features are justified only by a testable representation hypothesis.
+
+Compare against the strongest verifiable applicable result, separating retrieval,
+reader, validation and ensemble effects. State when published methods, independent
+labels or comparable official scores are unavailable. A leaderboard target is a
+research objective, not a promised outcome. Employer-facing claims must retain
+these limits and the frozen source/model/judge/prompt and notebook provenance.
