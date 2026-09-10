@@ -26,14 +26,55 @@ download did not complete, so no new Kaggle-download checksum is claimed.
 Coverage remains **622/624**, with zero new model calls, OCR runs or GPU jobs in
 this follow-up. No predictions or immutable inference receipts were changed.
 Completion needs valid evidence in the assigned sources or authoritative
-clarification of the source mapping or unanswerable-question policy. A private
-clarification draft is prepared; no test questions have been publicly posted.
+clarification of the source mapping or unanswerable-question policy. No test questions or row-level predictions are included in this repository.
 See [the source-audit protocol](DATA_AUDIT_PROTOCOL.md#source-consistency-follow-up).
 
-A submission remains an acceptance requirement. All 624 answers must pass the
-canonical validator, including non-abstention, exact template IDs/order, answer
-serialization and evidence-page bounds. The training feature ablations in
-Notebook 04 do not fill missing test answers or certify their accuracy.
+### Independent source-association audit
+
+A further read-only audit at **2026-09-10 19:13 UTC** searched all **1,739 saved
+OCR checkpoints across 48 documents**, including OCR for 639 of the 798
+native-textless test pages. All requested objects were read; record sizes,
+versions, S3 checksums and checksum metadata were reconciled. Candidate bodies
+were independently checked against their returned SHA-256 checksums.
+
+The audit also checked the raw inventory against all 200 frozen test-document
+IDs, found no duplicate PDF contents, searched native text in all five supplied
+training PDFs (74 pages), and inspected page overviews of all 63 pages in the two
+assigned PDFs. Neither assigned PDF has an embedded attachment. Each unresolved
+question has three sibling questions whose subject matter agrees with its
+assigned PDF, supporting an isolated question/source inconsistency rather than a
+wholesale PDF swap.
+
+Ten saved OCR pages matched both financial anchor terms. Review identified
+special-account statements, transfers and health-insurance finances; no
+supporting source replacement was established. No saved OCR page matched
+`water-defense law`, `inundation assumption` or `rainwater flooding` in the
+Japanese terms specified in the private audit. Four additional scanned pages in
+three relevant hazard-map PDFs were visually reviewed and did not contain the
+requested designation-status table.
+
+**Limits:** 155 native-textless pages elsewhere lack both saved OCR and a visual
+review in this follow-up. OCR itself can corrupt or omit text. This is not a
+claim that every pixel in the corpus was read, that the dataset has confirmed
+errors, or that the two questions are intentionally unanswerable. Cross-document
+topic matches are diagnostic leads, not verified source substitutions.
+
+**Decision:** preserve all **622** complete predictions and both abstentions.
+This audit recovered **zero** additional answers and used **zero** new reader
+calls or paid training jobs. Repeating inference on the same unrelated assigned
+sources is not justified by this evidence. No CSV was exported or uploaded.
+Private outcome SHA-256:
+`85a8388009c5c8074eb7740d80c03696fe64a78b857f854638974087b253a77c`.
+
+A submission remains an acceptance requirement. The project's current **strict
+export policy** requires all 624 answers to be non-abstaining, with exact template
+IDs/order, valid answer serialization and evidence-page bounds. This is a project
+quality gate; it is **not evidence that Kaggle prohibits abstentions**. The
+inspected competition instructions do not establish how empty-answer/evidence
+rows are accepted and scored. Any best-effort export must explicitly identify its
+abstention policy and coverage instead of being presented as 624 answered
+questions. The training feature ablations in Notebook 04 do not fill missing
+test answers or certify their accuracy.
 
 The optional test exporter uses the first-pass BM25/9B configuration. The citation-guided reread in Notebook 05 is measured on the training diagnostic; no full-test reread result is claimed.
 
