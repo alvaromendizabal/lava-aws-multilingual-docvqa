@@ -90,6 +90,8 @@ def run(
     contract: dict[str, Any],
     logger: RuntimeEventLogger,
 ) -> tuple[dict, dict]:
+    if contract != contract_for(root):
+        raise ValueError("Research contract differs from the current source and pinned inputs")
     identity = digest(encode(contract))
     store.write("contract.json", contract)
     payloads = {}
@@ -105,12 +107,16 @@ def run(
     documents, coverage = {}, []
     reused_documents, reused_queries = 0, 0
     for doc, alias in aliases.items():
+
+        def extract_one(doc: str = doc) -> dict[str, Any]:
+            return json.loads(
+                encode({"pages": [asdict(p) for p in extract_document(payloads[doc + ".pdf"])]})
+            )
+
         value, reused = stage(
             store,
             {"contract_id": identity, "source": contract["sources"][doc + ".pdf"]},
-            lambda doc=doc: json.loads(
-                encode({"pages": [asdict(p) for p in extract_document(payloads[doc + ".pdf"])]})
-            ),
+            extract_one,
             logger=logger,
             name="documents",
         )
@@ -134,12 +140,14 @@ def run(
     active = {name: 0 for name in COMPONENTS}
     for ref in refs:
         query = RetrievalQuery(ref.question_id, ref.document_id, ref.question)
+
+        def rank_one(query: RetrievalQuery = query) -> dict[str, Any]:
+            return json.loads(encode(page_features(query, documents[query.document_id])))
+
         value, reused = stage(
             store,
             {"contract_id": identity, "query": asdict(query)},
-            lambda query=query: json.loads(
-                encode(page_features(query, documents[query.document_id]))
-            ),
+            rank_one,
             logger=logger,
             name="queries",
         )

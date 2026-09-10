@@ -181,6 +181,7 @@ def test_complete_research_roundtrip_and_resume_keep_real_json_checkpoints(tmp_p
         (inputs / name).write_bytes(value)
         sources[name] = {"key": name, "sha256": digest(value), "version_id": "fixture"}
     store = LocalArchive(tmp_path / "archive")
+    monkeypatch.setattr(runner, "contract_for", lambda _: {"sources": sources})
     first, reuse = runner.run(
         tmp_path, inputs, store, {"sources": sources}, RuntimeEventLogger("test")
     )
@@ -192,3 +193,18 @@ def test_complete_research_roundtrip_and_resume_keep_real_json_checkpoints(tmp_p
     assert second == first
     assert reuse == {"reused_documents": 5, "reused_queries": 16}
     assert all(p.read_bytes() == value for p, value in before.items())
+
+
+def test_research_rejects_wrong_source_contract_before_reading_inputs(tmp_path, monkeypatch):
+    from lava.readers.runtime_logging import RuntimeEventLogger
+    from scripts import research_document_features as runner
+
+    monkeypatch.setattr(runner, "contract_for", lambda _: {"source": "expected"})
+    with pytest.raises(ValueError, match="contract differs"):
+        runner.run(
+            tmp_path,
+            tmp_path,
+            LocalArchive(tmp_path / "archive"),
+            {"source": "different"},
+            RuntimeEventLogger("test"),
+        )

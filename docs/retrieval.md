@@ -192,10 +192,92 @@ The CPU process ends if Studio stops. S3 checkpoints survive; restarting the sam
 command restores completed work. Longer GPU jobs use SageMaker's independent job
 lifecycle. The executed Notebook 04 can be viewed without running either workload.
 
-## Research boundary
+## Document-domain ablation
 
-The lexical feature search is complete and did not justify changing the default
-retriever. The visual challenger is measured and archived. The integrated 9B
-first pass and citation-guided reread are completed and scored in Notebook 05.
-Full 624-question test inference and Kaggle submission remain outside the
-measured release. No leaderboard score is claimed.
+The September 10, 2026 audit adds structural signals beyond the lexical grid.
+`src/lava/retrieval/domain_features.py` declares seven families and a fixed
+17-policy catalog. Every policy retains the five-page budget, original question,
+full document candidate set and frozen BM25 parameters. There is no candidate
+answer, test-label input, model call or automatic production change.
+
+The families are: central-page body text; large-font/top-page headings;
+maximum local-block BM25; detected table text; exact NFKC-normalized digit-string
+matches; document-IDF-weighted query-term coverage; and immediate neighbors of
+the two best BM25 pages. Numeric punctuation is preserved instead of guessing a
+locale. Table detection tries ruled tables first and text alignment second.
+Fallback detections are fallible layout candidates, not verified table semantics.
+
+The catalog contains BM25, seven individual additions, their combination, seven
+leave-one-family-out ablations, and a policy keeping four BM25 pages plus one page
+covering remaining query terms. Fusion uses weight 3 for BM25, weight 1 for each
+active feature and reciprocal-rank constant 60. Constant feature scores do not
+alter the baseline. No parameter was selected from the resulting scores.
+
+This design draws on positioned blocks and table detection supported by
+[PyMuPDF](https://pymupdf.readthedocs.io/en/latest/recipes-text.html).
+[ColPali](https://arxiv.org/abs/2407.01449) motivates evaluating visual information
+that text alone misses; its architecture is not reproduced by these CPU features.
+[MHier-RAG](https://arxiv.org/abs/2508.00579) motivates explicit cross-page and
+multi-granularity research. The simple neighbor and block policies here are
+ablation baselines, not implementations of that learned system.
+
+All 74 pages from the five pinned training PDFs were processed. Table candidates
+were detected on 68 pages, including 24 pages using text-alignment fallback; no
+table-detection exception occurred. Those counts measure detector coverage, not
+precision. Numeric features varied across pages for seven of the 16 questions.
+All 17 configurations have distinct complete ranking signatures.
+
+Block retrieval produced 96.88% pooled recall@5 and complete evidence for 15/16
+questions, compared with 95.31% and 14/16 for BM25. It completes the sole Vietnamese
+question; it does not establish Vietnamese-language generalization. Removing
+page margins reduced pooled complete coverage to 13/16. Combining all seven
+signals yielded 14/16. Every add-one and remove-one result is retained in
+[`document_features.json`](../reports/retrieval/document_features.json).
+
+Each outer fold selects only on the other four documents, using the existing
+conservative gate. All five folds retained BM25; their combined recall@5 remains
+95.31% and complete coverage 14/16. Pooled improvements are not promotion evidence.
+The initial CPU execution took 30.235 seconds. An independent resume reused five
+document and 16 query checkpoints in 0.048 seconds and reproduced the same summary
+hash. Raw features, rankings, logs and receipts remain private.
+
+Run `python scripts/research_document_features.py --mode preview` to inspect the
+plan. Evaluation requires the six checksum-pinned training files under
+`artifacts/retrieval/inputs` and `S3_BUCKET` for the default immutable S3 backend.
+`--local-archive` is explicit staging; its checksummed objects must be copied to a
+durable archive and read back before local work is treated as preserved remotely.
+Local checkpoint normalization is covered by a complete run/resume regression
+test. The original two-second staging failure is retained; it occurred before
+reference scoring and used no paid compute.
+
+## Feature research completion gate
+
+The finite lexical grid and this domain ablation are completed experiments.
+They do not establish that every useful document feature has been exhausted.
+The broader feature gate remains **open**.
+
+| Family | Evidence available | Remaining requirement |
+| --- | --- | --- |
+| Unicode and lexical representations | 1,089 BM25 configurations; grouped selection | Finite declared grid complete; no promoted challenger |
+| Lexical rank fusion and exploration | 493 policies; grouped selection | Finite declared grid complete; no promoted challenger |
+| Native reading order and all-page indexing | Sorted native text, physical-page and checksum checks | Retain image authority when native text is incomplete |
+| Body, heading, block and table signals | Fixed additions and removal ablations measured here | Validate any proposed promotion beyond one favorable document |
+| Numeric matching | Exact digit strings; seven active questions | Locale/era conversion and unit-aware relations remain untested |
+| Query coverage and adjacent pages | Fixed-budget policies measured here | Automatic nonadjacent multi-hop selection remains unvalidated |
+| Visual page embeddings | One pinned colSmol-500M experiment | One model is not exhaustive visual-retriever comparison |
+| OCR quality and fusion | Test recovery preserves 69 additional complete answers | Controlled labeled OCR/native ablation; completeness is not accuracy |
+| Multilingual dense text and reranking | No measured challenger in this repository | Frozen embedding/reranker comparison on independent documents |
+| Question decomposition and semantic expansion | No measured automatic policy | Answer-blind prompt contract, budget and grouped ablation |
+| Learned table/chart relationships | Native layout proxies and three operator-routed test cases | Automatic extraction/routing and controlled reader evaluation |
+| Source consistency | Frozen data verified; two suspected question/PDF mismatches | Valid evidence or corrected authoritative mappings for those cases |
+| Independent validation | Sixteen previously examined questions from five PDFs | Additional trustworthy labeled documents; hidden test answers cannot fill this gap |
+
+A family must have a declared hypothesis, leakage boundary, reproducible execution,
+saved negative results, and a reasoned retain/reject/defer decision. A new default
+also needs grouped validation and the downstream LAVA answer/evidence metric;
+retrieval coverage alone cannot certify it. Sparse language support and reused
+development documents prevent a claim of state-of-the-art generalization.
+
+The 624-question test entry and verified Kaggle upload remain project acceptance
+criteria. They will not be marked complete from partial coverage or a feature
+count. Existing model, judge, prompt and inference contracts remain frozen.

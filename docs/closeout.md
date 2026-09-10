@@ -1,6 +1,13 @@
-# Verified project closeout — September 8, 2026
+# Verified milestones and remaining work — September 10, 2026
 
-This release completes an evaluated retrieval-to-answer research system. The employer reading path is **Notebook 00 → 05 → 03 → 04**; 01 and 02 provide experimental design and cloud execution details.
+This document records completed research milestones, not completion of the full
+competition project. The employer reading path is **Notebook 00 → 05 → 03 → 04**;
+01 and 02 provide experimental design and cloud execution details.
+
+As of September 10, 2026, 619 of 624 test answers are structurally complete and
+preserved. Three questions are assigned to a bounded targeted recovery run; two
+others have suspected source-document mismatches. The complete CSV, validated
+Kaggle upload and broader feature-research acceptance gate remain unfinished.
 
 ## Delivered and measured
 
@@ -78,10 +85,24 @@ The generated HTML report was also opened in Studio: the static fallback rendere
 
 [PR #16](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/pull/16) contains the implementation and reviewed outputs; its [checks](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/pull/16/checks) provide the independent Linux CI record. [GitHub validation run 34188449609](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/runs/34188449609) passed on the published notebook commit. Local checks alone are not the release gate. No stale-output or kernel test was disabled to publish the result.
 
-## Completed scope
+## Completed milestones and remaining acceptance criteria
 
-The project is ready to review as an applied ML engineering portfolio. It demonstrates measured system behavior, broad retrieval research, rejected complexity, a targeted improvement, durable execution and reproducible public evidence.
+The completed work can be reviewed as an applied ML engineering portfolio. It
+demonstrates measured system behavior, retrieval research, rejected complexity,
+a targeted improvement, durable execution and reproducible public evidence.
 
 All quality findings use 16 previously examined training questions from five PDFs: 15 Japanese questions and one Vietnamese question. The metric follows the published LAVA formula with a pinned local judge; exact organizer prompt/runtime parity is not established. No held-out, language-wide, leaderboard or state-of-the-art result is claimed.
 
-Application hosting, 624-question test inference and Kaggle upload are outside this measured release. The optional export code remains available, but these operations are not unfinished acceptance criteria for the research system.
+The finite lexical grid is complete. It does not establish exhaustive document
+feature research. A new 17-policy domain-feature audit measured body, heading,
+block, table, numeric, query-coverage and adjacent-page signals. Block retrieval
+improved pooled complete-evidence coverage from 14/16 to 15/16, concentrated in one
+training document; all five conservative document folds retained the baseline.
+The complete feature-family ablations and coverage limitations are in Notebook 04
+and [the research acceptance gate](retrieval.md#feature-research-completion-gate).
+
+Completion still requires justified disposition of the remaining feature families,
+appropriate validation for any promoted policy, resolution of the unanswered test
+questions, a canonically validated 624-row CSV and a verified Kaggle receipt. The
+existing development scores must remain separate from any eventual competition
+score. Application hosting is not required.
