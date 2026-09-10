@@ -149,3 +149,46 @@ def test_features_do_not_depend_on_unrelated_document_identity():
     assert page_features(query, pages()) == page_features(
         replace(query, document_id="unrelated"), pages()
     )
+
+
+def test_complete_research_roundtrip_and_resume_keep_real_json_checkpoints(tmp_path, monkeypatch):
+    from lava.evaluation.semantic import digest
+    from lava.readers.runtime_logging import RuntimeEventLogger
+    from scripts import research_document_features as runner
+
+    refs = [
+        ReferenceRecord(
+            question_id=f"q{i:02}",
+            document_id=f"d{i % 5}",
+            question="needle 2026",
+            answer="a",
+            evidence_pages=[1],
+            language="ja",
+            answer_format=AnswerFormat.STRING,
+        )
+        for i in range(16)
+    ]
+    monkeypatch.setattr(runner, "parse_training_csv", lambda _: tuple(refs))
+    with pymupdf.open() as pdf:
+        pdf.new_page().insert_text((50, 100), "needle 2026")
+        pdf.new_page()
+        payload = pdf.tobytes()
+    inputs = tmp_path / "inputs"
+    inputs.mkdir()
+    sources = {}
+    for name in ("train.csv", *(f"d{i}.pdf" for i in range(5))):
+        value = b"synthetic fixture" if name == "train.csv" else payload
+        (inputs / name).write_bytes(value)
+        sources[name] = {"key": name, "sha256": digest(value), "version_id": "fixture"}
+    store = LocalArchive(tmp_path / "archive")
+    first, reuse = runner.run(
+        tmp_path, inputs, store, {"sources": sources}, RuntimeEventLogger("test")
+    )
+    assert reuse == {"reused_documents": 0, "reused_queries": 0}
+    before = {p: p.read_bytes() for p in store.path.rglob("*.json")}
+    second, reuse = runner.run(
+        tmp_path, inputs, store, {"sources": sources}, RuntimeEventLogger("test")
+    )
+    assert second == first
+    assert reuse == {"reused_documents": 5, "reused_queries": 16}
+    assert all(p.read_bytes() == value for p, value in before.items())

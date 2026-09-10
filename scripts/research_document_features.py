@@ -108,9 +108,9 @@ def run(
         value, reused = stage(
             store,
             {"contract_id": identity, "source": contract["sources"][doc + ".pdf"]},
-            lambda doc=doc: {
-                "pages": [asdict(p) for p in extract_document(payloads[doc + ".pdf"])]
-            },
+            lambda doc=doc: json.loads(
+                encode({"pages": [asdict(p) for p in extract_document(payloads[doc + ".pdf"])]})
+            ),
             logger=logger,
             name="documents",
         )
@@ -137,7 +137,9 @@ def run(
         value, reused = stage(
             store,
             {"contract_id": identity, "query": asdict(query)},
-            lambda query=query: page_features(query, documents[query.document_id]),
+            lambda query=query: json.loads(
+                encode(page_features(query, documents[query.document_id]))
+            ),
             logger=logger,
             name="queries",
         )
