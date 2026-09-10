@@ -104,6 +104,35 @@ IDs. It deliberately does not export a CSV or upload to Kaggle. A complete
 624-row submission still requires the canonical validator and verified
 provenance for every answer.
 
+Before allocating a recovery GPU, run `scripts/verify_targeted_access.py` in a
+bounded CPU job using the same SageMaker execution role and the exact staged
+inference source. The probe rejects an administrator or a different role,
+revalidates inherited answers, reads the pinned PDFs, prepares every routed page
+and crop, checks versioned image/text reads, and verifies a private receipt write
+and read-back. It makes no model calls. A successful administrator-side S3 read or
+IAM simulation alone does not replace this runtime check.
+
+The role needs `s3:GetObjectVersion` for version-pinned reads in addition to the
+existing `s3:GetObject` and `s3:PutObject` submission permissions. The canonical
+`infra/iam/submission.template.json` includes these actions within the submission
+prefix. The first targeted attempt on September 10, 2026 UTC failed while reading
+its pinned plan because that action was missing; it generated no new answers.
+All 619 previously complete answers remained preserved, with five unresolved and
+no exported CSV or Kaggle submission at that checkpoint.
+
+The permission was corrected without expanding the submission resource prefix.
+At 03:36 UTC on September 10, 2026, a bounded CPU job completed under the actual
+SageMaker execution role: it revalidated all 619 inherited answers, read the three
+routed PDFs, verified eight page views including the detail crop, and saved and
+read back its access receipt. It made zero model calls. The private receipt's
+SHA-256 is `2f58c4ec476616a15efd4e7651bf4009fbdbd22e664c1757a987d97001d80ae1`.
+The inference revision remains `1fd9ec645e7cf8697ee163b725da645e369e19be`;
+the executed access probe was committed at
+`6d8ce7ffe511b497049bcc570e7ca6cba1e2ce23`. These are access-verification results,
+not recovered answers. A separate GPU retry was accepted at 03:37 UTC. The two
+suspected question/document mismatches remain unresolved, so even successful
+recovery of all three routed questions would leave coverage at 622 of 624.
+
 ### Resume the frozen first pass
 
 For an explicitly reviewed hardware fallback, the canonical GPU entrypoint is
