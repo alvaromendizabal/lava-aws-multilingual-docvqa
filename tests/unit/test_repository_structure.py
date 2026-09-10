@@ -93,4 +93,6 @@ def test_project_entrance_links_every_canonical_notebook_in_order() -> None:
     assert positions == sorted(positions)
     assert "reports/notebooks/" not in readme
     assert "## Scope and limitations" in readme
-    assert "Completed applied ML research system" in readme
+    assert "Applied ML research system" in readme
+    assert "test submission is incomplete" in readme
+    assert "No complete CSV or Kaggle score is claimed." in readme

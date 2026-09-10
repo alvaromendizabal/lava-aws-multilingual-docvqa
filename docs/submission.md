@@ -1,5 +1,16 @@
 # Generate a submission in your notebook
 
+**Verified project state, September 10, 2026:** 550 first-pass answers and 69
+OCR-recovered answers and three targeted recoveries are preserved, giving 622 of
+624 structurally complete answers. The targeted run finished. Two questions
+have suspected question/PDF mismatches; these are not organizer-confirmed data
+corrections. No complete CSV or verified Kaggle upload receipt is available.
+
+A submission remains an acceptance requirement. All 624 answers must pass the
+canonical validator, including non-abstention, exact template IDs/order, answer
+serialization and evidence-page bounds. The training feature ablations in
+Notebook 04 do not fill missing test answers or certify their accuracy.
+
 The optional test exporter uses the first-pass BM25/9B configuration. The citation-guided reread in Notebook 05 is measured on the training diagnostic; no full-test reread result is claimed.
 
 Open `notebooks/05_end_to_end_system_evaluation.ipynb` using the locked LAVA kernel.
@@ -129,9 +140,20 @@ SHA-256 is `2f58c4ec476616a15efd4e7651bf4009fbdbd22e664c1757a987d97001d80ae1`.
 The inference revision remains `1fd9ec645e7cf8697ee163b725da645e369e19be`;
 the executed access probe was committed at
 `6d8ce7ffe511b497049bcc570e7ca6cba1e2ce23`. These are access-verification results,
-not recovered answers. A separate GPU retry was accepted at 03:37 UTC. The two
-suspected question/document mismatches remain unresolved, so even successful
-recovery of all three routed questions would leave coverage at 622 of 624.
+not recovered answers.
+
+The GPU retry completed at **04:36:51 UTC on September 10, 2026**. It generated
+three new complete responses in three model calls and preserved all 619 earlier
+answers. Independent replay of `check_targeted` and `validate_prediction` matched
+the saved raw generations, original questions, PDF sources, planned routes and
+actual inference revision. The worker reported 67.051 seconds; SageMaker recorded
+315 billable seconds including setup. These are different timing scopes.
+
+The resulting coverage is **622/624**. The two suspected question/document
+mismatches still require valid documentary evidence or authoritative source
+clarification. The run exported no CSV and made no Kaggle upload. The sanitized
+[recovery receipt](../reports/submission/targeted_recovery.json) records the actual
+outcome. The result is structural completeness, not measured answer accuracy.
 
 ### Resume the frozen first pass
 

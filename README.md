@@ -2,11 +2,17 @@
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
 
-**Completed applied ML research system · Python · Open vision-language models · AWS**
+**Applied ML research system · Python · Open vision-language models · AWS**
 
 Given a question and a complete PDF, this system retrieves evidence pages, reads their images and native text, and returns a structured answer with physical-page citations. I built and evaluated the full pipeline, compared three reader configurations, audited 1,582 retrieval configurations, and tested a targeted second read using the model’s own citations.
 
 The strongest engineering result: **the same 9B reader improved from 67.57% to 77.99% local LAVA after a citation-guided reread**. Both passes, their costs, and their failures are published. These are development measurements on 16 supplied training questions from five PDFs.
+
+**Project status, September 10, 2026:** the test submission is incomplete, with
+622 of 624 structurally complete answers preserved. The bounded targeted run
+recovered all three routed questions; two suspected question/document mismatches remain.
+No complete CSV or Kaggle score is claimed. The broader feature-research gate is
+open; the completed lexical grid is one part of that work.
 
 **Start with [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb), then [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb). All six notebooks include executed outputs; review requires no account, installation, or GPU.**
 
@@ -57,6 +63,28 @@ Rankings are saved before reference labels are scored. Deduplication and candida
 
 The visual hybrid recovered one additional question on the development pilot. It has no independent validation and is not the default retriever. BM25 reaches complete evidence for all 16 questions at ten pages; that does not establish perfect answering. [Notebook 04](notebooks/04_evidence_retrieval.ipynb) includes ranking curves, feature families, fold decisions, negative results and actual recovery receipts.
 
+### Test document structure as well as lexical parameters
+
+A separate CPU audit evaluates **17 fixed policies across seven document-feature
+families**: body text, headings, local text blocks, detected tables, exact numeric
+matches, query-term coverage and neighboring pages. It includes each family alone,
+the combined policy, each leave-one-family-out ablation, and one query-complement
+selector. All rankings cover every physical page and are saved before label scoring.
+
+| Development policy | Evidence recall@5 | Questions with all evidence |
+| --- | ---: | ---: |
+| Fixed BM25 | 95.31% | 14/16 |
+| BM25 plus local-block retrieval | 96.88% | 15/16 |
+| All seven document signals | 95.31% | 14/16 |
+
+The block signal completes the sole Vietnamese training example. The improvement
+is concentrated in one document, and the existing conservative selector retains
+BM25 in all five held-out-document folds. No challenger is promoted. The audit
+took 27.426 seconds on the existing CPU host; a separate process reused all five
+document and 16 query checkpoints in 0.052 seconds. These are retrieval diagnostics,
+not new answer-quality or Kaggle scores. The [research coverage table](docs/retrieval.md#feature-research-completion-gate)
+identifies the remaining untested families and validation requirements.
+
 ## Review the implementation
 
 | Notebook | What it demonstrates |
@@ -79,7 +107,10 @@ The data audit verified **208 files, including 205 PDFs**. All labeled evaluatio
 
 The [published LAVA metric](https://lava-workshop.github.io/#evaluation) averages semantic answer credit and evidence-page F1 per question. This implementation uses a pinned Gemma-3 1B judge that passed 28 development controls. The organizer’s exact prompt/runtime is unpublished, so **these are local formula-based scores, not official server scores**.
 
-This release delivers an evaluated research system. It does not establish held-out, language-wide or state-of-the-art performance. The 624 hidden-test predictions, competition submission and application hosting are outside the measured release. No Kaggle submission or leaderboard rank is claimed.
+The repository contains an evaluated research system; feature research and the
+624-question competition entry remain active completion criteria. Existing results
+do not establish held-out, language-wide or state-of-the-art performance. No Kaggle
+submission or leaderboard rank is claimed. Application hosting is not required.
 
 ## Reproduce and inspect
 

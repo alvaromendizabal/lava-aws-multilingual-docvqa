@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAVA document-feature research</title><style>body{margin:0;background:#f1f5f8;color:#13233f;font:16px system-ui}main{max-width:1120px;margin:auto;padding:32px}section{background:white;border-radius:16px;padding:24px}h1{font-size:30px}p{line-height:1.6}svg{width:100%;height:auto}a{color:#176f83}</style>
+<main><h1>Document-feature research</h1><p>Seventeen fixed policies, seven feature families, five training PDFs. The block signal adds one complete question in pooled diagnostics; all five conservative document folds retain BM25.</p>
+<section><div id="interactive"></div><div id="fallback"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 760" role="img" aria-label="Document feature ablations on sixteen training questions" style="font-family:system-ui;background:white">
+<rect width="1080" height="760" fill="white"/>
+<text x="28" y="38" font-size="24" font-weight="700" fill="#13233f">Document features: pooled gains versus validation</text>
+<text x="28" y="64" font-size="14" fill="#526077">Five training PDFs · 16 questions · five-page budget · no new model inference</text>
+<text x="315" y="94" font-size="13" fill="#526077">Questions with every required evidence page</text>
+<text x="980" y="94" text-anchor="middle" font-size="13" fill="#526077">Recall@5</text>
+<line x1="315" x2="315" y1="112" y2="676" stroke="#e5ebef"/>
+<text x="315" y="696" text-anchor="middle" font-size="12" fill="#526077">0</text>
+<line x1="451" x2="451" y1="112" y2="676" stroke="#e5ebef"/>
+<text x="451" y="696" text-anchor="middle" font-size="12" fill="#526077">4</text>
+<line x1="587" x2="587" y1="112" y2="676" stroke="#e5ebef"/>
+<text x="587" y="696" text-anchor="middle" font-size="12" fill="#526077">8</text>
+<line x1="723" x2="723" y1="112" y2="676" stroke="#e5ebef"/>
+<text x="723" y="696" text-anchor="middle" font-size="12" fill="#526077">12</text>
+<line x1="859" x2="859" y1="112" y2="676" stroke="#e5ebef"/>
+<text x="859" y="696" text-anchor="middle" font-size="12" fill="#526077">16</text>
+<text x="295" y="135" text-anchor="end" font-size="13" fill="#13233f">BM25 baseline</text>
+<rect x="315" y="120" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="136" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="136" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="167" text-anchor="end" font-size="13" fill="#13233f">Add body text</text>
+<rect x="315" y="152" width="442" height="22" rx="3" fill="#b75d48"/>
+<text x="767" y="168" font-size="13" fill="#13233f">13/16</text>
+<text x="980" y="168" text-anchor="middle" font-size="13" fill="#13233f">92.19%</text>
+<text x="295" y="199" text-anchor="end" font-size="13" fill="#13233f">Add headings</text>
+<rect x="315" y="184" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="200" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="200" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="231" text-anchor="end" font-size="13" fill="#13233f">Add local blocks</text>
+<rect x="315" y="216" width="510" height="22" rx="3" fill="#13867c"/>
+<text x="835" y="232" font-size="13" fill="#13233f">15/16</text>
+<text x="980" y="232" text-anchor="middle" font-size="13" fill="#13233f">96.88%</text>
+<text x="295" y="263" text-anchor="end" font-size="13" fill="#13233f">Add table text</text>
+<rect x="315" y="248" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="264" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="264" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="295" text-anchor="end" font-size="13" fill="#13233f">Add exact numbers</text>
+<rect x="315" y="280" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="296" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="296" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="327" text-anchor="end" font-size="13" fill="#13233f">Add query coverage</text>
+<rect x="315" y="312" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="328" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="328" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="359" text-anchor="end" font-size="13" fill="#13233f">Add neighboring pages</text>
+<rect x="315" y="344" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="360" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="360" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="391" text-anchor="end" font-size="13" fill="#13233f">All seven signals</text>
+<rect x="315" y="376" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="392" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="392" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="423" text-anchor="end" font-size="13" fill="#13233f">All except body</text>
+<rect x="315" y="408" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="424" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="424" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="455" text-anchor="end" font-size="13" fill="#13233f">All except headings</text>
+<rect x="315" y="440" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="456" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="456" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="487" text-anchor="end" font-size="13" fill="#13233f">All except blocks</text>
+<rect x="315" y="472" width="442" height="22" rx="3" fill="#b75d48"/>
+<text x="767" y="488" font-size="13" fill="#13233f">13/16</text>
+<text x="980" y="488" text-anchor="middle" font-size="13" fill="#13233f">92.19%</text>
+<text x="295" y="519" text-anchor="end" font-size="13" fill="#13233f">All except tables</text>
+<rect x="315" y="504" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="520" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="520" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="551" text-anchor="end" font-size="13" fill="#13233f">All except numbers</text>
+<rect x="315" y="536" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="552" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="552" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="583" text-anchor="end" font-size="13" fill="#13233f">All except coverage</text>
+<rect x="315" y="568" width="442" height="22" rx="3" fill="#b75d48"/>
+<text x="767" y="584" font-size="13" fill="#13233f">13/16</text>
+<text x="980" y="584" text-anchor="middle" font-size="13" fill="#13233f">92.19%</text>
+<text x="295" y="615" text-anchor="end" font-size="13" fill="#13233f">All except neighbors</text>
+<rect x="315" y="600" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="616" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="616" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="295" y="647" text-anchor="end" font-size="13" fill="#13233f">Four BM25 + query complement</text>
+<rect x="315" y="632" width="476" height="22" rx="3" fill="#48677f"/>
+<text x="801" y="648" font-size="13" fill="#13233f">14/16</text>
+<text x="980" y="648" text-anchor="middle" font-size="13" fill="#13233f">95.31%</text>
+<text x="28" y="729" font-size="14" fill="#13233f">Conservative document-isolated selection retained BM25 in all five folds.</text>
+<text x="28" y="751" font-size="12" fill="#526077">The block gain is concentrated in one document. These are retrieval diagnostics, not answer accuracy.</text>
+</svg></div></section><p>These are 16-question development retrieval results, not official Kaggle scores or evidence of answer accuracy. Hover to inspect a policy. The static figure remains available if Plotly cannot load.</p><p>Source SHA-256: <code>9815159085c01929c5c9f7c6fd68641bb121ba8b6000c4028d87b233071ee4d9</code></p></main>
+<script src="https://cdn.plot.ly/plotly-4.0.0.min.js"></script><script>if(window.Plotly){Plotly.newPlot('interactive',[{"type": "bar", "orientation": "h", "x": [14, 13, 14, 15, 14, 14, 14, 14, 14, 14, 14, 13, 14, 14, 13, 14, 14], "y": ["BM25 baseline", "Add body text", "Add headings", "Add local blocks", "Add table text", "Add exact numbers", "Add query coverage", "Add neighboring pages", "All seven signals", "All except body", "All except headings", "All except blocks", "All except tables", "All except numbers", "All except coverage", "All except neighbors", "Four BM25 + query complement"], "customdata": [95.3125, 92.1875, 95.3125, 96.875, 95.3125, 95.3125, 95.3125, 95.3125, 95.3125, 95.3125, 95.3125, 92.1875, 95.3125, 95.3125, 92.1875, 95.3125, 95.3125], "marker": {"color": ["#48677f", "#b75d48", "#48677f", "#13867c", "#48677f", "#48677f", "#48677f", "#48677f", "#48677f", "#48677f", "#48677f", "#b75d48", "#48677f", "#48677f", "#b75d48", "#48677f", "#48677f"]}, "hovertemplate": "%{y}<br>Complete evidence: %{x}/16<br>Recall@5: %{customdata:.2f}%<extra></extra>"}],{"height": 760, "margin": {"l": 240, "r": 35, "t": 20, "b": 60}, "font": {"family": "system-ui", "color": "#13233f"}, "xaxis": {"range": [0, 16.7], "title": {"text": "Questions with complete evidence"}, "dtick": 4}, "yaxis": {"autorange": "reversed"}, "paper_bgcolor": "white", "plot_bgcolor": "white"},{responsive:true,displaylogo:false}).then(()=>{document.getElementById('fallback').hidden=true;});}</script></html>
