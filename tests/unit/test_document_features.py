@@ -1,6 +1,8 @@
 """Document-domain features preserve source coverage and label-isolated selection."""
 
+import importlib.util
 from dataclasses import replace
+from pathlib import Path
 
 import pymupdf
 import pytest
@@ -15,7 +17,13 @@ from lava.retrieval.domain_features import (
 )
 from lava.retrieval.lexical import BM25Index, PageText, RetrievalQuery
 from lava.retrieval.research import BASELINE
-from scripts.research_document_features import LocalArchive
+
+SCRIPT = Path(__file__).resolve().parents[2] / "scripts/research_document_features.py"
+SPEC = importlib.util.spec_from_file_location("document_research_under_test", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+runner = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(runner)
+LocalArchive = runner.LocalArchive
 
 
 def pages():
@@ -154,7 +162,6 @@ def test_features_do_not_depend_on_unrelated_document_identity():
 def test_complete_research_roundtrip_and_resume_keep_real_json_checkpoints(tmp_path, monkeypatch):
     from lava.evaluation.semantic import digest
     from lava.readers.runtime_logging import RuntimeEventLogger
-    from scripts import research_document_features as runner
 
     refs = [
         ReferenceRecord(
@@ -197,7 +204,6 @@ def test_complete_research_roundtrip_and_resume_keep_real_json_checkpoints(tmp_p
 
 def test_research_rejects_wrong_source_contract_before_reading_inputs(tmp_path, monkeypatch):
     from lava.readers.runtime_logging import RuntimeEventLogger
-    from scripts import research_document_features as runner
 
     monkeypatch.setattr(runner, "contract_for", lambda _: {"source": "expected"})
     with pytest.raises(ValueError, match="contract differs"):
