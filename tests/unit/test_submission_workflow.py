@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import boto3
 import pymupdf
 import pytest
+import yaml
 from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.stub import Stubber
 from botocore.validate import validate_parameters
@@ -197,6 +198,247 @@ def test_recovery_never_converts_abstention_to_a_complete_answer(recovery_case):
     assert failed == [c.original.question_id]
     prediction, _ = workflow.validate_prediction(c.original, c.inference["records"][0])
     assert not c.module.complete_answer(prediction)
+
+
+@pytest.fixture
+def targeted_module(monkeypatch):
+    monkeypatch.syspath_prepend(str(ROOT))
+    from pipelines.submission import targeted
+
+    return targeted
+
+
+def test_targeted_routes_partition_remaining_ids_and_reject_answer_hints(targeted_module):
+    module = targeted_module
+    requests = (SimpleNamespace(question_id="q0", document_id="d0"),)
+    good = {
+        "routes": {"q0": [{"pages": [1, 3], "crops": {"3": [0.1, 0.2, 0.8, 0.9]}}]},
+        "blocked": {},
+    }
+    module.validate_routes(good, requests, {"q0"}, {"d0": 3})
+    for mutation in ("overlap", "missing", "page", "duplicate", "crop", "answer", "bool", "count"):
+        plan = deepcopy(good)
+        if mutation == "overlap":
+            plan["blocked"]["q0"] = "Unrelated source document"
+        elif mutation == "missing":
+            plan["routes"].clear()
+        elif mutation == "page":
+            plan["routes"]["q0"][0]["pages"] = [1, 4]
+        elif mutation == "duplicate":
+            plan["routes"]["q0"] *= 2
+        elif mutation == "crop":
+            plan["routes"]["q0"][0]["crops"]["3"][0] = float("nan")
+        elif mutation == "answer":
+            plan["routes"]["q0"][0]["answer"] = "Not allowed"
+        elif mutation == "bool":
+            plan["routes"]["q0"][0]["pages"] = [True, 3]
+        else:
+            plan["routes"]["q0"] *= 3
+        with pytest.raises(ValueError):
+            module.validate_routes(plan, requests, {"q0"}, {"d0": 3})
+    module.validate_routes(
+        {"routes": {}, "blocked": {"q0": "No matching evidence"}}, requests, {"q0"}, {"d0": 3}
+    )
+
+
+def test_targeted_reparses_generation_without_changing_question_or_source(
+    recovery_case, targeted_module
+):
+    c, module = recovery_case, targeted_module
+    route = {"pages": [2], "crops": {}}
+    saved = {**deepcopy(c.saved), "route": route}
+    assert (
+        module.check_targeted(saved, c.original, c.contract["contract_id"], route).answer
+        == "RECOVERED_VALUE"
+    )
+    for mutation in ("question", "source", "raw", "route", "commit"):
+        changed = deepcopy(saved)
+        if mutation == "question":
+            changed["request"]["question"] = "different question"
+        elif mutation == "source":
+            changed["request"]["pages"][0]["source_pdf_sha256"] = "f" * 64
+        elif mutation == "raw":
+            changed["raw_response"] = (
+                '{"answer":"","evidence_pages":[],"confidence":0,"abstain":true}'
+            )
+        elif mutation == "route":
+            changed["route"] = {"pages": [1], "crops": {}}
+        else:
+            changed["inference_code_commit"] = "uncommitted"
+        with pytest.raises(ValueError):
+            module.check_targeted(changed, c.original, c.contract["contract_id"], route)
+
+
+def test_targeted_pinned_read_closes_body_and_rejects_incomplete_or_changed_source(targeted_module):
+    module = targeted_module
+    for change in (None, "checksum", "version", "pending", "metadata"):
+        value = (
+            {"state": "pending"}
+            if change == "pending"
+            else {"state": "complete", "value": {"x": 1}}
+        )
+        payload = encode(value)
+        body = io.BytesIO(payload)
+        source = {"key": "source", "version_id": "v1", "sha256": digest(payload)}
+        response = {"Body": body, "VersionId": "v1", "Metadata": {"sha256": digest(payload)}}
+        if change == "checksum":
+            source["sha256"] = "f" * 64
+        elif change == "version":
+            response["VersionId"] = "v2"
+        elif change == "metadata":
+            response["Metadata"] = {}
+        client = Mock()
+        client.get_object.return_value = response
+        if change is None:
+            assert module.read_pinned(client, "bucket", source) == {"x": 1}
+        else:
+            with pytest.raises(ValueError):
+                module.read_pinned(client, "bucket", source)
+        assert body.closed
+
+
+def test_targeted_geometric_crop_is_bound_to_the_same_pdf(prepared, targeted_module):
+    p, module = prepared, targeted_module
+    original = workflow.validate_test_manifest(p.manifest, p.contract)[0]
+    page = original.pages[0]
+    source = {
+        "key": page.source_pdf_s3_uri.split("s3://bucket/")[1],
+        "sha256": page.source_pdf_sha256,
+        "version_id": page.source_pdf_version_id,
+    }
+    payload = p.s3.values[source["key"]][0]
+    renderer = yaml.safe_load((ROOT / "configs/oracle_reader_benchmark.yaml").read_bytes())[
+        "asset_builder"
+    ]
+    render = renderer["render_profiles"][renderer["active_render_profile"]]
+    crop = [0.1, 0.1, 0.6, 0.4]
+    result = module.prepare_asset(
+        p.s3, "bucket", payload, source, original, 1, crop, render, "e" * 64
+    )
+    assert result["source_pdf_sha256"] == page.source_pdf_sha256
+    assert result["source_pdf_version_id"] == page.source_pdf_version_id
+    assert result["page_number"] == 1 and result["asset_version"] == "targeted-page-detail-v1"
+    with pymupdf.open(stream=payload, filetype="pdf") as pdf:
+        rect = pdf[0].rect
+        clip = pymupdf.Rect(
+            crop[0] * rect.width, crop[1] * rect.height, crop[2] * rect.width, crop[3] * rect.height
+        )
+        expected = pdf[0].get_pixmap(dpi=600, clip=clip, alpha=False).tobytes("png")
+    assert result["image_sha256"] == digest(expected)
+
+
+def test_targeted_parent_verifies_all_inherited_records_read_only(
+    recovery_case, targeted_module, monkeypatch
+):
+    c, module = recovery_case, targeted_module
+    monkeypatch.setattr(module, "test_contract", lambda _: deepcopy(c.p.contract))
+
+    def pinned(key, value):
+        payload = encode({"state": "complete", "value": value})
+        c.p.s3.put_object(Key=key, Body=payload, Metadata={"sha256": digest(payload)})
+        return {"key": key, "sha256": digest(payload), "version_id": "v1"}
+
+    plan = {
+        "base_contract_id": c.p.contract["contract_id"],
+        "base_inference_value_sha256": digest(encode(c.inference)),
+        "parent_contract_id": c.contract["contract_id"],
+        "parent_inference_commit": "c" * 40,
+        "expected_preserved_count": 4,
+        "inputs": pinned("parent-inputs", c.p.manifest),
+        "base_inference": pinned("parent-base", c.inference),
+        "parent_contract": pinned("parent-contract", c.contract),
+        "parent_report": pinned(
+            "parent-report",
+            {"contract_id": c.contract["contract_id"], "recovered": 1, "unresolved": []},
+        ),
+        "parent_answers": [
+            {"question_id": c.original.question_id, **pinned("parent-answer", c.saved)}
+        ],
+        "routes": {},
+        "blocked": {},
+    }
+    for number, context in c.context.items():
+        pinned(
+            f"experiments/submissions/system/{c.contract['contract_id']}/ocr/{c.original.document_id}/{number:04d}.json",
+            context,
+        )
+    before = deepcopy(c.p.s3.values)
+    _, _, requests, preserved = module.verify_parent(c.p.root, c.p.s3, "bucket", plan)
+    assert len(requests) == preserved == 4
+    assert c.p.s3.values == before
+    for mutation in ("missing", "overwrite", "count", "duplicate", "checksum"):
+        changed = deepcopy(plan)
+        if mutation == "missing":
+            changed["parent_answers"] = []
+        elif mutation == "overwrite":
+            changed["parent_answers"][0]["question_id"] = requests[1].question_id
+        elif mutation == "count":
+            changed["expected_preserved_count"] = 3
+        elif mutation == "duplicate":
+            changed["parent_answers"] *= 2
+        else:
+            changed["parent_answers"][0]["sha256"] = "f" * 64
+        with pytest.raises(ValueError):
+            module.verify_parent(c.p.root, c.p.s3, "bucket", changed)
+    assert c.p.s3.values == before
+
+
+@pytest.mark.parametrize("abstain", [False, True])
+def test_targeted_run_preserves_old_objects_and_never_exports_partial_csv(
+    recovery_case, targeted_module, monkeypatch, abstain
+):
+    c, module = recovery_case, targeted_module
+    for name in ("targeted.py", "run_targeted.sh"):
+        shutil.copy(ROOT / "pipelines/submission" / name, c.p.root / "pipelines/submission" / name)
+    requests = workflow.validate_test_manifest(c.p.manifest, c.p.contract)
+    plan = {
+        "routes": {c.original.question_id: [{"pages": [2], "crops": {}}]},
+        "blocked": {},
+        "parent_contract_id": c.contract["contract_id"],
+    }
+    monkeypatch.setattr(
+        module, "verify_parent", lambda *args: (c.p.contract, c.p.manifest, requests, 3)
+    )
+    monkeypatch.setattr(module, "load_resolved_model", lambda *args: None)
+    contract = module.contract_for(c.p.root, plan)
+    monkeypatch.setenv("LAVA_TARGETED_CONTRACT", contract["contract_id"])
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-west-2")
+    raw = (
+        c.saved["raw_response"]
+        if not abstain
+        else '{"answer":"","evidence_pages":[],"confidence":0,"abstain":true}'
+    )
+    calls = []
+
+    class Reader:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def predict(self, request):
+            calls.append(request)
+            prediction = parse_reader_response(
+                question_id=request.question_id,
+                answer_format=request.answer_format,
+                raw_response=raw,
+                allowed_pages=request.available_pages,
+            )
+            return prediction, ReaderTelemetry.model_validate(c.saved["telemetry"])
+
+    monkeypatch.setattr(module, "CrossPageReader", Reader)
+    monkeypatch.setattr(module, "read_raw_response", lambda _: raw)
+    before = deepcopy(c.p.s3.values)
+    report = module.run(c.p.root, c.p.s3, "bucket", plan, RuntimeEventLogger("test"))
+    assert report["preserved_count"] == 3
+    assert report["additional_recovered_count"] == (0 if abstain else 1)
+    assert report["total_complete_count"] == (3 if abstain else 4)
+    assert report["unresolved"] == ([c.original.question_id] if abstain else [])
+    assert report["csv_exported"] is report["uploaded_to_kaggle"] is False
+    assert len(calls) == report["new_model_calls"] == 1
+    assert not (c.p.root / "artifacts/submission/submission.csv").exists()
+    assert all(c.p.s3.values[key] == value for key, value in before.items())
+    with pytest.raises(ValueError, match="already finished"):
+        module.run(c.p.root, c.p.s3, "bucket", plan, RuntimeEventLogger("test"))
+    assert len(calls) == 1
 
 
 def test_recovery_worker_only_reads_failed_questions_and_resumes_verified_export(
