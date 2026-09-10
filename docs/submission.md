@@ -80,6 +80,30 @@ its immutable CSV manifest records both inference revisions and the numbers of
 preserved and recovered answers. Original manifests retain their generation-state
 `uploaded_to_kaggle:false`; a real upload receipt is recorded separately.
 
+### Targeted review after an exhausted search
+
+`pipelines/submission/targeted.py` is a separate, explicitly operator-routed
+diagnostic stage. Its private, checksum-pinned plan selects physical pages and
+optional geometric detail crops after reviewing failed evidence searches. It
+contains no candidate answers and does not use hidden labels. This is not the
+original automated BM25 retrieval policy and must be identified separately in
+any report.
+
+Before loading the unchanged 9B reader, the stage independently reparses every
+inherited base and recovery prediction and checks the original question, PDF,
+OCR context, source revision, object version and checksum. Complete answers are
+never overwritten. New routes and source code receive a new immutable contract.
+Every attempted generation and accepted decision is saved and read back.
+
+The stage allows at most five questions, two candidate views per question, four
+pages per view, ten model calls and 1,200 seconds of work. The managed job imposes
+an additional wall-clock cap. A document mismatch is recorded as an explicit
+blocker, not resolved by substituting another PDF or manufacturing an answer.
+Its report distinguishes inherited answers, additional answers and unresolved
+IDs. It deliberately does not export a CSV or upload to Kaggle. A complete
+624-row submission still requires the canonical validator and verified
+provenance for every answer.
+
 ### Resume the frozen first pass
 
 For an explicitly reviewed hardware fallback, the canonical GPU entrypoint is
