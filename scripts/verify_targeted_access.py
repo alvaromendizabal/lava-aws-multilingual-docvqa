@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import UTC, datetime
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,6 @@ from lava.evaluation.semantic import digest
 from lava.evaluation.submission_store import cached_source
 from lava.readers.runtime_logging import RuntimeEventLogger
 from lava.readers.system import store_for
-from pipelines.submission.targeted import contract_for, prepare_asset, read_pinned, verify_parent
 
 
 def verify_caller(identity: dict, role_arn: str) -> None:
@@ -48,16 +48,19 @@ def verify_asset(s3: Any, bucket: str, asset: dict, kind: str) -> None:
 
 
 def run(root: Path, s3: Any, sts: Any, env: dict) -> dict:
+    # Load the deployed pipeline at runtime; its source is bound by contract_for.
+    # This probe must not require edits to the immutable inference implementation.
+    targeted = import_module("pipelines.submission.targeted")
     identity = sts.get_caller_identity()
     verify_caller(identity, env["LAVA_EXPECTED_ROLE_ARN"])
     bucket = env["LAVA_BUCKET"]
-    plan = read_pinned(s3, bucket, json.loads(env["LAVA_TARGETED_PLAN"]))
-    contract = contract_for(root, plan)
+    plan = targeted.read_pinned(s3, bucket, json.loads(env["LAVA_TARGETED_PLAN"]))
+    contract = targeted.contract_for(root, plan)
     if contract["contract_id"] != env["LAVA_TARGETED_CONTRACT"]:
         raise ValueError("Access probe source differs from targeted contract")
     logger = RuntimeEventLogger("submission.access")
     with logger.stage("parent.verify", heartbeat_seconds=15):
-        _, _, requests, preserved = verify_parent(root, s3, bucket, plan)
+        _, _, requests, preserved = targeted.verify_parent(root, s3, bucket, plan)
     renderer = yaml.safe_load((root / "configs/oracle_reader_benchmark.yaml").read_bytes())[
         "asset_builder"
     ]
@@ -83,7 +86,7 @@ def run(root: Path, s3: Any, sts: Any, env: dict) -> dict:
             checked_documents.add(original.document_id)
             for route in routes:
                 for number in route["pages"]:
-                    asset = prepare_asset(
+                    asset = targeted.prepare_asset(
                         s3,
                         bucket,
                         payload,
