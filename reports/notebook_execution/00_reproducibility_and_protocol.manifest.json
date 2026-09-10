@@ -1,9 +1,9 @@
 {
-  "analysis_inputs_sha256": "7ab059a3e15538f70cae0b462834646e4438ae7b180013de0849b61bf70103cd",
-  "code_revision": "8fbfdfddac9aa0cf67b5a85cef28b34e0b63e298",
+  "analysis_inputs_sha256": "b49fe0be0876f44eecee25381cc0543e885153e0e6c5abd4357ae3739b324f71",
+  "code_revision": "5c8349203ec39e6f033674014968b95bbcfef547",
   "executed_code_cells": 3,
   "notebook": "00_reproducibility_and_protocol.ipynb",
-  "output_sha256": "35049c6c5a4234bcd7d6be67b5c2ab832fe2626891d52ffa069258a75fc4ad21",
+  "output_sha256": "2671bea6ffa0a5a00ef319db57f7b06ba8b6a6c529028e13214990accbf77b76",
   "schema_version": 2,
   "source_sha256": "acca6befcadb680ff8f77c08207d752d598807f4f78d6c136114d814d31e0670"
 }
