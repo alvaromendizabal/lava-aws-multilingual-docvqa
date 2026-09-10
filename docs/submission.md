@@ -104,6 +104,22 @@ IDs. It deliberately does not export a CSV or upload to Kaggle. A complete
 624-row submission still requires the canonical validator and verified
 provenance for every answer.
 
+Before allocating a recovery GPU, run `scripts/verify_targeted_access.py` in a
+bounded CPU job using the same SageMaker execution role and the exact staged
+inference source. The probe rejects an administrator or a different role,
+revalidates inherited answers, reads the pinned PDFs, prepares every routed page
+and crop, checks versioned image/text reads, and verifies a private receipt write
+and read-back. It makes no model calls. A successful administrator-side S3 read or
+IAM simulation alone does not replace this runtime check.
+
+The role needs `s3:GetObjectVersion` for version-pinned reads in addition to the
+existing `s3:GetObject` and `s3:PutObject` submission permissions. The canonical
+`infra/iam/submission.template.json` includes these actions within the submission
+prefix. The first targeted attempt on September 10, 2026 UTC failed while reading
+its pinned plan because that action was missing; it generated no new answers.
+All 619 previously complete answers remained preserved, with five unresolved and
+no exported CSV or Kaggle submission at that checkpoint.
+
 ### Resume the frozen first pass
 
 For an explicitly reviewed hardware fallback, the canonical GPU entrypoint is
