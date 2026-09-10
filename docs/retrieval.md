@@ -237,8 +237,8 @@ signals yielded 14/16. Every add-one and remove-one result is retained in
 Each outer fold selects only on the other four documents, using the existing
 conservative gate. All five folds retained BM25; their combined recall@5 remains
 95.31% and complete coverage 14/16. Pooled improvements are not promotion evidence.
-The initial CPU execution took 30.235 seconds. An independent resume reused five
-document and 16 query checkpoints in 0.048 seconds and reproduced the same summary
+The initial CPU execution took 27.426 seconds. An independent resume reused five
+document and 16 query checkpoints in 0.052 seconds and reproduced the same summary
 hash. Raw features, rankings, logs and receipts remain private.
 
 Run `python scripts/research_document_features.py --mode preview` to inspect the

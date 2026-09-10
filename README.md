@@ -9,8 +9,8 @@ Given a question and a complete PDF, this system retrieves evidence pages, reads
 The strongest engineering result: **the same 9B reader improved from 67.57% to 77.99% local LAVA after a citation-guided reread**. Both passes, their costs, and their failures are published. These are development measurements on 16 supplied training questions from five PDFs.
 
 **Project status, September 10, 2026:** the test submission is incomplete, with
-619 of 624 structurally complete answers preserved. A bounded recovery run targets
-three remaining questions; two others have suspected question/document mismatches.
+622 of 624 structurally complete answers preserved. The bounded targeted run
+recovered all three routed questions; two suspected question/document mismatches remain.
 No complete CSV or Kaggle score is claimed. The broader feature-research gate is
 open; the completed lexical grid is one part of that work.
 
@@ -80,8 +80,8 @@ selector. All rankings cover every physical page and are saved before label scor
 The block signal completes the sole Vietnamese training example. The improvement
 is concentrated in one document, and the existing conservative selector retains
 BM25 in all five held-out-document folds. No challenger is promoted. The audit
-took 30.235 seconds on the existing CPU host; a separate process reused all five
-document and 16 query checkpoints in 0.048 seconds. These are retrieval diagnostics,
+took 27.426 seconds on the existing CPU host; a separate process reused all five
+document and 16 query checkpoints in 0.052 seconds. These are retrieval diagnostics,
 not new answer-quality or Kaggle scores. The [research coverage table](docs/retrieval.md#feature-research-completion-gate)
 identifies the remaining untested families and validation requirements.
 

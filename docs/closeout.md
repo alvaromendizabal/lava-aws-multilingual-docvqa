@@ -4,9 +4,9 @@ This document records completed research milestones, not completion of the full
 competition project. The employer reading path is **Notebook 00 → 05 → 03 → 04**;
 01 and 02 provide experimental design and cloud execution details.
 
-As of September 10, 2026, 619 of 624 test answers are structurally complete and
-preserved. Three questions are assigned to a bounded targeted recovery run; two
-others have suspected source-document mismatches. The complete CSV, validated
+As of September 10, 2026, 622 of 624 test answers are structurally complete and
+preserved. The targeted run recovered all three routed questions at 04:36 UTC;
+two suspected source-document mismatches remain. The complete CSV, validated
 Kaggle upload and broader feature-research acceptance gate remain unfinished.
 
 ## Delivered and measured
