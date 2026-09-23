@@ -1,0 +1,11 @@
+component,status,implementation_or_evidence,boundary
+BM25Plus/CJK lexical retrieval,reconstructed,src/lava/reproduction/frontier.py + public source study,development panel only
+multilingual E5 page retrieval,reconstructed and measured,single-page public-method representation + prior sliding-window ablation,E5@5 did not beat lexical baseline
+ColQwen visual retrieval,reconstructed and measured,visual page embeddings + MaxSim rankings,15/16 complete@5; 16/16@10 on development panel
+adaptive page routing,reconstructed,public short/long-document cap schedule,answer impact still being measured
+Qwen3.5-9B BF16 reader,GPU contract passed,strict load + synthetic and real-input smoke,development only
+Qwen3.6-27B NF4 reader,GPU contract passed,strict load + synthetic and real-input generation,development benchmark incomplete
+evidence decomposition,implemented for benchmark,arm E,not yet scored
+cross-modal conflict reread,implemented for benchmark,arm F,not yet scored
+task-specific LoRA,not yet implemented,planned only after audited document-disjoint data,do not claim reproduction
+official 2026 winner system,not established,public UIT repo placement unverified,no winner claim

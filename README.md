@@ -8,13 +8,15 @@ Given a question and a complete PDF, this system retrieves evidence pages, reads
 
 The strongest engineering result: **the same 9B reader improved from 67.57% to 77.99% local LAVA after a citation-guided reread**. Both passes, their costs, and their failures are published. These are development measurements on 16 supplied training questions from five PDFs.
 
-**Project status, September 10, 2026:** the test submission is incomplete, with
-622 of 624 structurally complete answers preserved. The bounded targeted run
-recovered all three routed questions; two suspected question/document mismatches remain.
-No complete CSV or Kaggle score is claimed. The broader feature-research gate is
-open; the completed lexical grid is one part of that work.
+**Project status, September 23, 2026:** frontier reproduction is active. The historical
+test run preserves 622 of 624 structurally complete answers, but no complete official-scored
+entry or leaderboard rank is claimed. The latest development work adds multilingual E5
+and ColQwen retrieval, reaches 15/16 complete-evidence questions at top-5 and 16/16 at
+top-10 on the 16-question diagnostic, and has strict GPU load/generation receipts for
+Qwen3.5-9B BF16 and Qwen3.6-27B NF4. A fixed six-arm reader benchmark has persisted
+33 of 96 outputs and resumes from content-addressed caches; it is not yet scored.
 
-**Start with [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb), then [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb). All six notebooks include executed outputs; review requires no account, installation, or GPU.**
+**Start with [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb), then [Notebook 06](notebooks/06_frontier_reproduction_and_reader_benchmark.ipynb). All seven notebooks include executed outputs; review requires no account, installation, or GPU.**
 
 ![Measured answer quality, evidence quality and local LAVA across three input conditions](reports/system/quality.svg)
 
@@ -85,6 +87,13 @@ document and 16 query checkpoints in 0.052 seconds. These are retrieval diagnost
 not new answer-quality or Kaggle scores. The [research coverage table](docs/retrieval.md#feature-research-completion-gate)
 identifies the remaining untested families and validation requirements.
 
+
+### Reconstruct public systems before blending them
+
+The existing pipeline is now a control rather than a constraint. The [frontier reproduction program](docs/frontier_reproduction.md) independently reconstructs documented public mechanisms, tests them under one protocol, and combines only components that add complementary value. The current six-arm benchmark spans Qwen3.5-9B and Qwen3.6-27B readers, five- versus ten-page lexical context, public-method lexical+dense routing, ColQwen visual retrieval, evidence decomposition, and cross-modal conflict rereading. Competitor submission files are never imported, and unverified public-repository placement is not presented as a winning result.
+
+The latest field run completed both reader GPU contracts and persisted 33/96 development outputs before stopping on a lossless JSON representation mismatch in citation page numbers. The corrected cache contract reparses those saved deterministic generations rather than resampling them. See [Notebook 06](notebooks/06_frontier_reproduction_and_reader_benchmark.ipynb) and the [aggregate status receipt](reports/frontier/latest_status.json).
+
 ## Review the implementation
 
 | Notebook | What it demonstrates |
@@ -95,6 +104,7 @@ identifies the remaining untested families and validation requirements.
 | [03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Oracle reader comparison, uncertainty and resource use |
 | [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Full-PDF search, 1,582 candidates, document folds and visual retrieval |
 | [05 — Complete system](notebooks/05_end_to_end_system_evaluation.ipynb) | Measured retrieved-page answering and citation-guided rereading |
+| [06 — Frontier reproduction](notebooks/06_frontier_reproduction_and_reader_benchmark.ipynb) | Public-method reconstruction, visual/dense retrieval evidence, reader contracts, and resumable six-arm benchmark |
 
 - **Reliable execution:** deterministic SageMaker job names, bounded attempts, per-question S3 checkpoints, independent output parsing, UTC stage logs and heartbeats.
 - **Reproducibility:** immutable model/data/prompt contracts, a frozen judge, checksum-verified artifacts, and source/input/output manifests for every notebook.
@@ -127,4 +137,4 @@ These commands verify or refresh the public analysis and create no GPU job. Read
 
 Private documents, exact generations and model/judge checkpoints remain in S3. Git contains source, sanitized metrics and executed notebooks. GPU operations require explicit charge acknowledgment; compatible completed work is reused.
 
-[Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [System reproduction](docs/system_evaluation.md) · [Verified closeout](docs/closeout.md)
+[Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier reproduction](docs/frontier_reproduction.md) · [System reproduction](docs/system_evaluation.md) · [Verified closeout](docs/closeout.md)

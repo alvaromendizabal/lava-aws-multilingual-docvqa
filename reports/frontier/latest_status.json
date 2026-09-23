@@ -1,0 +1,49 @@
+{
+  "generated_utc": "2026-09-23T02:50:00Z",
+  "scope": "development evidence only; no private answers or test predictions",
+  "retrieval": {
+    "questions": 16,
+    "documents": 5,
+    "bm25_at_5": {
+      "evidence_recall": 0.953125,
+      "complete_evidence_questions": 14
+    },
+    "visual_at_5": {
+      "evidence_recall": 0.984375,
+      "complete_evidence_questions": 15
+    },
+    "bm25_visual_rrf_at_5": {
+      "evidence_recall": 0.984375,
+      "complete_evidence_questions": 15
+    },
+    "bm25_at_10": {
+      "evidence_recall": 1.0,
+      "complete_evidence_questions": 16
+    },
+    "visual_at_10": {
+      "evidence_recall": 1.0,
+      "complete_evidence_questions": 16
+    },
+    "e5_at_5": {
+      "evidence_recall": 0.921875,
+      "complete_evidence_questions": 13
+    }
+  },
+  "reader_model_contract": {
+    "qwen3_5_9b_bf16": "passed strict load + synthetic generation",
+    "qwen3_6_27b_nf4": "passed strrict load + synthetic generation",
+    "gpu": "NVIDIA L40S",
+    "research_calls_during_model_preflight": 0
+  },
+  "end_to_end_progress": {
+    "arm_A_schema_valid": 16,
+    "arm_B_schema_valid": 16,
+    "arm_C_raw_generations_completed": 1,
+    "completed_final_outputs": 33,
+    "expected_final_outputs": 96,
+    "latest_stop_reason": "lossless page identifiers were serialized as digit strings; parser v4 normalizes them without resampling",
+    "official_score_verified": false,
+    "production_promoted": false
+  },
+  "next": "resume the same six-arm benchmark from cached raw generations; score only after all 96 development outputs are persisted"
+}
