@@ -21,6 +21,7 @@ from pydantic import (
 
 from lava.evaluation.normalization import parse_evidence_pages
 from lava.evaluation.schemas import AnswerFormat
+from lava.readers.output_normalization import normalize_model_evidence_pages
 from lava.readers.schemas import ReaderPrediction
 from lava.readers.structured_output import extract_json_candidate
 
@@ -136,6 +137,17 @@ def parse_reader_response(
         raise ReaderOutputError(str(error), code="invalid_json") from error
     if not isinstance(decoded, dict):
         raise ReaderOutputError("Reader output must be a JSON object", code="wrong_root_type")
+
+    if "evidence_pages" in decoded:
+        try:
+            normalized_pages = normalize_model_evidence_pages(decoded["evidence_pages"])
+        except (TypeError, ValueError) as error:
+            raise ReaderOutputError(
+                f"Invalid evidence pages: {error}",
+                code="invalid_pages",
+            ) from error
+        decoded = {**decoded, "evidence_pages": list(normalized_pages.pages)}
+
     try:
         payload = _ReaderPayload.model_validate(decoded)
     except ValidationError as error:
