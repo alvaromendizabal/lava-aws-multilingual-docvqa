@@ -49,7 +49,7 @@ def normalize_model_evidence_pages(
     pages: list[int] = []
     converted = 0
     for candidate in value:
-        if type(candidate) is int:
+        if isinstance(candidate, int) and not isinstance(candidate, bool):
             page = candidate
         elif isinstance(candidate, str) and _DECIMAL_PAGE.fullmatch(candidate.strip()):
             page = int(candidate.strip())
