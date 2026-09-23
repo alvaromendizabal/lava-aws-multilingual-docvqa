@@ -4,6 +4,7 @@ This module intentionally contains no private questions, answers, predictions, o
 It captures the public experimental contract: fixed reader arms, retrieval fusion helpers,
 lossless evidence-page normalization, and parser-independent generation-cache identity.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -25,7 +26,9 @@ ARMS: tuple[ReproductionArm, ...] = (
     ReproductionArm("C", "Qwen3.6-27B NF4", "UIT-style BM25Plus + E5 adaptive", "direct"),
     ReproductionArm("D", "Qwen3.6-27B NF4", "BM25 + ColQwen adaptive", "direct"),
     ReproductionArm("E", "Qwen3.6-27B NF4", "BM25 + ColQwen adaptive", "evidence decomposition"),
-    ReproductionArm("F", "Qwen3.6-27B NF4", "BM25 + ColQwen adaptive", "cross-modal conflict reread"),
+    ReproductionArm(
+        "F", "Qwen3.6-27B NF4", "BM25 + ColQwen adaptive", "cross-modal conflict reread"
+    ),
 )
 
 
@@ -55,7 +58,12 @@ def normalize_evidence_pages(value: Any, allowed: Sequence[int]) -> list[int]:
 
 def generation_semantics(request: Mapping[str, Any]) -> dict[str, Any]:
     """Strip parser/report implementation identity from a deterministic generation request."""
-    ignored = {"implementation", "generation_contract_version", "parser_contract_version", "model_runtime_sha256"}
+    ignored = {
+        "implementation",
+        "generation_contract_version",
+        "parser_contract_version",
+        "model_runtime_sha256",
+    }
     return {key: value for key, value in request.items() if key not in ignored}
 
 
