@@ -7,9 +7,10 @@ lossless evidence-page normalization, and parser-independent generation-cache id
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,7 @@ def normalize_evidence_pages(value: Any, allowed: Sequence[int]) -> list[int]:
     Floats, decimal strings, booleans, zero, duplicates, and unavailable pages are rejected.
     """
     if not isinstance(value, list):
-        raise ValueError("evidence_pages must be a list")
+        raise TypeError("evidence_pages must be a list")
     normalized: list[int] = []
     for item in value:
         if type(item) is int:
