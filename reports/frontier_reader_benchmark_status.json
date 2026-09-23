@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-23T16:30:00Z",
+  "benchmark": "six-arm end-to-end reader frontier",
+  "setting": "16-question reused development diagnostic",
+  "official_kaggle_score": null,
+  "production_promoted": false,
+  "retrieval_diagnostics": {
+    "bm25_at_5": {
+      "evidence_recall": 0.953125,
+      "complete_evidence_questions": 14,
+      "question_count": 16
+    },
+    "colqwen_at_5": {
+      "evidence_recall": 0.984375,
+      "complete_evidence_questions": 15,
+      "question_count": 16
+    },
+    "bm25_at_10": {
+      "evidence_recall": 1.0,
+      "complete_evidence_questions": 16,
+      "question_count": 16
+    },
+    "colqwen_at_10": {
+      "evidence_recall": 1.0,
+      "complete_evidence_questions": 16,
+      "question_count": 16
+    }
+  },
+  "latest_field_run": {
+    "status": "incomplete_no_score",
+    "model_preflight": {
+      "qwen35_9b_bf16": "passed",
+      "qwen36_27b_nf4": "passed"
+    },
+    "final_answers_persisted": 33,
+    "expected_final_answers": 96,
+    "new_generation_calls": 29,
+    "reused_generation_calls": 4,
+    "failure_class": "strict output schema serialization drift",
+    "failure_detail": "exact decimal citation strings were rejected as non-integer JSON values"
+  },
+  "resume_contract": {
+    "raw_generation_cache_separated_from_parser": true,
+    "legacy_raw_generation_checksum_required": true,
+    "parser_only_changes_reuse_model_preflight": true,
+    "lossless_decimal_string_page_normalization": true,
+    "ambiguous_page_values_rejected": true,
+    "first_invalid_output_aborts_run": false,
+    "consecutive_invalid_stop_count": 3,
+    "maximum_unique_generation_requests": 144
+  },
+  "limitations": [
+    "No end-to-end benchmark score is available from the incomplete field run.",
+    "The development panel is small and previously examined.",
+    "The official competition score and leaderboard gap are not verified in this artifact."
+  ]
+}
