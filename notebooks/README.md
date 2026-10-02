@@ -21,3 +21,17 @@ In Studio, this folder is `/home/sagemaker-user/lava-aws-multilingual-docvqa/not
 ## Optional integrated evaluation
 
 [05 — Retrieved-evidence evaluation](05_end_to_end_system_evaluation.ipynb) explains the label-blind input design, actual measurement status, failure analysis and recovery. It can be viewed without a GPU. The measured component benchmark remains complete. Its optional GPU attempt was stopped at closeout. No further run is required; the [operator guide](../docs/system_evaluation.md) is retained for deliberate future reproduction.
+
+## Frontier research after the canonical notebook snapshot
+
+Later reader/retrieval work is published separately in
+[the frontier research update](../docs/frontier_research_update.md) and
+[aggregate research artifacts](../research/README.md).
+
+The six notebooks above remain the canonical executed notebook set because their
+publication manifests are checksum-bound to the exact source and analysis inputs
+they actually executed. The October frontier results are not retroactively
+inserted into those notebooks without a legitimate re-execution. This preserves
+the distinction between executed notebook evidence and later aggregate research
+findings.
+
