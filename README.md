@@ -14,6 +14,18 @@ recovered all three routed questions; two suspected question/document mismatches
 No complete CSV or Kaggle score is claimed. The broader feature-research gate is
 open; the completed lexical grid is one part of that work.
 
+**Frontier research update, October 2, 2026:** a later apples-to-apples semantic
+reader ablation kept the pinned Qwen3.5-9B reader as the local frontier. On the
+same 16-question oracle-evidence diagnostic and pinned semantic judge, the
+historical 9B reader scores **87.02% local LAVA**, while the strongest tested
+Qwen3.6-27B arm scores **72.50%**. Even a label-leaky oracle selector across the
+tested 27B arms reaches only **79.58%**, so the one-shot 27B branch is not
+promoted. The next ceiling-escape experiment keeps the stronger 9B checkpoint
+fixed and tests self-consistency plus targeted crop/zoom perception before
+moving to exhaustive page screening and explicit table/numeric reasoning.
+See the [frontier research update](docs/frontier_research_update.md) and
+[machine-readable aggregate evidence](research/README.md).
+
 **Start with [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb), then [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb). All six notebooks include executed outputs; review requires no account, installation, or GPU.**
 
 ![Measured answer quality, evidence quality and local LAVA across three input conditions](reports/system/quality.svg)
@@ -127,4 +139,4 @@ These commands verify or refresh the public analysis and create no GPU job. Read
 
 Private documents, exact generations and model/judge checkpoints remain in S3. Git contains source, sanitized metrics and executed notebooks. GPU operations require explicit charge acknowledgment; compatible completed work is reused.
 
-[Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [System reproduction](docs/system_evaluation.md) · [Verified closeout](docs/closeout.md)
+[Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier research](docs/frontier_research_update.md) · [System reproduction](docs/system_evaluation.md) · [Verified closeout](docs/closeout.md)
