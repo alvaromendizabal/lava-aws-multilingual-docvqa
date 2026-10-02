@@ -1,0 +1,14 @@
+category,system_or_policy,k,answer_score,grounding_f1,local_lava,evidence_recall,complete_evidence_questions,schema_valid_rate,status
+retrieval,BM25,5,,,,0.953125,14,,measured
+retrieval,multilingual_E5,5,,,,0.921875,13,,measured_not_promoted
+retrieval,ColQwen_visual,5,,,,0.984375,15,,measured
+retrieval,BM25_visual_fusion,5,,,,0.984375,15,,measured
+retrieval,BM25,10,,,,1.0,16,,measured
+retrieval,ColQwen_visual,10,,,,1.0,16,,measured
+reader,Qwen3.5_9B_gold_evidence,,0.8014880952,0.9389880952,0.8702380952,,,1.0,reader_frontier
+system,Qwen3.5_9B_two_pass_retrieved,,0.6765,0.8833,0.7799,,,,end_to_end_best
+reader,Qwen3.6_27B_text_direct,,0.44375,0.7916666667,0.6177083333,,,0.8125,not_promoted
+reader,Qwen3.6_27B_fused_direct,,0.54375,0.90625,0.725,,,1.0,best_27b_not_promoted
+reader,Qwen3.6_27B_verified_synthesis,,0.4979166667,0.90625,0.7020833333,,,1.0,not_promoted
+reader,Qwen3.6_27B_selective_adjudication,,0.6229166667,0.6770833333,0.65,,,0.75,not_promoted
+reader,Qwen3.6_27B_oracle_of_arms_upper_bound,,0.6854166667,0.90625,0.7958333333,,,,label_leaky_upper_bound_only
