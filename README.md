@@ -52,7 +52,7 @@ All figures below use the same frozen 16-question development panel from five su
 | Citation-guided Qwen3.5-9B reread | complete two-pass system | 67.65% | 88.33% | **77.99%** |
 | Heterogeneous routed system | nested leave-one-document-out | — | — | **82.68%** |
 
-The two-pass Qwen system improved the first-pass question average by **10.42 percentage points** while using the same 9B reader. The later heterogeneous system was then evaluated with a stronger selection protocol: the candidate family was frozen before each held-out document was scored, and routing decisions were learned only from the other documents. That out-of-fold result improved the prior incumbent by **4.69 percentage points**, with two documents improving and none regressing.
+The two-pass Qwen system improved the first-pass question average by **10.42 percentage points** while using the same 9B reader. This remains a **post-hoc development finding** on the reused labeled panel; the later heterogeneous result uses document-disjoint selection to provide a stronger validation view. The later heterogeneous system was then evaluated with a stronger selection protocol: the candidate family was frozen before each held-out document was scored, and routing decisions were learned only from the other documents. That out-of-fold result improved the prior incumbent by **4.69 percentage points**, with two documents improving and none regressing.
 
 The exact competition-specific routing rule is intentionally not published. The public evidence is the validation design, aggregate result, and model-family provenance.
 
@@ -159,7 +159,7 @@ The six canonical notebooks remain the checksum-bound executed evidence for the 
 3. [Notebook 04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb)
 4. [Architecture and lineage](docs/architecture.md)
 
-## Scope and reproducibility
+## Scope and limitations
 
 The canonical notebooks are executed evidence for the earlier benchmark state and remain checksum-bound to the exact source/input state they actually ran. Later frontier research is published separately as aggregate evidence rather than retroactively rewriting notebook outputs without a legitimate rerun.
 
