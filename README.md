@@ -4,7 +4,7 @@
 
 **Applied multimodal ML research · Document intelligence · AWS · Reproducible evaluation**
 
-LAVA is an end-to-end document intelligence research system for multilingual PDF question answering. It retrieves evidence from complete documents, reads page images and native text with vision-language models, produces structured answers with physical-page citations, validates those citations, and evaluates answer semantics and grounding together.
+LAVA is an **Applied ML research system** for end-to-end multilingual PDF question answering. It retrieves evidence from complete documents, reads page images and native text with vision-language models, produces structured answers with physical-page citations, validates those citations, and evaluates answer semantics and grounding together.
 
 The project is built like a production ML system rather than a notebook-only experiment: immutable model/data contracts, document-disjoint validation, resumable GPU inference, per-question checkpoints, exact artifact hashing, explicit promotion gates, and public-safe research evidence are first-class parts of the design.
 
@@ -163,9 +163,9 @@ The six canonical notebooks remain the checksum-bound executed evidence for the 
 
 The canonical notebooks are executed evidence for the earlier benchmark state and remain checksum-bound to the exact source/input state they actually ran. Later frontier research is published separately as aggregate evidence rather than retroactively rewriting notebook outputs without a legitimate rerun.
 
-The labeled development set contains 16 questions from five supplied PDFs: 15 Japanese and one Vietnamese. The metric follows the published LAVA structure with a pinned local semantic judge. These measurements are therefore research evidence for model and system decisions, not a substitute for external evaluation.
+The labeled development set contains 16 questions from five supplied PDFs: 15 Japanese and one Vietnamese. The metric follows the published LAVA structure with a pinned local semantic judge. These measurements are therefore research evidence for model and system decisions, not a substitute for external evaluation. They are **not official server scores**.
 
-The private 624-question inference workflow runs in AWS with resumable checkpoints and strict structural validation. Public Git intentionally excludes the private predictions and exact competition routing implementation.
+The private 624-question inference workflow runs in AWS with resumable checkpoints and strict structural validation. At this publication snapshot, the **test submission is incomplete**. Public Git intentionally excludes the private predictions and exact competition routing implementation. **No complete CSV or Kaggle score is claimed.**
 
 ## Reproduce and inspect
 
