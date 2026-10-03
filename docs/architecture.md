@@ -1,50 +1,155 @@
 # Architecture and experiment lineage
 
-LAVA separates label-free inference from reference-based evaluation. The deployed cloud workloads are managed batch inference jobs; model weights are frozen.
+LAVA is organized as a **retrieval → multimodal reading → validation → checkpointing** system. Reference answers are isolated from inference, model and representation identities are pinned, and long-running GPU work is resumable at question granularity.
+
+## Current system
 
 ```mermaid
 flowchart TD
-    P["Pinned PDFs and questions"] --> T["Native text extraction"]
-    T --> B["Full-document BM25"]
-    B --> R["9B reader: selected images and text"]
-    R --> C["Validated first-pass citations"]
-    C --> S["9B reread: cited pages"]
-    R --> E["Answer and citation evaluation"]
-    S --> E
-    G["Reference answers and pages"] --> E
-    E --> N["Verified reports and notebooks"]
-    R --> K["S3 answer checkpoints"]
-    S --> K
+    A["Pinned PDF + question"] --> B["Native text + page images"]
+    B --> C["Full-document lexical retrieval"]
+    C --> D["Evidence-page bundle"]
+    D --> R{"Frozen router"}
+    R -->|path A| Q["Qwen3.5-9B"]
+    Q --> QR["Citation-guided reread"]
+    R -->|path B| G["Gemma 4 12B W4A16"]
+    G --> GR["Self-cited-page reread"]
+    QR --> V["Schema + evidence validation"]
+    GR --> V
+    V --> K["Immutable per-question checkpoint"]
+    K --> M["Coverage + ordering merge gate"]
+    REF["Reference answers and pages"] --> E["Development evaluation only"]
+    QR --> E
+    GR --> E
 ```
 
-Reference answers and evidence pages enter evaluation only. The first pass ranks all physical pages of the question’s PDF, presents up to five pages, and validates that citations belong to the supplied input. The second pass retains valid self-cited pages, falling back to the original set when necessary. It always returns the second answer; no label-based per-question selection is performed.
+The router is frozen before test inference. It does not inspect private answers or gold evidence. The public repository documents the routing experiment and aggregate validation result while intentionally withholding the turnkey competition policy.
 
-## Completed experiments
+## Baseline lineage
 
-The audit verified 208 raw files and all 205 PDFs. Oracle reader pilots covered all 16 training questions; retrieval searched all 74 pages of their five PDFs. Integrated first-pass and second-pass answers were subsequently generated and scored on those same questions.
+The original complete system used:
 
-| Configuration | Verified instance | Role |
-| --- | --- | --- |
-| Qwen3.5 4B BF16 | `ml.g5.2xlarge` | Oracle reader comparison |
-| Qwen3.5 9B BF16 | `ml.g6e.2xlarge` | Oracle reader comparison |
-| Qwen3.8 27B NF4 | `ml.g5.2xlarge` | Quantized larger-reader comparison |
-| Qwen3.5 9B BF16 | `ml.g6e.8xlarge` | Retrieved-page first pass and citation-guided reread |
-| colSmol-500M | `ml.m7i.2xlarge` | Exploratory page-image retrieval |
+1. full-document BM25 retrieval;
+2. up to five selected physical pages;
+3. a pinned Qwen3.5-9B multimodal reader;
+4. structured answer + physical-page citations;
+5. a fixed second pass over the reader's own valid citations.
 
-The successful integrated attempts used an available larger host with the same single L40S GPU class and reader configuration. The model registry retains historical candidates for lineage; they are not unfinished experiments.
+Reference answers and evidence pages enter only after inference. The second pass always returns the second answer; labels never choose a per-question prediction.
 
-## Feature research
+That baseline measures **77.99% local LAVA** on the supplied development panel.
 
-The lexical audit caches token statistics, checkpoints 11 BM25 families and one fusion/exploration family, and records all 1,582 candidate rankings before scoring. Candidate signatures used for selection contain only the four training documents in each outer fold. Global duplicate counts and pooled family scores are descriptive. The conservative gate requires improvement across multiple training documents; the fixed BM25 baseline survived every fold.
+## Heterogeneous routed system
 
-## Verification and durability
+Later experiments showed complementary reader behavior rather than a universal single-model winner. A compressed Gemma 4 multimodal reader was therefore evaluated alongside the Qwen baseline.
 
-A Completed job is followed by artifact verification: source lineage, complete unique question coverage, exact generation checksums, independently parsed citations, and the common semantic judge. Invalid model outputs remain in the denominator.
+A compact prespecified routing family was selected in nested held-out-document folds. The validated routed challenger measures **82.68% local LAVA**, improving two held-out documents and regressing none relative to the 77.99% baseline.
 
-Private documents, page images, generations and judge decisions remain in S3. Conditional writes and read-back checks protect checkpoints. Deterministic job names allow reattachment after monitor interruption; failed or stopped attempts require an explicit retry. UTC events report stage and total elapsed time, progress and heartbeats.
+See [validated heterogeneous routing](heterogeneous_routing_update.md) for the public-safe methodology and systems details.
 
-All six notebooks live directly in `notebooks/`. Manifests in `reports/notebook_execution/` bind executable source, public inputs and completed outputs. Successful staging records recover interrupted publication; a failed execution preserves the previous publication.
+## Representation contracts
 
-The canonical Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Source lives in `src/lava/`, operator commands in `scripts/`, frozen settings in `configs/`, and batch entry points in `pipelines/`. No endpoint or application service is required to review the release.
+Vision-language inference treats preprocessing as part of model identity.
 
-[Measured results and limitations](../README.md#scope-and-limitations) · [System operation](system_evaluation.md)
+Page representations bind:
+
+- source PDF checksum/version;
+- physical page number;
+- rasterization procedure;
+- image checksum;
+- extracted text checksum;
+- model/processor revision.
+
+For later multimodal work, the historical reread renderer was recovered from the exact successful experiment source and reproduced byte-for-byte before being reused on new documents. This prevents silent image-pipeline drift from masquerading as model change.
+
+## Reader execution
+
+Qwen and Gemma execute in separate phases on the single-GPU workflow so their weights are never resident simultaneously.
+
+### Qwen path
+
+The Qwen reader uses deterministic generation and a second read over validated first-pass citations. Per-question checkpoints allow the pipeline to resume without repeating completed inference.
+
+For isolated requests that exceeded the L4 memory envelope, the system used the same BF16 checkpoint and prompt with Accelerate-managed GPU/CPU weight placement. The offloaded path was permitted only after byte-identical raw-generation parity on difficult already-completed questions.
+
+### Gemma path
+
+Gemma 4 W4A16 runs through a pinned vLLM environment. Before increasing batching, the pipeline compared real routed prompts at batch sizes 1, 2, and 3 and required byte-identical greedy outputs for both direct and self-citation passes.
+
+Batch 3 passed the parity gate and delivered substantially better measured throughput.
+
+## Durable inference
+
+Every completed question is a separate immutable checkpoint. A compatible rerun verifies and reuses completed work before constructing model weights.
+
+Checkpoint and run contracts bind:
+
+- source revision;
+- data manifest;
+- model revision;
+- page representation;
+- prompt/schema contract;
+- routing contract;
+- inference implementation;
+- parent-run lineage.
+
+A final candidate is blocked unless coverage, unique IDs, ordering, answer serialization, citations, and physical page bounds all validate.
+
+## Process lifecycle and recovery
+
+The execution layer emits UTC events and heartbeats with:
+
+- stage and progress counts;
+- elapsed time;
+- GPU memory/utilization;
+- process RSS and host RAM;
+- disk headroom;
+- checkpoint reuse/new counts;
+- estimated compute spend.
+
+A failure in one stage packages diagnostics and exits nonzero rather than silently continuing.
+
+GPU child workers execute in isolated process groups. Timeout handling terminates the entire worker tree, including inference-engine descendants. Stale GPU-process cleanup is fail-closed and requires provenance linking the process to a recorded project run.
+
+## Completed research families
+
+The project has evaluated:
+
+| Family | Role |
+| --- | --- |
+| BM25 lexical retrieval | durable baseline |
+| multilingual dense retrieval | retrieval challenger |
+| page-image retrieval | visual evidence discovery |
+| lexical + visual fusion | hybrid retrieval |
+| Qwen3.5 4B / 9B | reader scaling |
+| larger quantized Qwen variants | controlled scaling / negative result |
+| citation-guided reread | baseline refinement |
+| self-consistency | reader robustness study |
+| targeted crop/zoom perception | active-perception study |
+| exhaustive page screening | high-recall retrieval study |
+| explicit numerical/table reasoning | specialist reasoning study |
+| Gemma 4 W4A16 | heterogeneous reader |
+| document-disjoint model routing | validated system challenger |
+
+The repository keeps negative results because branch-kill decisions are part of disciplined ML development.
+
+## Reproducibility boundary
+
+Public Git contains source, aggregate metrics, contracts, reports, and executed notebooks sufficient to review the engineering and research decisions.
+
+Private storage retains:
+- source documents where redistribution is inappropriate;
+- test questions/answers;
+- raw generations;
+- private evaluation decisions;
+- test predictions;
+- credentials and cloud object locations;
+- exact competition orchestration.
+
+The canonical Studio checkout is:
+
+`/home/sagemaker-user/lava-aws-multilingual-docvqa`
+
+Source lives in `src/lava/`, operator commands in `scripts/`, frozen settings in `configs/`, and batch entry points in `pipelines/`.
+
+[Measured results](../README.md) · [Validated routing](heterogeneous_routing_update.md) · [System evaluation](system_evaluation.md)
