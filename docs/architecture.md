@@ -78,4 +78,4 @@ Private: restricted source documents, private questions/answers, raw generations
 
 The canonical Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`.
 
-[Portfolio overview](portfolio.md) · [Frontier research](frontier_research_update.md) · [System operation](system_evaluation.md)
+[Portfolio overview](portfolio.md) · [Validated routing](heterogeneous_routing_update.md) · [Frontier research](frontier_research_update.md) · [System operation](system_evaluation.md)
