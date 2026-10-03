@@ -1,50 +1,81 @@
 # Architecture and experiment lineage
 
-LAVA separates label-free inference from reference-based evaluation. The deployed cloud workloads are managed batch inference jobs; model weights are frozen.
+LAVA separates label-free inference, model specialization, and reference-based evaluation. The private cloud workflow is a resumable batch system; the public repository contains the reusable architecture and sanitized evidence.
 
 ```mermaid
 flowchart TD
-    P["Pinned PDFs and questions"] --> T["Native text extraction"]
-    T --> B["Full-document BM25"]
-    B --> R["9B reader: selected images and text"]
-    R --> C["Validated first-pass citations"]
-    C --> S["9B reread: cited pages"]
-    R --> E["Answer and citation evaluation"]
-    S --> E
-    G["Reference answers and pages"] --> E
-    E --> N["Verified reports and notebooks"]
-    R --> K["S3 answer checkpoints"]
-    S --> K
+    P["Pinned PDF + question"] --> X["Native text + page image assets"]
+    X --> R["Lexical / dense / visual retrieval"]
+    R --> A["Reader family A"]
+    R --> B["Reader family B"]
+    A --> SA["Structured answer + citations"]
+    B --> SB["Structured answer + citations"]
+    SA --> V["Schema + page-bound validation"]
+    SB --> V
+    V --> H["Frozen lightweight routing / selection"]
+    H --> O["Final routed prediction"]
+    G["References: evaluation only"] --> E["Semantic answer + grounding evaluation"]
+    O --> E
+    E --> D["Document-disjoint research decisions"]
+    O --> K["Per-question checkpoints"]
+    D --> N["Public-safe reports + executed notebooks"]
 ```
 
-Reference answers and evidence pages enter evaluation only. The first pass ranks all physical pages of the question’s PDF, presents up to five pages, and validates that citations belong to the supplied input. The second pass retains valid self-cited pages, falling back to the original set when necessary. It always returns the second answer; no label-based per-question selection is performed.
+The exact private routing rule is intentionally not published. The public contract exposes model families, aggregate measurements, held-out-document validation, and promotion logic.
 
-## Completed experiments
+## Completed research layers
 
-The audit verified 208 raw files and all 205 PDFs. Oracle reader pilots covered all 16 training questions; retrieval searched all 74 pages of their five PDFs. Integrated first-pass and second-pass answers were subsequently generated and scored on those same questions.
+### Data and representation
+- audited 208 raw files including all 205 PDFs;
+- physical-page identities retained throughout the pipeline;
+- native text and rendered page assets checksum-bound;
+- evidence citations validated against supplied physical pages.
 
-| Configuration | Verified instance | Role |
-| --- | --- | --- |
-| Qwen3.5 4B BF16 | `ml.g5.2xlarge` | Oracle reader comparison |
-| Qwen3.5 9B BF16 | `ml.g6e.2xlarge` | Oracle reader comparison |
-| Qwen3.8 27B NF4 | `ml.g5.2xlarge` | Quantized larger-reader comparison |
-| Qwen3.5 9B BF16 | `ml.g6e.8xlarge` | Retrieved-page first pass and citation-guided reread |
-| colSmol-500M | `ml.m7i.2xlarge` | Exploratory page-image retrieval |
+### Retrieval
+The system evaluates lexical BM25, multilingual dense retrieval, page-image late interaction, and visual/lexical fusion. The public retrieval audit materializes rankings before label scoring and uses document-fold isolation for candidate selection.
 
-The successful integrated attempts used an available larger host with the same single L40S GPU class and reader configuration. The model registry retains historical candidates for lineage; they are not unfinished experiments.
+### Reader systems
+The project evaluates multiple open multimodal reader families and precision/runtime profiles. The measured incumbent uses a two-pass citation-guided reread: a first prediction proposes evidence pages, then the same reader rereads only its valid citations with a deterministic fallback.
 
-## Feature research
+A later heterogeneous-reader study adds a deliberately different compressed multimodal model. It is not promoted on standalone score; its complementary error profile motivates a routed candidate family.
 
-The lexical audit caches token statistics, checkpoints 11 BM25 families and one fusion/exploration family, and records all 1,582 candidate rankings before scoring. Candidate signatures used for selection contain only the four training documents in each outer fold. Global duplicate counts and pooled family scores are descriptive. The conservative gate requires improvement across multiple training documents; the fixed BM25 baseline survived every fold.
+### Validation
+The routed candidate is evaluated with nested leave-one-document-out selection. For each outer fold, the candidate family is frozen and the selected policy is learned only from the remaining documents. The held-out document contributes exactly once to the aggregate.
 
-## Verification and durability
+This produces a **82.68% out-of-fold local LAVA** development estimate versus **77.99%** for the prior two-pass incumbent.
 
-A Completed job is followed by artifact verification: source lineage, complete unique question coverage, exact generation checksums, independently parsed citations, and the common semantic judge. Invalid model outputs remain in the denominator.
+## Reliability architecture
 
-Private documents, page images, generations and judge decisions remain in S3. Conditional writes and read-back checks protect checkpoints. Deterministic job names allow reattachment after monitor interruption; failed or stopped attempts require an explicit retry. UTC events report stage and total elapsed time, progress and heartbeats.
+The private AWS workflow treats inference as a durable data pipeline rather than a single model call:
 
-All six notebooks live directly in `notebooks/`. Manifests in `reports/notebook_execution/` bind executable source, public inputs and completed outputs. Successful staging records recover interrupted publication; a failed execution preserves the previous publication.
+- deterministic run and contract identities;
+- per-question checkpoints;
+- content-addressed assets;
+- exact read-back verification;
+- bounded runtime and cost controls;
+- periodic heartbeats and resource telemetry;
+- explicit failure classes;
+- process isolation and cleanup;
+- resume without regenerating completed questions;
+- strict final coverage/schema/evidence gates.
 
-The canonical Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`. Source lives in `src/lava/`, operator commands in `scripts/`, frozen settings in `configs/`, and batch entry points in `pipelines/`. No endpoint or application service is required to review the release.
+A failed or stopped run preserves completed work. Changes to model revision, source contract, prompt implementation, or representation identity invalidate incompatible checkpoints instead of silently reusing them.
 
-[Measured results and limitations](../README.md#scope-and-limitations) · [System operation](system_evaluation.md)
+## Reproducibility boundary
+
+Public: source implementation, frozen public configs, model/judge revisions, aggregate metrics, sanitized receipts, executed notebooks, architecture, and validation contracts.
+
+Private: restricted source documents, private questions/answers, raw generations, test predictions, competition-specific routing details, credentials/private object locations, and model caches.
+
+## Canonical review paths
+
+- `notebooks/` — executed benchmark evidence
+- `research/` — later aggregate frontier evidence
+- `reports/` — measured sanitized outputs
+- `configs/` — frozen contracts
+- `src/lava/` — reusable implementation
+- `pipelines/` — bounded batch entry points
+
+The canonical Studio checkout is `/home/sagemaker-user/lava-aws-multilingual-docvqa`.
+
+[Portfolio overview](portfolio.md) · [Validated routing](heterogeneous_routing_update.md) · [Frontier research](frontier_research_update.md) · [System operation](system_evaluation.md)

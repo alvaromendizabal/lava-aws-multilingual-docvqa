@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
-  "generated_at_utc": "2026-10-02T03:20:00Z",
-  "scope": "public-safe aggregate research state; no private questions, raw generations, test predictions, credentials, or cloud object locations",
+  "schema_version": 2,
+  "generated_at_utc": "2026-10-03T03:57:00Z",
+  "scope": "public-safe aggregate research state; excludes private questions, raw generations, test predictions, exact routing rules, credentials, cloud object locations, and private orchestration",
   "evaluation": {
     "panel_questions": 16,
     "panel_documents": 5,
@@ -13,14 +13,28 @@
     "judge_model": "google/gemma-3-1b-it",
     "judge_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
     "judge_contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
-    "official_server_score": null,
-    "boundary": "local published-formula score; organizer prompt/runtime not public"
+    "external_evaluation": null,
+    "boundary": "local published-formula research score under a pinned semantic judge"
   },
-  "end_to_end_best": {
-    "semantic_answer": 0.6765,
-    "evidence_f1": 0.8833,
-    "local_lava": 0.7799,
-    "note": "two-pass citation-guided reread; reused development panel"
+  "incumbent_two_pass": {
+    "system": "retrieval -> Qwen3.5-9B -> citation-guided reread",
+    "semantic_answer": 0.6764880952380953,
+    "evidence_f1": 0.8833333333333333,
+    "local_lava": 0.7799107142857142
+  },
+  "validated_routed_challenger": {
+    "local_lava": 0.8267857142857142,
+    "delta_vs_incumbent": 0.046875,
+    "validation": "nested_leave_one_document_out",
+    "documents_improved": 2,
+    "documents_regressed": 0,
+    "exploratory_cluster_bootstrap_delta_95": [
+      0.01785714285714285,
+      0.16176470588235295
+    ],
+    "selected_heterogeneous_route_outer_folds": 4,
+    "outer_folds": 5,
+    "exact_private_route_published": false
   },
   "reader_frontier": {
     "model_id": "Qwen/Qwen3.5-9B",
@@ -56,50 +70,35 @@
       "complete_evidence_questions": 16
     }
   },
-  "qwen36_27b_semantic_ablation": {
-    "status": "not_promoted",
-    "model_family": "Qwen3.6-27B AWQ",
-    "text_direct": {
-      "answer": 0.44375,
-      "grounding": 0.7916666666666666,
-      "overall": 0.6177083333333333,
-      "schema_valid_rate": 0.8125
+  "experiments": {
+    "larger_one_shot_reader": {
+      "status": "not_promoted",
+      "best_local_lava": 0.725
     },
-    "fused_direct": {
-      "answer": 0.54375,
-      "grounding": 0.90625,
-      "overall": 0.725,
-      "schema_valid_rate": 1
+    "self_consistency_active_perception": {
+      "status": "not_promoted",
+      "single_control_local_lava": 0.8233630952,
+      "best_local_lava": 0.8348214286
     },
-    "verified_synthesis": {
-      "answer": 0.4979166666666667,
-      "grounding": 0.90625,
-      "overall": 0.7020833333333334,
-      "schema_valid_rate": 1
+    "exhaustive_screening_reasoning": {
+      "status": "not_promoted",
+      "best_overall_local_lava": 0.6920634921,
+      "numeric_slice_local_lava": 1,
+      "numeric_questions": 4
     },
-    "selective_adjudication": {
-      "answer": 0.6229166666666667,
-      "grounding": 0.6770833333333334,
-      "overall": 0.65,
-      "schema_valid_rate": 0.75
-    },
-    "oracle_of_arms_upper_bound": {
-      "answer": 0.6854166666666667,
-      "grounding": 0.90625,
-      "overall": 0.7958333333333334
-    },
-    "decision": "kill_one_shot_27b_branch_return_to_9b_incumbent"
+    "gemma4_12b": {
+      "status": "standalone_not_promoted_complementary",
+      "model_id": "google/gemma-4-12B-it-qat-w4a16-ct",
+      "oracle_local_lava": 0.8125,
+      "retrieved_direct_local_lava": 0.65625,
+      "selfcite_local_lava": 0.78125,
+      "selfcite_schema_valid_rate": 0.9375
+    }
   },
-  "next_experiment": {
-    "id": "E07",
-    "status": "pending_execution",
-    "model_id": "Qwen/Qwen3.5-9B",
-    "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
-    "capabilities": [
-      "SC-8 self-consistency",
-      "targeted crop/zoom active perception",
-      "deterministic consensus"
-    ],
-    "follow_up_if_no_promotion": "E01 exhaustive/high-recall page screening + explicit numerical/table reasoning"
+  "private_full_test_stage": {
+    "questions": 624,
+    "status": "active_resumable_aws_inference",
+    "public_predictions": false,
+    "exact_routing_rule_public": false
   }
 }
