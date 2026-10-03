@@ -2,29 +2,30 @@
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
 
-**Applied ML research system · Python · Open vision-language models · AWS**
+**Applied ML systems research · Multimodal document intelligence · Python · PyTorch · vLLM · AWS**
 
-Given a question and a complete PDF, this system retrieves evidence pages, reads their images and native text, and returns a structured answer with physical-page citations. I built and evaluated the full pipeline, compared three reader configurations, audited 1,582 retrieval configurations, and tested a targeted second read using the model’s own citations.
+I built this end-to-end multilingual document-intelligence system to answer questions over long PDFs with grounded physical-page citations. The project combines lexical and visual retrieval, multimodal vision-language readers, structured generation, document-disjoint validation, immutable experiment contracts, resumable GPU inference, and failure-safe AWS execution.
 
-The strongest engineering result: **the same 9B reader improved from 67.57% to 77.99% local LAVA after a citation-guided reread**. Both passes, their costs, and their failures are published. These are development measurements on 16 supplied training questions from five PDFs.
+The strongest validated development result is a **heterogeneous routed system that improves local LAVA from 77.99% to 82.68% under document-disjoint evaluation** while preserving a fixed, label-blind routing policy. The system combines two complementary reader families rather than assuming that one larger model should solve every question type. This result is measured on the supplied development documents with the project's pinned local evaluator; it is not presented as an official competition score.
 
-**Project status, September 10, 2026:** the test submission is incomplete, with
-622 of 624 structurally complete answers preserved. The bounded targeted run
-recovered all three routed questions; two suspected question/document mismatches remain.
-No complete CSV or Kaggle score is claimed. The broader feature-research gate is
-open; the completed lexical grid is one part of that work.
+### What this project demonstrates
 
-**Frontier research update, October 2, 2026:** a later apples-to-apples semantic
-reader ablation kept the pinned Qwen3.5-9B reader as the local frontier. On the
-same 16-question oracle-evidence diagnostic and pinned semantic judge, the
-historical 9B reader scores **87.02% local LAVA**, while the strongest tested
-Qwen3.6-27B arm scores **72.50%**. Even a label-leaky oracle selector across the
-tested 27B arms reaches only **79.58%**, so the one-shot 27B branch is not
-promoted. The next ceiling-escape experiment keeps the stronger 9B checkpoint
-fixed and tests self-consistency plus targeted crop/zoom perception before
-moving to exhaustive page screening and explicit table/numeric reasoning.
-See the [frontier research update](docs/frontier_research_update.md) and
-[machine-readable aggregate evidence](research/README.md).
+- **Model selection under evidence:** compared multiple reader sizes and architectures, retained a smaller model when it was empirically stronger, and killed expensive branches that did not earn promotion.
+- **Multimodal retrieval:** evaluated BM25, multilingual dense retrieval, page-image retrieval, hybrid fusion, exhaustive screening, and structure-aware document signals.
+- **Heterogeneous model routing:** identified complementary residual behavior across Qwen and Gemma readers, froze a compact routing family, and validated the selected policy with nested held-out-document evaluation.
+- **GPU systems engineering:** built resumable per-question checkpoints, exact artifact lineage, constrained-memory inference, deterministic replay, safe CPU weight offload for isolated OOM cases, and batch-parity gates before increasing vLLM throughput.
+- **Operational reliability:** every meaningful failure became a regression test; long-running work emits heartbeats, preserves partial progress, packages diagnostics, and refuses unsafe retries.
+- **Reproducible research:** pinned model revisions, judge contracts, data manifests, source hashes, and executed notebooks make the public results auditable without publishing private test answers or competition-specific orchestration details.
+
+### Current research state
+
+The public benchmark baseline remains the two-pass Qwen3.5-9B system: BM25 retrieves evidence pages, the reader produces an answer with citations, and a deterministic second pass rereads only its own cited pages. That system measures **67.65% semantic answer credit, 88.33% evidence-page F1, and 77.99% local LAVA** on the 16-question development panel.
+
+Subsequent research explored self-consistency, active visual perception, exhaustive page screening, explicit numerical reasoning, and a heterogeneous Gemma 4 reader. The key result was complementarity rather than a single-model replacement. A prespecified candidate family was evaluated with nested document-disjoint selection; the routed challenger measured **82.68% local LAVA**, improving two held-out documents and regressing none.
+
+Full-test routed inference is being executed as a resumable AWS workflow. Public Git history intentionally contains aggregate methods, decisions, and engineering contracts—not private questions, raw generations, test predictions, credentials, or the exact competition routing implementation.
+
+See the [validated routing and inference engineering update](docs/heterogeneous_routing_update.md), [architecture](docs/architecture.md), [frontier research log](docs/frontier_research_update.md), and [machine-readable public research state](research/README.md).
 
 **Start with [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb), then [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb). All six notebooks include executed outputs; review requires no account, installation, or GPU.**
 
