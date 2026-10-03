@@ -49,7 +49,7 @@ Long-running GPU research is treated as a resumable pipeline with per-question d
 | Document-disjoint heterogeneous challenger | **82.68% local LAVA** |
 | Best measured recall@5 | **98.44%** |
 | Lexical/fusion retrieval configurations audited | **1,582** |
-| Executed notebook publication tests | **546 passed** |
+| Executed research publication | **6 checksum-bound notebooks + required CI quality gate** |
 
 ## Technologies demonstrated
 
