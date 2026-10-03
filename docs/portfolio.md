@@ -64,9 +64,10 @@ Long-running GPU research is treated as a resumable pipeline with per-question d
 1. [README](../README.md)
 2. [Notebook 00](../notebooks/00_reproducibility_and_protocol.ipynb)
 3. [Frontier research update](frontier_research_update.md)
-4. [Notebook 05](../notebooks/05_end_to_end_system_evaluation.ipynb)
-5. [Architecture](architecture.md)
-6. [Machine-readable frontier evidence](../research/README.md)
+4. [Validated routing & inference engineering](heterogeneous_routing_update.md)
+5. [Notebook 05](../notebooks/05_end_to_end_system_evaluation.ipynb)
+6. [Architecture](architecture.md)
+7. [Machine-readable frontier evidence](../research/README.md)
 
 ## Publication boundary
 
