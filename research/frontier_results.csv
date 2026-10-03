@@ -10,10 +10,10 @@ reader,Qwen3.6_27B_text_direct,,0.44375,0.7916666667,0.6177083333,,,0.8125,not_p
 reader,Qwen3.6_27B_fused_direct,,0.54375,0.90625,0.725,,,1.0,not_promoted
 reader,Qwen3.6_27B_verified_synthesis,,0.4979166667,0.90625,0.7020833333,,,1.0,not_promoted
 reader,Qwen3.6_27B_selective_adjudication,,0.6229166667,0.6770833333,0.65,,,0.75,not_promoted
-reader,Qwen3.5_9B_sc8,,0.0,0.0,0.8348214286,,,,tested_not_promoted
-reader,Qwen3.5_9B_active_perception,,0.0,0.0,0.8129464286,,,,tested_not_promoted
-reasoning,exhaustive_screening_direct,,0.0,0.0,0.5245535714,,,,tested_not_promoted
-reasoning,targeted_reread,,0.0,0.0,0.5677083333,,,,tested_not_promoted
-reasoning,explicit_reasoning,,0.0,0.0,0.6920634921,,,,specialist_signal
+reader,Qwen3.5_9B_sc8,,,,0.8348214286,,,,tested_not_promoted
+reader,Qwen3.5_9B_active_perception,,,,0.8129464286,,,,tested_not_promoted
+reasoning,exhaustive_screening_direct,,,,0.5245535714,,,,tested_not_promoted
+reasoning,targeted_reread,,,,0.5677083333,,,,tested_not_promoted
+reasoning,explicit_reasoning,,,,0.6920634921,,,,specialist_signal
 reader,Gemma4_12B_bm25_selfcite,,0.7291666667,0.8333333333,0.78125,,,0.9375,standalone_not_promoted
-system,heterogeneous_document_disjoint_route,,0.0,0.0,0.8267857143,,,,validated_development_challenger
+system,heterogeneous_document_disjoint_route,,,,0.8267857143,,,,validated_development_challenger
