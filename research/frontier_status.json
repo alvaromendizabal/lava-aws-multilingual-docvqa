@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
-  "generated_at_utc": "2026-10-02T03:20:00Z",
-  "scope": "public-safe aggregate research state; no private questions, raw generations, test predictions, credentials, or cloud object locations",
+  "schema_version": 2,
+  "generated_date_utc": "2026-10-03",
+  "scope": "public-safe aggregate research state; excludes private questions, raw generations, test predictions, credentials, cloud object locations, exact routing rules, and recovery heuristics",
   "evaluation": {
     "panel_questions": 16,
     "panel_documents": 5,
@@ -14,21 +14,41 @@
     "judge_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
     "judge_contract_id": "6f3e8ea4f81bf99601d0a427bd541b27020e1668741d739ac97bde7e738222cc",
     "official_server_score": null,
-    "boundary": "local published-formula score; organizer prompt/runtime not public"
+    "boundary": "local development evaluation; hidden-test performance is not inferred"
   },
-  "end_to_end_best": {
-    "semantic_answer": 0.6765,
-    "evidence_f1": 0.8833,
-    "local_lava": 0.7799,
-    "note": "two-pass citation-guided reread; reused development panel"
+  "baseline_system": {
+    "model_family": "Qwen3.5-9B",
+    "policy": "lexical retrieval plus citation-guided second read",
+    "semantic_answer": 0.6764880952380953,
+    "evidence_f1": 0.8833333333333333,
+    "local_lava": 0.7799107142857142
   },
   "reader_frontier": {
     "model_id": "Qwen/Qwen3.5-9B",
     "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "condition": "supplied gold evidence",
     "semantic_answer": 0.8014880952380953,
     "evidence_f1": 0.9389880952380952,
     "local_lava": 0.8702380952380953,
     "schema_valid_rate": 1
+  },
+  "validated_routed_system": {
+    "status": "validated_development_challenger",
+    "selection": "nested held-out-document routing from a prespecified compact policy family",
+    "local_lava": 0.8267857142857142,
+    "delta_vs_baseline": 0.046875,
+    "heldout_documents_improved": 2,
+    "heldout_documents_regressed": 0,
+    "stable_policy_selected_folds": 4,
+    "total_folds": 5,
+    "note": "aggregate public-safe result; exact competition routing rule is intentionally private"
+  },
+  "heterogeneous_reader": {
+    "model_id": "google/gemma-4-12B-it-qat-w4a16-ct",
+    "role": "complementary multimodal reader",
+    "standalone_bm25_selfcite_local_lava": 0.78125,
+    "standalone_status": "not_promoted",
+    "finding": "complementary residual structure motivated validated routing"
   },
   "retrieval": {
     "bm25_at_5": {
@@ -50,56 +70,30 @@
     "bm25_at_10": {
       "evidence_recall": 1,
       "complete_evidence_questions": 16
-    },
-    "colqwen_at_10": {
-      "evidence_recall": 1,
-      "complete_evidence_questions": 16
     }
   },
-  "qwen36_27b_semantic_ablation": {
-    "status": "not_promoted",
-    "model_family": "Qwen3.6-27B AWQ",
-    "text_direct": {
-      "answer": 0.44375,
-      "grounding": 0.7916666666666666,
-      "overall": 0.6177083333333333,
-      "schema_valid_rate": 0.8125
-    },
-    "fused_direct": {
-      "answer": 0.54375,
-      "grounding": 0.90625,
-      "overall": 0.725,
-      "schema_valid_rate": 1
-    },
-    "verified_synthesis": {
-      "answer": 0.4979166666666667,
-      "grounding": 0.90625,
-      "overall": 0.7020833333333334,
-      "schema_valid_rate": 1
-    },
-    "selective_adjudication": {
-      "answer": 0.6229166666666667,
-      "grounding": 0.6770833333333334,
-      "overall": 0.65,
-      "schema_valid_rate": 0.75
-    },
-    "oracle_of_arms_upper_bound": {
-      "answer": 0.6854166666666667,
-      "grounding": 0.90625,
-      "overall": 0.7958333333333334
-    },
-    "decision": "kill_one_shot_27b_branch_return_to_9b_incumbent"
+  "completed_capability_studies": {
+    "larger_qwen_branch": "not_promoted",
+    "self_consistency": "tested_not_promoted",
+    "fixed_active_perception": "tested_not_promoted",
+    "exhaustive_screening": "tested_not_promoted",
+    "explicit_numeric_reasoning": "specialist_signal_not_promoted",
+    "heterogeneous_gemma_reader": "standalone_not_promoted_routing_signal",
+    "document_disjoint_routing": "validated_challenger"
   },
-  "next_experiment": {
-    "id": "E07",
-    "status": "pending_execution",
-    "model_id": "Qwen/Qwen3.5-9B",
-    "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
-    "capabilities": [
-      "SC-8 self-consistency",
-      "targeted crop/zoom active perception",
-      "deterministic consensus"
-    ],
-    "follow_up_if_no_promotion": "E01 exhaustive/high-recall page screening + explicit numerical/table reasoning"
+  "inference_engineering": {
+    "state": "routed_full_test_inference_in_progress",
+    "qwen_slice": "fully_checkpointed",
+    "gemma_slice": "resumable_checkpointed_execution",
+    "practices": [
+      "immutable per-question checkpoints",
+      "byte-level representation provenance",
+      "deterministic replay",
+      "memory-safe model placement with parity gate",
+      "vLLM batching behind exact-output parity gate",
+      "bounded heartbeats and resource telemetry",
+      "process-group timeout cleanup",
+      "fail-closed stale-worker ownership verification"
+    ]
   }
 }
