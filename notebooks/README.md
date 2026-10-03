@@ -1,37 +1,46 @@
-# Read the completed research benchmark
+# Executed research notebooks
 
-All six canonical notebooks include verified execution outputs. **Open and read; no setup or rerun is required.**
+All six canonical notebooks include verified execution outputs. **Open and read; no setup or GPU is required.**
 
 | Notebook | Purpose |
 | --- | --- |
-| [00 — Research overview](00_reproducibility_and_protocol.ipynb) | Start here: scope, findings, and conclusions |
-| [01 — Experiment design](01_oracle_reader_benchmark_design.ipynb) | Model choices and comparison methodology |
-| [02 — Cloud execution](02_verified_gpu_execution.ipynb) | Completed runs, observability, and recovery |
-| [03 — Model quality and cost](03_model_scaling_and_cost.ipynb) | Actual scores, visual analysis, and resource tradeoffs |
-| [04 — Evidence retrieval](04_evidence_retrieval.ipynb) | Baseline, lexical feature research, visual challenger, and recovery |
-| [05 — Optional integrated workflow](05_end_to_end_system_evaluation.ipynb) | Implemented pipeline and user-operated export; integrated score unmeasured |
+| [00 — Research overview](00_reproducibility_and_protocol.ipynb) | Scope, evaluation contract, headline benchmark results |
+| [01 — Experiment design](01_oracle_reader_benchmark_design.ipynb) | Comparable model inputs and research methodology |
+| [02 — Cloud execution](02_verified_gpu_execution.ipynb) | AWS execution, checkpoints, logging and recovery |
+| [03 — Model quality and cost](03_model_scaling_and_cost.ipynb) | Reader comparisons, uncertainty and resource tradeoffs |
+| [04 — Evidence retrieval](04_evidence_retrieval.ipynb) | Lexical, structural and visual retrieval research |
+| [05 — Complete system](05_end_to_end_system_evaluation.ipynb) | Retrieved-evidence answering and citation-guided rereading |
 
-**Short employer review: 00 → 03 → 04.** Read 01 and 02 for additional technical detail.
+**Short employer review:** 00 → 05 → 03 → 04.
 
-The component benchmark is complete. Integrated reader/retrieval evaluation, deployment, and Kaggle submission are optional extensions; no end-to-end or leaderboard score is claimed. See [scope and limitations](../README.md#scope-and-limitations).
+The notebook set is intentionally a checksum-bound research snapshot. Later October experiments—including self-consistency, active perception, exhaustive reasoning, heterogeneous Gemma reading, and document-disjoint routing validation—are published separately in the [frontier research update](../docs/frontier_research_update.md) and [aggregate research artifacts](../research/README.md).
 
-In Studio, this folder is `/home/sagemaker-user/lava-aws-multilingual-docvqa/notebooks/`. For reproduction, `make notebooks` verifies/reuses outputs or refreshes changed inputs, and `make quality` checks tests and publication integrity. Both run from the repository root and create no GPU job.
+This separation is deliberate: later metrics are not retroactively inserted into executed notebooks without rerunning those notebooks against the new source/input state.
 
+## What Notebook 05 established
 
-## Optional integrated evaluation
+The integrated benchmark measures the complete full-PDF BM25 → Qwen3.5-9B path and a deterministic citation-guided second read.
 
-[05 — Retrieved-evidence evaluation](05_end_to_end_system_evaluation.ipynb) explains the label-blind input design, actual measurement status, failure analysis and recovery. It can be viewed without a GPU. The measured component benchmark remains complete. Its optional GPU attempt was stopped at closeout. No further run is required; the [operator guide](../docs/system_evaluation.md) is retained for deliberate future reproduction.
+On the frozen development panel:
+- first pass: **67.57% local LAVA**
+- citation-guided reread: **77.99%**
+- improvement: **+10.42 percentage points**
 
-## Frontier research after the canonical notebook snapshot
+The later document-disjoint heterogeneous challenger reaches **82.68% local LAVA** and is documented outside the canonical notebook snapshot.
 
-Later reader/retrieval work is published separately in
-[the frontier research update](../docs/frontier_research_update.md) and
-[aggregate research artifacts](../research/README.md).
+## Reproduction
 
-The six notebooks above remain the canonical executed notebook set because their
-publication manifests are checksum-bound to the exact source and analysis inputs
-they actually executed. The October frontier results are not retroactively
-inserted into those notebooks without a legitimate re-execution. This preserves
-the distinction between executed notebook evidence and later aggregate research
-findings.
+In Studio this folder is:
 
+`/home/sagemaker-user/lava-aws-multilingual-docvqa/notebooks/`
+
+For reproduction:
+
+```bash
+make notebooks
+make quality
+```
+
+Those commands verify/reuse outputs or refresh changed public inputs and create no GPU job.
+
+See [Portfolio overview](../docs/portfolio.md) for the quickest project review.
