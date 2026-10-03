@@ -56,6 +56,18 @@ The two-pass Qwen system improved the first-pass question average by **10.42 per
 
 The exact competition-specific routing rule is intentionally not published. The public evidence is the validation design, aggregate result, and model-family provenance.
 
+## Verified reader benchmark
+
+The canonical supplied-evidence benchmark keeps all reader configurations visible in the public entrance, including configurations that were not selected. This is the exact model-comparison snapshot represented in the executed notebooks.
+
+| Oracle reader | Semantic answer credit | Evidence-page F1 | Local LAVA | Valid responses |
+| --- | ---: | ---: | ---: | ---: |
+| Qwen3.5 4B · BF16 | 50.62% | 97.02% | 73.82% | 16/16 |
+| Qwen3.5 9B · BF16 | **80.15%** | 93.90% | **87.02%** | 16/16 |
+| Qwen3.8 27B · NF4 | 70.98% | 89.73% | 80.36% | 15/16 |
+
+These measurements isolate reader behavior on supplied evidence. They complement—but do not replace—the later retrieved-evidence and document-disjoint system validation.
+
 ## Retrieval research
 
 The retrieval program independently evaluates lexical, multilingual dense, and page-image evidence discovery.
@@ -120,6 +132,19 @@ This repository emphasizes the parts of ML work that usually disappear from a mo
 | [`reports/`](reports/) | Sanitized measured results and figures |
 | [`research/`](research/) | Public-safe aggregate frontier evidence |
 | [`docs/`](docs/) | Architecture, evaluation, research decisions, and reproduction notes |
+
+## Canonical executed notebooks
+
+The six canonical notebooks remain the checksum-bound executed evidence for the benchmark state. Later frontier research is published separately rather than rewriting saved outputs without a legitimate rerun.
+
+| Notebook | What it demonstrates |
+| --- | --- |
+| [00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb) | Verified scope, evaluation contract, benchmark results, and conclusions |
+| [01 — Experiment design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Comparable reader inputs, model configurations, and evaluation boundaries |
+| [02 — Cloud execution](notebooks/02_verified_gpu_execution.ipynb) | AWS jobs, checksums, checkpoints, logging, and recovery |
+| [03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Reader comparison, uncertainty, latency, memory, and resource tradeoffs |
+| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Full-PDF retrieval, feature research, visual retrieval, and fold decisions |
+| [05 — Complete system](notebooks/05_end_to_end_system_evaluation.ipynb) | Retrieved-evidence answering and citation-guided rereading |
 
 ## Review path for employers
 
