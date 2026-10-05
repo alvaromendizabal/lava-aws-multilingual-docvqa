@@ -66,4 +66,4 @@ def test_employer_headline_scores_match_the_verified_experiments():
     for figure in ("quality.svg", "documents.svg", "questions.svg"):
         assert "<svg" in verified_system_figure(ROOT, figure)
     assert "post-hoc development finding" in readme
-    assert "not official server scores" in readme
+    assert "not presented as organizer-server-identical competition scores" in readme

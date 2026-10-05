@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">LAVA multilingual document intelligence system overview</title>
+  <desc id="desc">Employer-facing overview of the document AI pipeline and measured development results.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="100%" stop-color="#151f38"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="560" rx="28" fill="url(#bg)"/>
+
+  <text x="54" y="64" fill="#f8fafc" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">
+    LAVA · Multilingual Document Intelligence on AWS
+  </text>
+  <text x="54" y="96" fill="#a9b7cf" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="16">
+    Retrieval → multimodal reading → grounded citations → document-disjoint model selection
+  </text>
+
+  <!-- Pipeline -->
+  <g filter="url(#shadow)">
+    <rect x="54" y="136" width="196" height="92" rx="18" fill="#18243f" stroke="#35517b"/>
+    <rect x="282" y="136" width="196" height="92" rx="18" fill="#18243f" stroke="#35517b"/>
+    <rect x="510" y="136" width="196" height="92" rx="18" fill="#18243f" stroke="#35517b"/>
+    <rect x="738" y="136" width="196" height="92" rx="18" fill="#18243f" stroke="#35517b"/>
+    <rect x="966" y="136" width="180" height="92" rx="18" fill="#18243f" stroke="#35517b"/>
+  </g>
+
+  <g font-family="Inter,Segoe UI,Arial,sans-serif" text-anchor="middle">
+    <text x="152" y="171" fill="#f8fafc" font-size="17" font-weight="700">Complete PDFs</text>
+    <text x="152" y="197" fill="#9fb0c9" font-size="13">native text + page images</text>
+
+    <text x="380" y="171" fill="#f8fafc" font-size="17" font-weight="700">Evidence retrieval</text>
+    <text x="380" y="197" fill="#9fb0c9" font-size="13">BM25 · dense · visual</text>
+
+    <text x="608" y="171" fill="#f8fafc" font-size="17" font-weight="700">VLM readers</text>
+    <text x="608" y="197" fill="#9fb0c9" font-size="13">Qwen + heterogeneous reader</text>
+
+    <text x="836" y="171" fill="#f8fafc" font-size="17" font-weight="700">Grounded output</text>
+    <text x="836" y="197" fill="#9fb0c9" font-size="13">answer + physical-page citations</text>
+
+    <text x="1056" y="171" fill="#f8fafc" font-size="17" font-weight="700">Validation</text>
+    <text x="1056" y="197" fill="#9fb0c9" font-size="13">held-out documents</text>
+  </g>
+
+  <g stroke="url(#accent)" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M250 182 H278"/>
+    <path d="M478 182 H506"/>
+    <path d="M706 182 H734"/>
+    <path d="M934 182 H962"/>
+  </g>
+  <g fill="#a78bfa">
+    <path d="M278 182 l-9 -6 v12 z"/>
+    <path d="M506 182 l-9 -6 v12 z"/>
+    <path d="M734 182 l-9 -6 v12 z"/>
+    <path d="M962 182 l-9 -6 v12 z"/>
+  </g>
+
+  <!-- Metrics -->
+  <text x="54" y="286" fill="#dbeafe" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="1.2">
+    MEASURED DEVELOPMENT EVIDENCE
+  </text>
+
+  <g filter="url(#shadow)">
+    <rect x="54" y="312" width="252" height="164" rx="20" fill="#111c32" stroke="#29466f"/>
+    <rect x="326" y="312" width="252" height="164" rx="20" fill="#111c32" stroke="#29466f"/>
+    <rect x="598" y="312" width="252" height="164" rx="20" fill="#111c32" stroke="#29466f"/>
+    <rect x="870" y="312" width="276" height="164" rx="20" fill="#111c32" stroke="#29466f"/>
+  </g>
+
+  <g font-family="Inter,Segoe UI,Arial,sans-serif">
+    <text x="78" y="350" fill="#93c5fd" font-size="14" font-weight="700">RETRIEVAL</text>
+    <text x="78" y="393" fill="#ffffff" font-size="34" font-weight="800">98.44%</text>
+    <text x="78" y="421" fill="#a9b7cf" font-size="14">best evidence recall@5</text>
+    <text x="78" y="447" fill="#7185a5" font-size="12">visual / lexical hybrid</text>
+
+    <text x="350" y="350" fill="#93c5fd" font-size="14" font-weight="700">READER ISOLATION</text>
+    <text x="350" y="393" fill="#ffffff" font-size="34" font-weight="800">87.02%</text>
+    <text x="350" y="421" fill="#a9b7cf" font-size="14">local LAVA on supplied evidence</text>
+    <text x="350" y="447" fill="#7185a5" font-size="12">pinned semantic contract</text>
+
+    <text x="622" y="350" fill="#c4b5fd" font-size="14" font-weight="700">END-TO-END</text>
+    <text x="622" y="393" fill="#ffffff" font-size="34" font-weight="800">82.68%</text>
+    <text x="622" y="421" fill="#a9b7cf" font-size="14">held-out-document local LAVA</text>
+    <text x="622" y="447" fill="#7185a5" font-size="12">heterogeneous routed challenger</text>
+
+    <text x="894" y="350" fill="#c4b5fd" font-size="14" font-weight="700">RESEARCH SCALE</text>
+    <text x="894" y="393" fill="#ffffff" font-size="34" font-weight="800">1,582</text>
+    <text x="894" y="421" fill="#a9b7cf" font-size="14">retrieval configurations audited</text>
+    <text x="894" y="447" fill="#7185a5" font-size="12">fold-isolated selection + lineage</text>
+  </g>
+
+  <rect x="54" y="504" width="1092" height="2" fill="url(#accent)" opacity="0.7"/>
+  <text x="54" y="535" fill="#8294b0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12">
+    Public-safe portfolio view · local research metrics · private competition predictions and routing logic intentionally excluded
+  </text>
+</svg>
