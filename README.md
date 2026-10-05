@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
 
-**Applied multimodal ML research · Document intelligence · AWS · Reproducible evaluation**
+**Multimodal document AI · Retrieval/RAG · Vision-language reasoning · AWS GPU systems · Reproducible evaluation**
 
 LAVA is an **Applied ML research system** for end-to-end multilingual PDF question answering. It retrieves evidence from complete documents, reads page images and native text with vision-language models, produces structured answers with physical-page citations, validates those citations, and evaluates answer semantics and grounding together.
 
@@ -17,7 +17,9 @@ The project is built like a production ML system rather than a notebook-only exp
 
 > These are local development measurements under a pinned implementation of the published LAVA scoring structure. The organizer's exact evaluation runtime is not public, so official competition evaluation remains separate from the measurements reported here.
 
-**Employer review path:** [5-minute reviewer guide](docs/reviewer_guide.md) → [Portfolio overview](docs/portfolio.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb) → [Reproducibility](docs/reproducibility.md)
+**Employer review path:** [30-second case study](docs/case_study.md) → [5-minute reviewer guide](docs/reviewer_guide.md) → [Portfolio overview](docs/portfolio.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb)
+
+![Executive overview of the LAVA system and measured development evidence](reports/system/portfolio_overview.svg)
 
 ![Measured answer quality, evidence quality and local LAVA across three input conditions](reports/system/quality.svg)
 
@@ -52,7 +54,7 @@ All figures below use the same frozen 16-question development panel from five su
 | Citation-guided Qwen3.5-9B reread | complete two-pass system | 67.65% | 88.33% | **77.99%** |
 | Heterogeneous routed system | nested leave-one-document-out | — | — | **82.68%** |
 
-The two-pass Qwen system improved the first-pass question average by **10.42 percentage points** while using the same 9B reader. The citation-guided reread is a **post-hoc development finding** on the reused supplied panel; the later routed result uses the stronger nested held-out-document selection protocol. This remains a **post-hoc development finding** on the reused labeled panel; the later heterogeneous result uses document-disjoint selection to provide a stronger validation view. The later heterogeneous system was then evaluated with a stronger selection protocol: the candidate family was frozen before each held-out document was scored, and routing decisions were learned only from the other documents. That out-of-fold result improved the prior incumbent by **4.69 percentage points**, with two documents improving and none regressing.
+The two-pass Qwen system improved the first-pass question average by **10.42 percentage points** while using the same 9B reader. That reread result is a **post-hoc development finding** on the reused supplied panel, so the later heterogeneous candidate was evaluated with a stronger nested held-out-document protocol: the candidate family was frozen before each held-out document was scored, and selection used only the other documents. The resulting out-of-fold estimate improved the prior incumbent by **4.69 percentage points**, with two documents improving and none regressing.
 
 The exact competition-specific routing rule is intentionally not published. The public evidence is the validation design, aggregate result, and model-family provenance.
 
@@ -148,6 +150,10 @@ The six canonical notebooks remain the checksum-bound executed evidence for the 
 
 ## Review path for employers
 
+**30-second review**
+1. [Engineering case study](docs/case_study.md)
+2. Scan the executive system overview above.
+
 **5-minute review**
 1. [Employer review guide](docs/reviewer_guide.md)
 2. [Portfolio overview](docs/portfolio.md)
@@ -189,4 +195,4 @@ make evaluation-preview
 
 The public workflow is intentionally layered: executed evidence can be inspected immediately, CPU checks are reproducible from Git, model evaluation requires access to the pinned open checkpoints, and private competition inference remains outside the public repository.
 
-[Employer review guide](docs/reviewer_guide.md) · [Portfolio overview](docs/portfolio.md) · [Reproducibility](docs/reproducibility.md) · [Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier research](docs/frontier_research_update.md)
+[Engineering case study](docs/case_study.md) · [Employer review guide](docs/reviewer_guide.md) · [Portfolio overview](docs/portfolio.md) · [Reproducibility](docs/reproducibility.md) · [Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier research](docs/frontier_research_update.md)
