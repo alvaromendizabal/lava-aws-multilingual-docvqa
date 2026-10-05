@@ -4,8 +4,8 @@ This repository is organized so a reviewer can assess the project at three level
 
 ## 5-minute review
 
-1. Read the project summary and measured results in the [README](../README.md).
-2. Scan the [portfolio overview](portfolio.md).
+1. Read the [engineering case study](case_study.md) for the problem, constraints, decisions, results, and tradeoffs.
+2. Scan the project summary and executive visual in the [README](../README.md).
 3. Open [Notebook 00](../notebooks/00_reproducibility_and_protocol.ipynb) for the research contract and [Notebook 05](../notebooks/05_end_to_end_system_evaluation.ipynb) for the complete system.
 4. Review the [frontier research update](frontier_research_update.md) to see what was promoted, rejected, and why.
 
