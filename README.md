@@ -17,7 +17,7 @@ The project is built like a production ML system rather than a notebook-only exp
 
 > These are local development measurements under a pinned implementation of the published LAVA scoring structure. The organizer's exact evaluation runtime is not public, so official competition evaluation remains separate from the measurements reported here.
 
-**Start here:** [Portfolio overview](docs/portfolio.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Frontier research update](docs/frontier_research_update.md) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb)
+**Employer review path:** [5-minute reviewer guide](docs/reviewer_guide.md) → [Portfolio overview](docs/portfolio.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb) → [Reproducibility](docs/reproducibility.md)
 
 ![Measured answer quality, evidence quality and local LAVA across three input conditions](reports/system/quality.svg)
 
@@ -131,7 +131,7 @@ This repository emphasizes the parts of ML work that usually disappear from a mo
 | [`configs/`](configs/) | Frozen model, retrieval, evaluation, and system contracts |
 | [`reports/`](reports/) | Sanitized measured results and figures |
 | [`research/`](research/) | Public-safe aggregate frontier evidence |
-| [`docs/`](docs/) | Architecture, evaluation, research decisions, and reproduction notes |
+| [`docs/`](docs/) | Architecture, evaluation, reviewer guide, research decisions, and reproduction notes |
 
 ## Canonical executed notebooks
 
@@ -149,35 +149,44 @@ The six canonical notebooks remain the checksum-bound executed evidence for the 
 ## Review path for employers
 
 **5-minute review**
-1. [Portfolio overview](docs/portfolio.md)
-2. [Notebook 00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb)
-3. [Frontier research update](docs/frontier_research_update.md)
+1. [Employer review guide](docs/reviewer_guide.md)
+2. [Portfolio overview](docs/portfolio.md)
+3. [Notebook 00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb)
 
 **15-minute technical review**
 1. [Notebook 05 — Complete system](notebooks/05_end_to_end_system_evaluation.ipynb)
-2. [Notebook 03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb)
-3. [Notebook 04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb)
+2. [Notebook 04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb)
+3. [Frontier research update](docs/frontier_research_update.md)
 4. [Architecture and lineage](docs/architecture.md)
+5. [Reproducibility guide](docs/reproducibility.md)
 
 ## Scope and limitations
 
-The canonical notebooks are executed evidence for the earlier benchmark state and remain checksum-bound to the exact source/input state they actually ran. Later frontier research is published separately as aggregate evidence rather than retroactively rewriting notebook outputs without a legitimate rerun.
+The canonical notebooks are executed evidence for the benchmark state they actually ran and remain checksum-bound to their source and declared inputs. Later research is published as aggregate evidence rather than retroactively rewriting those notebook outputs.
 
-The labeled development set contains 16 questions from five supplied PDFs: 15 Japanese and one Vietnamese. The metric follows the published LAVA structure with a pinned local semantic judge. These measurements are therefore research evidence for model and system decisions, not a substitute for external evaluation. They are **not official server scores**.
+The labeled development set is small: 16 questions from five supplied PDFs, with limited Vietnamese coverage. The metric follows the published LAVA structure under a pinned local semantic judge. These measurements support research decisions; they are **not presented as organizer-server-identical competition scores**.
 
-The private 624-question inference workflow runs in AWS with resumable checkpoints and strict structural validation. At this publication snapshot, the **test submission is incomplete**. Public Git intentionally excludes the private predictions and exact competition routing implementation. **No complete CSV or Kaggle score is claimed.**
+The private full-test and competition layer is intentionally excluded from public Git. Public claims are limited to aggregate development evidence, reusable engineering, and validation methodology. Private test predictions, exact routing logic, raw private generations, credentials, cloud object locations, model caches, and return bundles are not published.
+
+For the exact public/private boundary and reproduction levels, see [Reproducibility](docs/reproducibility.md).
 
 ## Reproduce and inspect
 
-Use Python 3.12 and the frozen `uv` environment:
+Public review requires no account or GPU. For environment-backed verification, use Python 3.12 and the frozen `uv` environment:
 
 ```bash
 uv sync --frozen --group judge
-uv run --frozen python -m ipykernel install --user --name lava --display-name "Python (LAVA)"
-make notebooks
 make quality
+make notebooks
 ```
 
-Those commands verify or refresh the public analysis and create no GPU job. Reading the saved notebooks requires no account or GPU.
+For model-backed evaluation, run the non-destructive prerequisite checks first:
 
-[Portfolio overview](docs/portfolio.md) · [Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier research](docs/frontier_research_update.md) · [System reproduction](docs/system_evaluation.md)
+```bash
+make evaluation-check
+make evaluation-preview
+```
+
+The public workflow is intentionally layered: executed evidence can be inspected immediately, CPU checks are reproducible from Git, model evaluation requires access to the pinned open checkpoints, and private competition inference remains outside the public repository.
+
+[Employer review guide](docs/reviewer_guide.md) · [Portfolio overview](docs/portfolio.md) · [Reproducibility](docs/reproducibility.md) · [Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier research](docs/frontier_research_update.md)
