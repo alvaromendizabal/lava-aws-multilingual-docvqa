@@ -108,6 +108,24 @@ Private GPU execution uses the same public engineering principles:
 
 The public source shows the abstractions and validation logic; private competition outputs stay outside Git.
 
+## Failure-recovery reproducibility
+
+Reproduction also includes the ability to recover from failure without silently changing the science.
+
+For expensive stages, the public engineering contract requires:
+
+1. a compatibility-bound checkpoint identity;
+2. explicit stage and failure classification;
+3. bounded subprocess ownership and cleanup;
+4. durable preservation of completed work;
+5. a return bundle containing the last valid state and first failed state;
+6. independent notebook/report validation;
+7. regression coverage for confirmed avoidable failures.
+
+The [reliability and recovery engineering case study](reliability_recovery.md) documents the operational design and the public-safe failure taxonomy. Its machine-readable companion is [research/reliability_frontier.json](../research/reliability_frontier.json).
+
+The private competition layer may contain additional runtime and source evidence, but those artifacts are not required to understand or verify the recovery architecture exposed here.
+
 ## Expected public verification
 
 A successful public review should establish that:
