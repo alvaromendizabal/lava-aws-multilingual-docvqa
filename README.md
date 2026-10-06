@@ -17,7 +17,7 @@ The project is built like a production ML system rather than a notebook-only exp
 
 > These are local development measurements under a pinned implementation of the published LAVA scoring structure. The organizer's exact evaluation runtime is not public, so official competition evaluation remains separate from the measurements reported here.
 
-**Employer review path:** [30-second case study](docs/case_study.md) → [5-minute reviewer guide](docs/reviewer_guide.md) → [Portfolio overview](docs/portfolio.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb)
+**Employer review path:** [30-second case study](docs/case_study.md) → [5-minute reviewer guide](docs/reviewer_guide.md) → [Portfolio overview](docs/portfolio.md) → [Reliability & recovery](docs/reliability_recovery.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb)
 
 ![Executive overview of the LAVA system and measured development evidence](reports/system/portfolio_overview.svg)
 
@@ -122,6 +122,14 @@ This repository emphasizes the parts of ML work that usually disappear from a mo
 - **Publication hygiene:** private source documents, raw generations, private test outputs, credentials, and competition-specific orchestration remain outside Git.
 - **Software quality:** unit tests, integration tests, Ruff, mypy, notebook integrity checks, and CI.
 
+## Reliability and recovery engineering
+
+The later systems work treats interrupted GPU research as a first-class ML engineering problem. Scientific stages are checkpointed independently from reporting, runtime qualification tests required capabilities instead of trusting package names alone, and confirmed avoidable failures are converted into regression tests before another expensive run.
+
+The public-safe [reliability and recovery case study](docs/reliability_recovery.md) documents the reusable design: immutable scientific identities, resume-first inference, bounded failure domains, owned-process cleanup, notebook save/reopen validation, and independent versioned backup. The companion [machine-readable reliability frontier](research/reliability_frontier.json) exposes the engineering contract without publishing private predictions, exact routing, source mappings, or cloud object locations.
+
+This distinction is deliberate: **a runtime failure is not a negative model result**, and a valid scientific result remains valid even if a later notebook or packaging stage fails.
+
 ## Repository map
 
 | Path | Purpose |
@@ -165,6 +173,7 @@ The six canonical notebooks remain the checksum-bound executed evidence for the 
 3. [Frontier research update](docs/frontier_research_update.md)
 4. [Architecture and lineage](docs/architecture.md)
 5. [Reproducibility guide](docs/reproducibility.md)
+6. [Reliability and recovery engineering](docs/reliability_recovery.md)
 
 ## Scope and limitations
 
