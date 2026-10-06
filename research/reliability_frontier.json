@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "scope": "public-safe reliability frontier",
+  "objective": "Preserve valid ML work across runtime, storage, process, notebook, and packaging failures without publishing competition-sensitive artifacts.",
+  "principles": [
+    "immutable scientific identity",
+    "resume-first inference",
+    "functional runtime qualification",
+    "bounded failure domains",
+    "independent finalization",
+    "public/private artifact separation"
+  ],
+  "failure_classes": [
+    {
+      "failure_class": "EPHEMERAL_STATE",
+      "mitigation": "persistent workspace and versioned artifact backup"
+    },
+    {
+      "failure_class": "STORAGE_HEADROOM",
+      "mitigation": "preflight capacity gates and bounded cleanup"
+    },
+    {
+      "failure_class": "ORPHAN_PROCESS",
+      "mitigation": "owned-child cleanup and hard timeouts"
+    },
+    {
+      "failure_class": "IPC_PATH",
+      "mitigation": "short scoped IPC roots and real socket regression tests"
+    },
+    {
+      "failure_class": "RUNTIME_DRIFT",
+      "mitigation": "functional environment qualification rather than version strings alone"
+    },
+    {
+      "failure_class": "INTEGRITY_CHECK",
+      "mitigation": "content and hash verification rather than timestamp-only assumptions"
+    },
+    {
+      "failure_class": "NOTEBOOK_RUNTIME",
+      "mitigation": "explicit interpreter selection and save/reopen publication validation"
+    },
+    {
+      "failure_class": "MODEL_LOAD",
+      "mitigation": "operation-level telemetry and bounded supported loading strategies"
+    },
+    {
+      "failure_class": "LATE_STAGE_FAILURE",
+      "mitigation": "per-stage checkpoints and independent backup"
+    }
+  ],
+  "public_evidence": [
+    "typed prediction and checkpoint schemas",
+    "content-addressed artifacts",
+    "bounded execution and failure classification",
+    "runtime qualification logic",
+    "notebook publication checks",
+    "validation and promotion contracts",
+    "CI-backed source quality"
+  ],
+  "private_exclusions": [
+    "private test predictions",
+    "raw private generations",
+    "exact competition routing rules",
+    "private source mappings",
+    "credentials",
+    "cloud object locations",
+    "private return bundles",
+    "model caches"
+  ]
+}
