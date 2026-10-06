@@ -1,0 +1,45 @@
+{
+  "scope": "Authored synthetic examples; fixed responses; no model inference or benchmark data.",
+  "documents": [
+    {
+      "id": "demo_shipments_ja",
+      "language": "ja",
+      "title": "2025年 第4四半期 出荷実績",
+      "pages": [
+        {"page_number": 1, "text": "出荷実績レポート。対象期間：2025年10月〜12月。"},
+        {"page_number": 2, "text": "拠点別出荷注文数\n東京：1,200件\n大阪：850件"}
+      ]
+    },
+    {
+      "id": "demo_support_vi",
+      "language": "vi",
+      "title": "Thỏa thuận hỗ trợ",
+      "pages": [
+        {"page_number": 1, "text": "Thời hạn phản hồi\nYêu cầu ưu tiên: 4 giờ\nYêu cầu thông thường: 24 giờ"},
+        {"page_number": 2, "text": "Yêu cầu được ghi nhận trong hệ thống hỗ trợ nội bộ."}
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "demo_ja",
+      "file_id": "demo_shipments_ja",
+      "question": "第4四半期に東京拠点から出荷された注文数はいくつですか？",
+      "answer_format": "number",
+      "language": "ja",
+      "expected_answer": "1200",
+      "expected_evidence_pages": [2],
+      "provided_response": {"answer": "1200", "evidence_pages": [2], "confidence": 0.8, "abstain": false}
+    },
+    {
+      "id": "demo_vi",
+      "file_id": "demo_support_vi",
+      "question": "Thời hạn phản hồi cho yêu cầu ưu tiên là bao lâu?",
+      "answer_format": "string",
+      "language": "vi",
+      "expected_answer": "4 giờ",
+      "expected_evidence_pages": [1],
+      "provided_response": {"answer": "4 giờ", "evidence_pages": [1], "confidence": 0.8, "abstain": false}
+    }
+  ]
+}

@@ -1,8 +1,19 @@
 # Reproducibility guide
 
-This repository is deliberately **semi-reproducible**: the public research contract, source code, frozen configurations, executed notebooks, aggregate evidence, and quality gates are reproducible; private competition inputs, private predictions, exact routing rules, credentials, and cloud-return bundles are not published.
+This repository is deliberately **semi-reproducible**: the public research contract, source code, frozen configurations, executed notebooks, aggregate evidence, and quality gates are reproducible; private competition inputs, private predictions, exact routing rules, credentials, and cloud-return bundles are not published. Official score aggregates and the unresolved completion status are published separately in the [closeout report](submission_closeout.md).
 
 The design goal is to let a reviewer verify the engineering and scientific process without releasing competition-sensitive artifacts.
+
+## Start with the smallest runnable proof
+
+From the repository root, with Python 3.12:
+
+```bash
+python3 examples/run_demo.py
+python3 examples/verify_submission_closeout.py
+```
+
+Both commands use the standard library and need no credentials, GPU, or model download. The [synthetic example](../examples/README.md) exercises the existing parser and submission validator on authored documents and fixed responses. The [closeout verifier](submission_closeout.md) recomputes comparisons from sanitized aggregate evidence. These checks do not reproduce model inference or authenticate private Kaggle receipts.
 
 ## Reproduction levels
 

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="736" viewBox="0 0 1200 736" role="img" aria-labelledby="title description">
+  <title id="title">Document evidence and cited answers: a public contract demonstration</title>
+  <desc id="description">Authored synthetic Japanese shipment data show Tokyo with 1,200 orders on page 2. Authored Vietnamese support data show a four-hour priority response time on page 1. Fixed example responses pass schema checks. A citation to page 3 of a two-page document is rejected. This illustration does not show model inference or benchmark results.</desc>
+  <defs>
+    <style>
+      text { font-family: Inter, "Noto Sans", "Noto Sans JP", "Yu Gothic", "Hiragino Kaku Gothic ProN", "DejaVu Sans", sans-serif; fill: #17324d; }
+      .label { font-size: 16px; font-weight: 700; letter-spacing: 1.2px; }
+      .body { font-size: 23px; }
+      .small { font-size: 18px; }
+      .muted { fill: #536b81; }
+      .accent { fill: #087f74; }
+      .white { fill: #ffffff; }
+    </style>
+  </defs>
+  <rect width="1200" height="736" rx="24" fill="#f3f6fa"/>
+  <text x="40" y="48" class="label muted">PUBLIC WALKTHROUGH · AUTHORED SYNTHETIC DATA</text>
+  <text x="40" y="94" font-size="34" font-weight="750">From document evidence to a cited answer</text>
+  <text x="40" y="130" class="small muted">Fixed responses exercise the same structured-output and submission contracts.</text>
+
+  <rect x="40" y="160" width="690" height="210" rx="16" fill="#ffffff" stroke="#d6e0e9"/>
+  <rect x="754" y="160" width="406" height="210" rx="16" fill="#ffffff" stroke="#d6e0e9"/>
+  <text x="64" y="196" class="label muted">JAPANESE · SHIPPING REPORT · PAGE 2 OF 2</text>
+  <text x="64" y="235" class="body" font-weight="700">Orders shipped by location</text>
+  <text x="430" y="235" class="small muted">拠点別出荷注文数</text>
+  <rect x="60" y="250" width="650" height="47" rx="8" fill="#e1f5ed"/>
+  <rect x="60" y="250" width="5" height="47" rx="2" fill="#087f74"/>
+  <text x="80" y="282" class="body">Tokyo</text>
+  <text x="260" y="282" class="body">東京</text>
+  <text x="677" y="282" text-anchor="end" class="body accent" font-weight="750">1,200 orders</text>
+  <text x="80" y="334" class="body muted">Osaka</text>
+  <text x="260" y="334" class="body muted">大阪</text>
+  <text x="677" y="334" text-anchor="end" class="body muted">850 orders</text>
+  <text x="778" y="196" class="label muted">FIXED EXAMPLE RESPONSE</text>
+  <text x="778" y="233" class="small">How many orders shipped from Tokyo?</text>
+  <text x="778" y="283" font-size="38" font-weight="750">1,200</text>
+  <rect x="976" y="251" width="154" height="42" rx="21" fill="#e1f5ed"/>
+  <text x="1053" y="279" text-anchor="middle" class="small accent" font-weight="700">Evidence: p. 2</text>
+  <text x="778" y="334" class="small accent">Schema accepted · fixture matched</text>
+
+  <rect x="40" y="390" width="690" height="210" rx="16" fill="#ffffff" stroke="#d6e0e9"/>
+  <rect x="754" y="390" width="406" height="210" rx="16" fill="#ffffff" stroke="#d6e0e9"/>
+  <text x="64" y="426" class="label muted">VIETNAMESE · SUPPORT AGREEMENT · PAGE 1 OF 2</text>
+  <text x="64" y="465" class="body" font-weight="700">Thời hạn phản hồi</text>
+  <text x="392" y="465" class="small muted">Response time</text>
+  <rect x="60" y="480" width="650" height="47" rx="8" fill="#e1f5ed"/>
+  <rect x="60" y="480" width="5" height="47" rx="2" fill="#087f74"/>
+  <text x="80" y="512" class="body">Yêu cầu ưu tiên</text>
+  <text x="677" y="512" text-anchor="end" class="body accent" font-weight="750">4 giờ</text>
+  <text x="80" y="564" class="body muted">Yêu cầu thông thường</text>
+  <text x="677" y="564" text-anchor="end" class="body muted">24 giờ</text>
+  <text x="778" y="426" class="label muted">FIXED EXAMPLE RESPONSE</text>
+  <text x="778" y="463" class="small">What is the priority response time?</text>
+  <text x="778" y="513" font-size="38" font-weight="750">4 giờ</text>
+  <rect x="976" y="481" width="154" height="42" rx="21" fill="#e1f5ed"/>
+  <text x="1053" y="509" text-anchor="middle" class="small accent" font-weight="700">Evidence: p. 1</text>
+  <text x="778" y="564" class="small accent">Schema accepted · fixture matched</text>
+
+  <rect x="40" y="622" width="1120" height="55" rx="12" fill="#17324d"/>
+  <text x="62" y="657" class="small white" font-weight="700">GUARDRAIL</text>
+  <text x="202" y="657" class="small white">Citing page 3 of either two-page document is rejected.</text>
+  <text x="40" y="710" class="small muted">No live inference. No benchmark score. Valid formatting alone does not establish answer correctness.</text>
+</svg>

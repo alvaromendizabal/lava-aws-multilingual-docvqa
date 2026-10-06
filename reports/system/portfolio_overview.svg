@@ -65,7 +65,7 @@
 
   <!-- Metrics -->
   <text x="54" y="286" fill="#dbeafe" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="1.2">
-    MEASURED DEVELOPMENT EVIDENCE
+    LOCAL DEVELOPMENT · 16 QUESTIONS / 5 PDFs · REUSED PANEL
   </text>
 
   <g filter="url(#shadow)">
@@ -89,7 +89,7 @@
     <text x="622" y="350" fill="#c4b5fd" font-size="14" font-weight="700">END-TO-END</text>
     <text x="622" y="393" fill="#ffffff" font-size="34" font-weight="800">82.68%</text>
     <text x="622" y="421" fill="#a9b7cf" font-size="14">held-out-document local LAVA</text>
-    <text x="622" y="447" fill="#7185a5" font-size="12">heterogeneous routed challenger</text>
+    <text x="622" y="447" fill="#7185a5" font-size="12">original frozen route only</text>
 
     <text x="894" y="350" fill="#c4b5fd" font-size="14" font-weight="700">RESEARCH SCALE</text>
     <text x="894" y="393" fill="#ffffff" font-size="34" font-weight="800">1,582</text>
@@ -99,6 +99,6 @@
 
   <rect x="54" y="504" width="1092" height="2" fill="url(#accent)" opacity="0.7"/>
   <text x="54" y="535" fill="#8294b0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12">
-    Public-safe portfolio view · local research metrics · private competition predictions and routing logic intentionally excluded
+    Local development evidence · official best: 0.49 public / 0.53 private · current structural acceptance: 622/624
   </text>
 </svg>

@@ -1,5 +1,7 @@
 # Validated heterogeneous routing and inference engineering
 
+**Evaluation scope:** local results in this study use a reused 16-question/five-PDF panel. Document holdout within that panel is not independent confirmation on new documents. The original-route score does not apply to the later recovered full-test composite. See the [official results and current completion status](submission_closeout.md).
+
 This update records the strongest public-safe research and systems results produced after the original two-pass Qwen benchmark. It is intentionally **semi-reproducible**: model identities, aggregate measurements, validation design, engineering contracts, and failure-handling principles are public; private questions, raw generations, test predictions, credentials, cloud object names, exact routing thresholds, and competition-specific orchestration remain private.
 
 ## Why the system changed
@@ -173,11 +175,11 @@ Private:
 
 The goal is to make the repository useful to an ML hiring manager or engineer reviewing system quality without publishing a turnkey competition solution.
 
-## Current state
+## Historical inference state and subsequent closeout
 
-The routed full-test system is being completed through resumable AWS inference. The Qwen routed slice is already fully checkpointed; the Gemma slice is partially checkpointed and continues from durable state.
+At the time of this study, the Qwen routed slice was fully checkpointed and the Gemma slice remained partially checkpointed. That progress snapshot is superseded by the October 6 closeout.
 
-The public repository does not claim a hidden-test result until the complete candidate has passed the project's 624-row structural gate and has been evaluated through the official submission path.
+The recovered candidate contains 622 structurally accepted, non-abstaining predictions and two unresolved answers. Its diagnostic submission used two compatibility abstentions and scored 0.48 public / 0.49 private. The historical best remains 0.49 public / 0.53 private. Neither artifact meets the strict supported-answer completion objective. See the [verified closeout and reproduction boundary](submission_closeout.md).
 
 ## Engineering takeaways
 

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "scope": "Sanitized aggregate reconciliation of two historical submissions; no new inference or submission.",
+  "observed_at_utc": "2026-10-06T19:51:53Z",
+  "source_identity": {
+    "kind": "private_owner_execution_archive",
+    "sha256": "96e8968a7f0b7227bc8f0700fb19fa58e9f417eea63f791783d617e4ec863188",
+    "meaning": "Identity of the privately retained source archive only; not public proof of inference or receipt authenticity."
+  },
+  "official_results": {
+    "metric": "official_competition_score",
+    "historical_best": {
+      "public": 0.49,
+      "private": 0.53,
+      "receipt_verified_by_owner_run": true,
+      "rows": 624,
+      "template_fallback_rows": 2,
+      "strict_complete": false
+    },
+    "later_diagnostic": {
+      "public": 0.48,
+      "private": 0.49,
+      "receipt_verified_by_owner_run": true,
+      "rows": 624,
+      "compatibility_abstention_rows": 2,
+      "strict_complete": false
+    },
+    "private_scores_used_for_tuning": false
+  },
+  "prediction_contract": {
+    "records": 624,
+    "structurally_accepted_non_abstaining": 622,
+    "unresolved": 2,
+    "strict_complete": false,
+    "factual_correctness_verified": false,
+    "acceptance_meaning": "Schema and non-abstention checks; not a count of factually correct answers."
+  },
+  "comparison": {
+    "scope": "Canonical answer strings and sorted physical evidence pages; not semantic correctness.",
+    "rows_changed": 389,
+    "rows_unchanged": 235,
+    "answer_changed": 376,
+    "evidence_changed": 111
+  },
+  "development_context": {
+    "metric": "local_published_formula_score",
+    "local_score": 0.8267857142857142,
+    "questions": 16,
+    "documents": 5,
+    "applies_to": "original_frozen_development_route_only",
+    "applies_to_recovered_composite": false,
+    "recomputed_by_closeout": false,
+    "source": "research/frontier_status.json"
+  },
+  "execution": {
+    "outcome": "reconciliation_completed",
+    "success_meaning": "Historical artifacts reconciled; full-test acceptance remains incomplete.",
+    "planned_tasks": 14,
+    "completed_tasks": 14,
+    "stage_task_counts": {
+      "execution_lock_and_ledger": 1,
+      "stdlib_self_tests": 1,
+      "existing_cpu_runtime": 1,
+      "artifact_reconciliation": 6,
+      "checkpoint_preservation": 1,
+      "score_receipt_refresh": 1,
+      "receipt_verification": 1,
+      "executed_notebook": 1,
+      "verified_backup": 1
+    },
+    "unchanged_checkpoints": 1081,
+    "new_model_calls": 0,
+    "new_answers": 0,
+    "new_submissions": 0,
+    "elapsed_seconds": 21.88,
+    "compute_estimate_usd": 0.010052,
+    "cost_scope": "Recorded supervised runtime estimate; excludes final packaging overhead, idle time, storage and unallocated billing."
+  },
+  "owner_notebook": {
+    "actual_jupyter_kernel": true,
+    "executed_code_cells": 2,
+    "plotly_output_persisted_and_reopened": true,
+    "offline_html_persisted_and_reopened": true,
+    "continued_after_plot": true,
+    "browser_rendering_asserted": false
+  },
+  "reproduction_boundary": {
+    "publicly_recomputable": [
+      "aggregate score deltas",
+      "structural coverage",
+      "change count consistency",
+      "completed task accounting"
+    ],
+    "private_evidence_not_reproduced": [
+      "raw Kaggle receipt authenticity",
+      "full-test predictions and inference",
+      "checkpoint hash comparison",
+      "owner notebook execution and cloud backup"
+    ]
+  }
+}

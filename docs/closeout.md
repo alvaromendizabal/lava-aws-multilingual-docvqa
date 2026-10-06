@@ -1,62 +1,32 @@
-# Project maturity and public roadmap — October 2026
+# Project status — October 6, 2026
 
-This page is the stable public milestone ledger for LAVA. It records measured research that can be reviewed without exposing private competition artifacts.
+The implemented research pipeline and public evidence are available for review. The competition improvement and complete-answer objectives remain open.
 
-## Verified milestones
+| Milestone | Verified state |
+| --- | --- |
+| Development research | Reader, retrieval, and end-to-end comparisons on a reused 16-question/five-PDF panel |
+| Original routed development candidate | 82.68% local LAVA; limited to its original evaluation scope |
+| Best recorded submission | 0.49 public / 0.53 private |
+| Later recovered diagnostic | 0.48 public / 0.49 private; no improvement |
+| Recovered prediction acceptance | 622/624 structurally accepted non-abstaining predictions; two unresolved |
+| Checkpoint preservation | 1,081 unchanged inference checkpoints verified in AWS |
+| Closeout execution | 14/14 audit tasks, 21.88 seconds, about $0.01 recorded compute estimate |
+| Notebook and backup | Real Jupyter execution, saved/reopened Plotly outputs, and versioned backup byte verification |
+| New inference or uploads during closeout | None |
 
-| Milestone | Result | Decision |
-| --- | --- | --- |
-| Data audit | 208 raw files, 205 PDFs verified | complete |
-| Qwen3.5-9B supplied-evidence reader | **87.02% local LAVA** | reader frontier |
-| BM25 full-PDF retrieval | 95.31% recall@5 | strong baseline retained |
-| visual / lexical retrieval hybrid | **98.44% recall@5** | strong exploratory evidence |
-| Qwen retrieved-evidence first pass | 67.57% local LAVA | baseline system |
-| Qwen citation-guided reread | **77.99% local LAVA** | incumbent system |
-| larger one-shot reader study | best arm below verified reader frontier | stopped |
-| self-consistency / active perception | improved same-run control | failed promotion contract |
-| exhaustive screening / explicit reasoning | strong numeric slice | specialist signal |
-| Gemma heterogeneous reader | complementary error profile | routing candidate |
-| nested document-disjoint heterogeneous route | **82.68% local LAVA** | validated challenger |
+[Sanitized closeout evidence and verification](submission_closeout.md) distinguish archive/format completion from factual answer support. The public verifier checks aggregate consistency; private receipts and predictions are not released.
 
-All local quality measurements use the frozen development panel and pinned semantic-judge contract documented in this repository.
+## What remains
 
-## Project maturity
+1. Resolve the two unsupported answers using actual source evidence. Schema-valid placeholders are not recovered answers.
+2. Evaluate new model or selection changes on independent documents. Reusing the small development panel limits confidence in generalization.
+3. Produce a genuinely new, validated full-test candidate before another submission. Existing scores are retained; private scores were not used for tuning.
+4. Verify a score-to-code connection before claiming reproduction of a leading public solution.
 
-### Research
-**Mature.** Baselines, ablations, model-family comparisons, retrieval studies, negative experiments, promotion rules, and held-out-document validation are all represented in public evidence.
+## Public release boundary
 
-### Software
-**Mature research codebase.** The repository includes typed schemas, reusable packages, unit/integration tests, linting, typing, CI, executed notebooks, and explicit configuration contracts.
+Public review and the synthetic example require no account or GPU. The repository contains reusable code, tests, configuration, executed development notebooks, aggregate results, and a documented reproduction path. Exact routing, private predictions, raw generations, credentials, cloud paths, caches, and private return bundles are excluded.
 
-### Cloud execution
-**Production-oriented research workflow.** GPU runs use deterministic identities, resumable checkpoints, bounded runtime/cost controls, resource telemetry, and recovery-first failure handling.
+Software tests and successful recovery checks support the engineering account. They do not establish production deployment, service availability, factual correctness of all answers, or winner-level performance.
 
-### Reproducibility
-**Publicly semi-reproducible by design.** Public source, configs, executed notebooks, aggregate evidence, and quality gates are available; private competition outputs and exact routing rules are intentionally excluded.
-
-## What this project demonstrates to an employer
-
-- Ability to turn an ambiguous multimodal problem into measurable subsystems.
-- Strong retrieval/RAG and vision-language engineering.
-- Discipline around group-aware validation and leakage prevention.
-- Comfort with GPU constraints, cloud orchestration, and failure recovery.
-- Willingness to kill expensive ideas when evidence is weak.
-- Ability to preserve a clean public portfolio surface while operating a more sensitive private evaluation layer.
-
-## Public roadmap
-
-Future public work should only be added when it creates durable evidence.
-
-1. Expand independent document-level validation beyond the current small labeled panel.
-2. Benchmark stronger dense/visual retrieval under the same frozen selection contract.
-3. Evaluate adaptive multimodal reading with failure-safe, resumable execution.
-4. Refresh canonical notebooks only when a new stable milestone materially changes the project story.
-5. Keep external competition outcomes separate from local research metrics unless the comparison is explicitly like-for-like.
-
-## Publication boundary
-
-The public repository does not mirror private test predictions, private source documents, raw private model generations, credentials, exact routing rules, or private cloud return bundles.
-
-That boundary keeps the project useful to employers while avoiding a public dump of competition-sensitive artifacts.
-
-[Portfolio](portfolio.md) · [Review guide](reviewer_guide.md) · [Reproducibility](reproducibility.md) · [Frontier research](frontier_research_update.md) · [Architecture](architecture.md)
+[Case study](case_study.md) · [Review guide](reviewer_guide.md) · [Reproducibility](reproducibility.md)
