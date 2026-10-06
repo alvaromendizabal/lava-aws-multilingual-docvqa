@@ -1,146 +1,43 @@
-# Engineering case study — evidence-grounded multilingual document QA
+# Case study: answering questions with inspectable document evidence
 
-## Executive summary
+**Role:** sole project owner for research design, Python implementation, AWS GPU execution, evaluation, and public reporting.
 
-I built LAVA as an end-to-end multilingual document-intelligence system rather than a single model benchmark. Given a complete Japanese or Vietnamese PDF and a question, the system must find the relevant physical pages, reason over native text and page images, generate a structured answer, cite supporting pages, and survive the operational realities of GPU inference.
+**Problem:** a useful PDF answer needs both the answer and a reliable way to locate its evidence. Japanese and Vietnamese documents add language variation; charts, tables, scanned pages, and long files add retrieval and reading errors.
 
-The project demonstrates three things at once:
+I implemented a pipeline that extracts page text and images, retrieves relevant pages, runs open vision-language readers, parses structured answers, validates physical-page citations, and scores answer semantics and grounding separately. The use case is document review with traceable sources. No production deployment or business savings are claimed.
 
-1. **Applied ML research:** controlled reader, retrieval, reasoning, and routing experiments.
-2. **ML engineering:** typed interfaces, checkpoints, immutable lineage, CI, and cloud execution.
-3. **Decision discipline:** explicit promotion gates, document-disjoint validation, and retained negative results.
+## The work and the evidence
 
-## The challenge
+| Decision | Observation | Consequence |
+| --- | --- | --- |
+| Separate retrieval from reading | BM25 recall@5 was 95.31%; visual/lexical retrieval reached 98.44% | Diagnose evidence discovery separately from reader behavior |
+| Supply gold evidence to isolate readers | Qwen3.5-9B reached 87.02% local LAVA | Establish reader capability before optimizing the complete pipeline |
+| Reread cited pages | Local end-to-end score rose from 67.57% to 77.99% | Retain a useful two-pass research baseline |
+| Evaluate complementary reader families | Original route reached 82.68% with held-out-document selection | Retain a small-panel lead requiring independent confirmation |
+| Compare actual submissions | Best 0.49 public / 0.53 private; later diagnostic 0.48 / 0.49 | Preserve the best; do not equate development gains with competition gains |
 
-A document-VQA system can look strong in an oracle setting while failing in production for several different reasons:
+**All local results above use a reused panel of 16 questions across five PDFs.** The 82.68% result belongs to the original frozen route. It does not validate the later full-test composite assembled with legacy recoveries. Neither supplied-evidence nor local development results are substitutes for official scores.
 
-- the evidence retriever misses the required page;
-- the reader sees the page but misinterprets the chart, table, or text;
-- a larger model is more expensive without being better;
-- a second pass improves some questions while regressing others;
-- routing overfits a small development set;
-- an interrupted GPU run loses expensive completed work;
-- a valid answer is paired with invalid or weak grounding.
+## Why the system is organized this way
 
-I treated those as separate engineering and research problems rather than collapsing them into one score.
+**A missing page and a misread page need different fixes.** Retrieval is scored directly, then readers are compared on known evidence, and finally the combined pipeline is evaluated. That separation makes ablations interpretable.
 
-## System architecture
+**A larger model needs to justify its cost.** The larger one-shot reader, self-consistency, active-perception, and exhaustive-screening branches did not consistently satisfy promotion gates. Their negative results remain in the record. Model-family diversity helped on the small development panel, but that does not establish an improvement across the full test set.
 
-The public pipeline is organized around explicit contracts:
+**Interrupted inference should remain usable.** Per-question checkpoints and model/data/source hashes make reuse explicit. The latest AWS closeout verified 1,081 unchanged checkpoints, executed and reopened its notebook, and verified a versioned backup by reading its bytes back. This demonstrates recovery mechanisms; it is not a production reliability or uptime measurement.
 
-**PDFs + questions → page extraction → lexical/dense/visual retrieval → multimodal readers → structured answer + citations → schema/evidence validation → semantic + grounding evaluation → held-out-document selection**
+## Current completion boundary
 
-The public repository includes the reusable implementation for retrieval, readers, scoring, schemas, checkpoints, observability, and publication. Competition-sensitive predictions and routing details remain private.
+The system has records for all 624 questions. The recovered candidate has 622 structurally accepted predictions and two unresolved answers. Structural acceptance checks formats and citation bounds; it does not establish factual correctness. The historical best used two template-derived values without verified support, while the later diagnostic used two compatibility abstentions. Neither satisfies the project's strict supported-answer completion objective.
 
-## Key technical decisions
+The closeout confirmed the recorded best and retained the later negative result. It made no new model calls or submissions. The next scientific requirement is broader independent evaluation and genuine evidence for the two unresolved answers. Documentation alone cannot close those gaps.
 
-### 1. Measure retrieval independently from reading
+## Inspect the implementation
 
-The project evaluates evidence discovery directly instead of assuming an answer error is a reader error.
+- [Synthetic example](../examples/README.md): run the real public parsing and citation checks without downloading a model.
+- [Notebook 05](../notebooks/05_end_to_end_system_evaluation.ipynb): executed end-to-end development evaluation.
+- [Submission closeout](submission_closeout.md): official outcomes, exact scope, and public verification.
+- [Architecture](architecture.md): subsystem boundaries and lineage.
+- [Reproducibility](reproducibility.md): what is runnable and what remains private.
 
-Measured development evidence:
-- fixed BM25 recall@5: **95.31%**
-- strongest measured visual/lexical recall@5: **98.44%**
-- BM25 with a larger page budget reaches complete evidence coverage on the small development panel
-
-This exposed an important tradeoff: more evidence availability does not automatically improve answer quality because irrelevant context can dilute reasoning and grounding.
-
-### 2. Isolate reader capability before optimizing the full system
-
-Readers were first compared with the correct evidence supplied.
-
-The strongest verified supplied-evidence reader achieved:
-- semantic answer credit: **80.15%**
-- evidence F1: **93.90%**
-- local LAVA: **87.02%**
-
-A substantially larger one-shot reader failed to beat that frontier. The project therefore stopped treating parameter count as a proxy for quality.
-
-### 3. Use the model's own citations for a second read
-
-The retrieved-evidence first pass exposed questions where evidence was present but the answer was weak. A citation-guided reread improved the end-to-end development score from **67.57% to 77.99% local LAVA** using the same 9B reader.
-
-That result was useful but still post-hoc on a reused panel, so it was not treated as sufficient evidence for more complex routing.
-
-### 4. Combine model families only when their errors are complementary
-
-A compressed Gemma-family reader did not win as a standalone model, but its errors differed enough from Qwen to justify a small heterogeneous candidate family.
-
-The route was then evaluated with nested held-out-document selection:
-- incumbent: **77.99%**
-- heterogeneous routed challenger: **82.68%**
-- improvement: **+4.69 percentage points**
-- held-out documents improved: 2
-- held-out documents regressed: 0
-
-The exact private routing rule is not published. The validation design and aggregate result are.
-
-### 5. Make failed runs resumable
-
-GPU work is treated as durable state, not a disposable process.
-
-The execution architecture includes:
-- deterministic run identities;
-- per-question checkpoints;
-- model/data/source hashes;
-- immutable artifact identities;
-- heartbeats and progress counters;
-- resource telemetry;
-- bounded runtime and cost gates;
-- process cleanup;
-- failure bundles that preserve completed work.
-
-This prevents one late failure from turning an otherwise useful GPU run into total loss. Confirmed avoidable failures are converted into regression tests, and runtime/packaging failures are kept separate from scientifically negative experiments. See [Reliability and recovery engineering](reliability_recovery.md) for the public-safe failure taxonomy and recovery design.
-
-## Validation discipline
-
-The project separates several evaluation scopes that are easy to confuse:
-
-- **reader isolation:** correct evidence is supplied;
-- **retrieval evaluation:** evidence discovery is scored directly;
-- **complete-system evaluation:** retrieved evidence is passed to the reader;
-- **reasoning ablations:** alternate reading policies are compared;
-- **document-disjoint selection:** candidate policies are selected without the held-out document's labels.
-
-Public claims are tied to the scope in which they were measured.
-
-## What did not work
-
-Negative results are part of the portfolio because they show decision quality.
-
-Examples:
-- a larger one-shot reader was not better;
-- self-consistency improved a same-run control but failed the cross-document promotion rule;
-- exhaustive page screening increased context without producing the best complete-system result;
-- active perception did not justify global promotion;
-- a strong numeric reasoning signal was kept as a specialization finding instead of being generalized beyond the evidence.
-
-## Engineering evidence
-
-The repository contains:
-- six executed, checksum-bound notebooks;
-- frozen configs and model revisions;
-- reusable Python packages under `src/lava/`;
-- unit and integration tests;
-- Ruff and mypy;
-- GitHub Actions CI;
-- public-safe aggregate reports;
-- explicit public/private artifact boundaries;
-- reproducibility and reviewer guides.
-
-## What I would discuss in an interview
-
-The most representative engineering questions are:
-
-- How do you tell whether an answer failure came from retrieval or reasoning?
-- When should a larger model be rejected despite higher capacity?
-- How do you validate a routing policy without leaking the held-out document?
-- What should be checkpointed in a multimodal GPU pipeline?
-- How do you make experiment results inspectable without publishing sensitive evaluation artifacts?
-- How do you distinguish a failed experiment from an experiment that failed to execute?
-
-## Scope
-
-The public results use a small released development panel and a pinned local implementation of the published metric structure. They are not represented as organizer-server-identical scores.
-
-The point of the public case study is the system design, evaluation discipline, and production-oriented research workflow—not a claim that a small development set is a universal benchmark.
+The public repository exposes reusable implementation and aggregate evidence. Exact routing, private predictions, raw generations, credentials, and cloud object locations remain outside Git.

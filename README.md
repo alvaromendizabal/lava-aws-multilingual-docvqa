@@ -2,192 +2,54 @@
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
 
-**Multimodal document AI · Retrieval/RAG · Vision-language reasoning · AWS GPU systems · Reproducible evaluation**
+**PDF question answering · Multimodal retrieval · Vision-language models · AWS GPU inference**
 
-LAVA is an **Applied ML research system** for end-to-end multilingual PDF question answering. It retrieves evidence from complete documents, reads page images and native text with vision-language models, produces structured answers with physical-page citations, validates those citations, and evaluates answer semantics and grounding together.
+I built an **Applied ML research system** that answers questions from Japanese and Vietnamese PDFs and returns the physical pages supporting each answer. My work covers evidence retrieval, structured multimodal reading, evaluation, model comparison, and recovery from interrupted GPU runs.
 
-The project is built like a production ML system rather than a notebook-only experiment: immutable model/data contracts, document-disjoint validation, resumable GPU inference, per-question checkpoints, exact artifact hashing, explicit promotion gates, and public-safe research evidence are first-class parts of the design.
+The practical problem is finding an answer in a long document while keeping its source inspectable. LAVA separates retrieval errors, reading errors, and citation errors so a model change can be evaluated at the stage it affects.
 
-**Portfolio highlights**
-- **82.68% document-disjoint local LAVA** for a validated heterogeneous routed system, versus **77.99%** for the prior two-pass incumbent.
-- **87.02% local LAVA** for the strongest verified reader on supplied gold evidence.
-- **98.44% evidence recall@5** from the strongest measured visual/lexical retrieval hybrid on the development panel.
-- **1,582 retrieval configurations** audited with fold-isolated selection and duplicate-signature accounting.
-- Multiple negative research branches were explicitly killed when they failed promotion gates, including larger-reader, self-consistency, active-perception, and exhaustive-screening variants.
+**Start here:** [Case study](docs/case_study.md) · [Run the public example](examples/README.md) · [Executed system notebook](notebooks/05_end_to_end_system_evaluation.ipynb)
 
-> These are local development measurements under a pinned implementation of the published LAVA scoring structure. The organizer's exact evaluation runtime is not public, so official competition evaluation remains separate from the measurements reported here.
+![Synthetic Japanese and Vietnamese examples showing answers and physical-page citations](examples/evidence_example.svg)
 
-**Employer review path:** [30-second case study](docs/case_study.md) → [5-minute reviewer guide](docs/reviewer_guide.md) → [Portfolio overview](docs/portfolio.md) → [Reliability & recovery](docs/reliability_recovery.md) → [Notebook 00](notebooks/00_reproducibility_and_protocol.ipynb) → [Notebook 05](notebooks/05_end_to_end_system_evaluation.ipynb)
+*Illustration uses authored synthetic documents and supplied responses. The runnable example checks the real public parser and submission validator; it does not run a model or measure accuracy.*
 
-![Executive overview of the LAVA system and measured development evidence](reports/system/portfolio_overview.svg)
+## Results and what they mean
 
-![Measured answer quality, evidence quality and local LAVA across three input conditions](reports/system/quality.svg)
+| Evidence | Result | Evaluation scope |
+| --- | ---: | --- |
+| Best recorded competition submission | **0.49 public / 0.53 private** | Organizer scores; refreshed October 6, 2026 |
+| Later recovered diagnostic | 0.48 public / 0.49 private | Organizer scores; did not improve the recorded best |
+| Original heterogeneous route | **82.68% local LAVA** | Document-held-out selection; reused **16 questions / 5 PDFs** |
+| Citation-guided reread | **77.99% local LAVA** | Same **16 questions / 5 PDFs**; post-hoc development finding |
+| Best measured evidence recall@5 | **98.44%** | Retrieval only; same **16 questions / 5 PDFs** |
+| Preserved inference checkpoints | **1,081** | Byte-identical in the verified AWS closeout |
 
-## What I built
+The local route result applies to the original frozen route, **not the later recovered prediction composite**. Local scores and official scores use different evaluation populations and runtimes and should not be compared as if interchangeable.
 
-The system separates retrieval, multimodal reading, evidence validation, semantic scoring, and experiment selection so each stage can be measured independently.
+The historical best CSV has 624 structurally valid rows, including two template-derived values without verified support. The recovered candidate has **622 structurally accepted predictions out of 624**, with two unresolved answers; its diagnostic CSV uses two compatibility abstentions. Structural acceptance is not a count of correct answers. The latest closeout verified existing artifacts and submitted nothing new. [Results, provenance, and completion status →](docs/submission_closeout.md)
 
-```mermaid
-flowchart LR
-    P["Pinned PDFs + questions"] --> X["Native text + page images"]
-    X --> R["Lexical / dense / visual retrieval"]
-    R --> Q["Reader A"]
-    R --> H["Reader B"]
-    Q --> C["Structured answer + physical-page citations"]
-    H --> C
-    C --> V["Schema + evidence validation"]
-    V --> E["Answer semantics + grounding score"]
-    E --> S["Document-disjoint selection / routing"]
-    S --> A["Immutable reports + checkpoints"]
+## Engineering decisions
+
+- **Measure retrieval before replacing the reader.** Compare BM25, multilingual dense embeddings, and ColQwen page-image retrieval against physical-page labels. A broader audit covered 1,582 retrieval configurations with fold-isolated selection.
+- **Test a second read before scaling the model.** Citation-guided rereading raised the local end-to-end score from 67.57% to 77.99% on the reused development panel. Larger readers, extra pages, and repeated sampling did not consistently clear promotion gates.
+- **Select complementary readers by document.** Evaluate a frozen Qwen/Gemma routing family while holding out whole documents. The 82.68% local result is exploratory evidence on a small reused panel, not independent confirmation of generalization.
+- **Preserve expensive work.** Hash model, data, source, and prediction identities; checkpoint each question; capture failure diagnostics; and verify saved notebooks and versioned backups. Runtime failure and a negative model result remain separate outcomes.
+
+[Architecture](docs/architecture.md) · [Research decisions](docs/frontier_research_update.md) · [Reliability and recovery](docs/reliability_recovery.md)
+
+## Run a public example
+
+Python 3.12, no GPU, account, model download, or third-party package required:
+
+```bash
+python3 examples/run_demo.py
+python3 examples/verify_submission_closeout.py
 ```
 
-The public repository intentionally publishes the research contract and aggregate evidence without exposing private questions, raw generations, test predictions, exact internal routing rules, credentials, or cloud object locations.
+The first command checks supplied Japanese/Vietnamese responses and rejects an invalid citation using the public implementation. The second verifies the aggregate closeout report and recomputes its comparisons. Neither command reproduces private inference or an official score.
 
-## Measured system behavior
-
-All figures below use the same frozen 16-question development panel from five supplied PDFs and the same pinned semantic-judge contract.
-
-| System | Validation view | Semantic answer | Evidence F1 | Local LAVA |
-| --- | --- | ---: | ---: | ---: |
-| Qwen3.5-9B on supplied gold evidence | reader-isolation diagnostic | 80.15% | 93.90% | **87.02%** |
-| BM25 → Qwen3.5-9B | complete first pass | 48.90% | 86.25% | 67.57% |
-| Citation-guided Qwen3.5-9B reread | complete two-pass system | 67.65% | 88.33% | **77.99%** |
-| Heterogeneous routed system | nested leave-one-document-out | — | — | **82.68%** |
-
-The two-pass Qwen system improved the first-pass question average by **10.42 percentage points** while using the same 9B reader. That reread result is a **post-hoc development finding** on the reused supplied panel, so the later heterogeneous candidate was evaluated with a stronger nested held-out-document protocol: the candidate family was frozen before each held-out document was scored, and selection used only the other documents. The resulting out-of-fold estimate improved the prior incumbent by **4.69 percentage points**, with two documents improving and none regressing.
-
-The exact competition-specific routing rule is intentionally not published. The public evidence is the validation design, aggregate result, and model-family provenance.
-
-## Verified reader benchmark
-
-The canonical supplied-evidence benchmark keeps all reader configurations visible in the public entrance, including configurations that were not selected. This is the exact model-comparison snapshot represented in the executed notebooks.
-
-| Oracle reader | Semantic answer credit | Evidence-page F1 | Local LAVA | Valid responses |
-| --- | ---: | ---: | ---: | ---: |
-| Qwen3.5 4B · BF16 | 50.62% | 97.02% | 73.82% | 16/16 |
-| Qwen3.5 9B · BF16 | **80.15%** | 93.90% | **87.02%** | 16/16 |
-| Qwen3.8 27B · NF4 | 70.98% | 89.73% | 80.36% | 15/16 |
-
-These measurements isolate reader behavior on supplied evidence. They complement—but do not replace—the later retrieved-evidence and document-disjoint system validation.
-
-## Retrieval research
-
-The retrieval program independently evaluates lexical, multilingual dense, and page-image evidence discovery.
-
-| Retrieval policy | Evidence recall@5 | Questions with all evidence |
-| --- | ---: | ---: |
-| Fixed BM25 | 95.31% | 14/16 |
-| multilingual E5 | 92.19% | 13/16 |
-| ColQwen visual retrieval | **98.44%** | **15/16** |
-| BM25 + visual fusion | **98.44%** | **15/16** |
-| BM25 at 10 pages | 100.00% | 16/16 |
-
-The broader lexical audit generates **1,089 BM25 configurations** across 11 text views and 99 parameter pairs, plus **493 fusion/exploration policies**. Rankings are materialized before labels are scored, and fold-isolated selection prevents a global pooled result from silently becoming the promoted retriever.
-
-The result is deliberately conservative: strong exploratory gains are recorded, but only policies that survive the multi-document promotion contract become defaults.
-
-## Reader and reasoning research
-
-### Model scaling
-
-The reader program compared multiple open multimodal model configurations under a common evaluation contract. The strongest verified supplied-evidence reader remains Qwen3.5-9B at **87.02% local LAVA**.
-
-A substantially larger one-shot reader branch was rejected after controlled semantic rescoring. This is an important engineering result: the project does not equate parameter count with system quality, and it stops expensive branches when the measured evidence does not support promotion.
-
-### Self-consistency and active perception
-
-A later Qwen9B experiment tested repeated sampling and targeted crop/zoom views. The best arm improved over its same-run single-reader control but did not satisfy the project promotion gate across documents, so the branch was stopped rather than micro-tuned.
-
-### Exhaustive evidence screening and explicit reasoning
-
-An exhaustive page-screening study showed that more retrieval was not automatically better: extra pages often diluted grounding. Its explicit reasoning arm did, however, achieve perfect local answer and grounding scores on all four numeric development questions, revealing a useful specialization signal without justifying a global system replacement.
-
-### Heterogeneous reader ensemble
-
-A compressed Gemma 4 12B reader produced a different error profile from Qwen. It did not earn standalone promotion, but it was materially complementary. That complementarity motivated a predeclared routed candidate family, which was then evaluated using nested held-out-document selection.
-
-The result—**82.68% out-of-fold local LAVA**—is the strongest independently selected end-to-end development estimate currently published for this project.
-
-See [Frontier research update](docs/frontier_research_update.md) for the aggregate experiment history and [machine-readable evidence](research/README.md) for public-safe result files.
-
-## Engineering quality
-
-This repository emphasizes the parts of ML work that usually disappear from a model-comparison notebook:
-
-- **Deterministic lineage:** pinned model revisions, source hashes, input hashes, prompt/evaluation contracts, and immutable report identities.
-- **Resumable inference:** per-question checkpoints and content-addressed artifacts preserve valid work across interrupted GPU runs.
-- **Cloud reliability:** deterministic job identities, bounded attempts, explicit cost gates, heartbeats, resource telemetry, failure packaging, and process cleanup.
-- **Validation discipline:** document-disjoint selection, negative results kept in the record, and promotion thresholds defined before deployment.
-- **Data integrity:** 208 raw files and 205 PDFs audited; citations are checked against physical page bounds.
-- **Publication hygiene:** private source documents, raw generations, private test outputs, credentials, and competition-specific orchestration remain outside Git.
-- **Software quality:** unit tests, integration tests, Ruff, mypy, notebook integrity checks, and CI.
-
-## Reliability and recovery engineering
-
-The later systems work treats interrupted GPU research as a first-class ML engineering problem. Scientific stages are checkpointed independently from reporting, runtime qualification tests required capabilities instead of trusting package names alone, and confirmed avoidable failures are converted into regression tests before another expensive run.
-
-The public-safe [reliability and recovery case study](docs/reliability_recovery.md) documents the reusable design: immutable scientific identities, resume-first inference, bounded failure domains, owned-process cleanup, notebook save/reopen validation, and independent versioned backup. The companion [machine-readable reliability frontier](research/reliability_frontier.json) exposes the engineering contract without publishing private predictions, exact routing, source mappings, or cloud object locations.
-
-This distinction is deliberate: **a runtime failure is not a negative model result**, and a valid scientific result remains valid even if a later notebook or packaging stage fails.
-
-## Repository map
-
-| Path | Purpose |
-| --- | --- |
-| [`notebooks/`](notebooks/) | Six executed, checksum-bound research notebooks |
-| [`src/lava/`](src/lava/) | Retrieval, reader, evaluation, schema, and checkpointing code |
-| [`scripts/`](scripts/) | Reproducible research and operator commands |
-| [`pipelines/`](pipelines/) | Bounded batch-inference entry points |
-| [`configs/`](configs/) | Frozen model, retrieval, evaluation, and system contracts |
-| [`reports/`](reports/) | Sanitized measured results and figures |
-| [`research/`](research/) | Public-safe aggregate frontier evidence |
-| [`docs/`](docs/) | Architecture, evaluation, reviewer guide, research decisions, and reproduction notes |
-
-## Canonical executed notebooks
-
-The six canonical notebooks remain the checksum-bound executed evidence for the benchmark state. Later frontier research is published separately rather than rewriting saved outputs without a legitimate rerun.
-
-| Notebook | What it demonstrates |
-| --- | --- |
-| [00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb) | Verified scope, evaluation contract, benchmark results, and conclusions |
-| [01 — Experiment design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Comparable reader inputs, model configurations, and evaluation boundaries |
-| [02 — Cloud execution](notebooks/02_verified_gpu_execution.ipynb) | AWS jobs, checksums, checkpoints, logging, and recovery |
-| [03 — Model quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Reader comparison, uncertainty, latency, memory, and resource tradeoffs |
-| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Full-PDF retrieval, feature research, visual retrieval, and fold decisions |
-| [05 — Complete system](notebooks/05_end_to_end_system_evaluation.ipynb) | Retrieved-evidence answering and citation-guided rereading |
-
-## Review path for employers
-
-**30-second review**
-1. [Engineering case study](docs/case_study.md)
-2. Scan the executive system overview above.
-
-**5-minute review**
-1. [Employer review guide](docs/reviewer_guide.md)
-2. [Portfolio overview](docs/portfolio.md)
-3. [Notebook 00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb)
-
-**15-minute technical review**
-1. [Notebook 05 — Complete system](notebooks/05_end_to_end_system_evaluation.ipynb)
-2. [Notebook 04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb)
-3. [Frontier research update](docs/frontier_research_update.md)
-4. [Architecture and lineage](docs/architecture.md)
-5. [Reproducibility guide](docs/reproducibility.md)
-6. [Reliability and recovery engineering](docs/reliability_recovery.md)
-
-## Scope and limitations
-
-The canonical notebooks are executed evidence for the benchmark state they actually ran and remain checksum-bound to their source and declared inputs. Later research is published as aggregate evidence rather than retroactively rewriting those notebook outputs.
-
-The labeled development set is small: 16 questions from five supplied PDFs, with limited Vietnamese coverage. The metric follows the published LAVA structure under a pinned local semantic judge. These measurements support research decisions; they are **not presented as organizer-server-identical competition scores**.
-
-The private full-test and competition layer is intentionally excluded from public Git. Public claims are limited to aggregate development evidence, reusable engineering, and validation methodology. Private test predictions, exact routing logic, raw private generations, credentials, cloud object locations, model caches, and return bundles are not published.
-
-For the exact public/private boundary and reproduction levels, see [Reproducibility](docs/reproducibility.md).
-
-## Reproduce and inspect
-
-Public review requires no account or GPU. For environment-backed verification, use Python 3.12 and the frozen `uv` environment:
+For the full repository quality gate and the six frozen research notebooks:
 
 ```bash
 uv sync --frozen --group judge
@@ -195,13 +57,44 @@ make quality
 make notebooks
 ```
 
-For model-backed evaluation, run the non-destructive prerequisite checks first:
+This installs the pinned research environment, including its CPU judge dependencies. See [reproduction levels and prerequisites](docs/reproducibility.md) before model-backed evaluation.
 
-```bash
-make evaluation-check
-make evaluation-preview
-```
+## Development benchmarks
 
-The public workflow is intentionally layered: executed evidence can be inspected immediately, CPU checks are reproducible from Git, model evaluation requires access to the pinned open checkpoints, and private competition inference remains outside the public repository.
+All tables in this section use the same **16-question / five-PDF** development panel and pinned local semantic judge. These measurements are **not presented as organizer-server-identical competition scores**.
 
-[Engineering case study](docs/case_study.md) · [Employer review guide](docs/reviewer_guide.md) · [Portfolio overview](docs/portfolio.md) · [Reproducibility](docs/reproducibility.md) · [Architecture](docs/architecture.md) · [Evaluation](docs/evaluation.md) · [Retrieval research](docs/retrieval.md) · [Frontier research](docs/frontier_research_update.md)
+| Supplied-evidence reader | Semantic answer | Evidence F1 | Local LAVA | Valid responses |
+| --- | ---: | ---: | ---: | ---: |
+| Qwen3.5 4B · BF16 | 50.62% | 97.02% | 73.82% | 16/16 |
+| Qwen3.5 9B · BF16 | 80.15% | 93.90% | **87.02%** | 16/16 |
+| Qwen3.8 27B · NF4 | 70.98% | 89.73% | 80.36% | 15/16 |
+
+| Retrieved-evidence system | Semantic answer | Evidence F1 | Local LAVA |
+| --- | ---: | ---: | ---: |
+| BM25 → Qwen3.5-9B | 48.90% | 86.25% | 67.57% |
+| Citation-guided Qwen3.5-9B reread | 67.65% | 88.33% | **77.99%** |
+
+Fixed BM25 achieved **95.31% recall@5**; the strongest measured visual/lexical policy reached **98.44%**. More retrieved pages did not reliably improve answer quality. [Retrieval study →](docs/retrieval.md)
+
+## Executed research notebooks
+
+These six notebooks preserve the benchmark state they actually executed. Later aggregate research and closeout evidence are published separately, without rewriting historical outputs.
+
+| Notebook | Evidence |
+| --- | --- |
+| [00 — Research overview](notebooks/00_reproducibility_and_protocol.ipynb) | Scope, contracts, measured results, and conclusions |
+| [01 — Experiment design](notebooks/01_oracle_reader_benchmark_design.ipynb) | Comparable reader inputs and configurations |
+| [02 — Cloud execution](notebooks/02_verified_gpu_execution.ipynb) | AWS jobs, hashes, checkpoints, and recovery |
+| [03 — Quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Quality, latency, memory, and cost tradeoffs |
+| [04 — Evidence retrieval](notebooks/04_evidence_retrieval.ipynb) | Full-PDF retrieval and fold-level decisions |
+| [05 — End-to-end evaluation](notebooks/05_end_to_end_system_evaluation.ipynb) | Retrieved-evidence answers and citation-guided rereading |
+
+## Scope and limitations
+
+This is an implemented research pipeline, with testing, typing, CI, and AWS execution evidence. Production deployment and service-level performance are not claimed. The small development panel has been reused across experiments and has limited Vietnamese coverage. Broader independent document-level validation remains necessary.
+
+The private full-test and competition layer is intentionally excluded from public Git. Public code, configuration, synthetic examples, executed development notebooks, aggregate results, and verification commands are available. Exact routing rules, private predictions, raw generations, model caches, credentials, cloud object locations, and private return bundles remain excluded.
+
+The competition objective remains unresolved: the recorded best is below the leader, and the strict complete-answer check remains at 622/624. The public evidence supports an engineering case study and a bounded account of the research; it does not claim winner reproduction or a completed 624-answer system.
+
+[Technical review guide](docs/reviewer_guide.md) · [Reproducibility](docs/reproducibility.md) · [Public evidence](research/README.md) · [Project status](docs/closeout.md)

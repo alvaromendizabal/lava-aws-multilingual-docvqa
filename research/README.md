@@ -17,11 +17,15 @@ The published research now spans five layers:
 Key current aggregate measurements:
 - strongest supplied-evidence reader: **87.02% local LAVA**
 - measured two-pass incumbent: **77.99%**
-- validated heterogeneous routed challenger: **82.68%**
+- original heterogeneous route, small-panel estimate: **82.68%**
 - strongest measured recall@5 retrieval policies: **98.44%**
+
+All local quality measurements use a reused **16-question / five-PDF** panel. The 82.68% route score does not apply to the later recovered full-test composite. Best official scores are **0.49 public / 0.53 private**; the later diagnostic scored **0.48 / 0.49**. Current structural acceptance is **622/624**, not an accuracy count.
 
 ## Files
 
+- [submission_closeout.json](submission_closeout.json) — sanitized official outcomes and completion scope
+- [../docs/submission_closeout.md](../docs/submission_closeout.md) — provenance and public verification command
 - [frontier_status.json](frontier_status.json) — machine-readable current research state
 - [frontier_results.csv](frontier_results.csv) — aggregate retrieval, reader, reasoning, and validation measurements
 - [../docs/frontier_research_update.md](../docs/frontier_research_update.md) — employer-facing interpretation and research decisions
@@ -33,4 +37,4 @@ Key current aggregate measurements:
 
 The public artifacts include model/revision identities, aggregate metrics, evaluation boundaries, and promotion logic. They exclude private questions, reference answers, raw generations, private test predictions, credentials, exact cloud locations, return bundles, and private routing rules.
 
-The current research frontier is a **document-disjoint heterogeneous routed challenger**, not a private test-result dump. The public value is the experiment design and validation evidence.
+The original document-disjoint route remains a development result. Official outcomes and completion checks are reported separately; they limit the conclusions that follow from the small-panel experiments.

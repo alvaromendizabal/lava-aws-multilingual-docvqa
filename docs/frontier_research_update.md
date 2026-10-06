@@ -1,5 +1,7 @@
 # Frontier research update — October 2026
 
+**Evaluation scope:** local results in this study use a reused 16-question/five-PDF panel. Document holdout within that panel is not independent confirmation on new documents. The original-route score does not apply to the later recovered full-test composite. See the [official results and current completion status](submission_closeout.md).
+
 This page records the public-safe state of the LAVA reader, retrieval, reasoning, and validation program after the executed-notebook benchmark. It excludes private questions, raw generations, test predictions, credentials, cloud locations, exact routing rules, and competition-specific orchestration.
 
 ## Evaluation boundary
@@ -12,7 +14,7 @@ The development panel contains **16 questions from five supplied training PDFs**
 | --- | ---: | --- |
 | Qwen3.5-9B on supplied gold evidence | **87.02%** | reader-isolation diagnostic |
 | Qwen3.5-9B retrieved-evidence two-pass system | **77.99%** | measured incumbent |
-| Heterogeneous routed system, nested held-out-document evaluation | **82.68%** | validated challenger |
+| Heterogeneous routed system, nested held-out-document evaluation | **82.68%** | original-route small-panel estimate |
 
 The routed result is an out-of-fold estimate: the candidate family is fixed before each held-out document is evaluated, and selection uses only the other documents.
 
