@@ -6,12 +6,13 @@ It is intentionally separate from the six canonical executed notebooks. Those no
 
 ## Current public state
 
-The published research now spans four layers:
+The published research now spans five layers:
 
 1. **Retrieval:** lexical, multilingual dense, and page-image retrieval.
 2. **Reader evaluation:** open multimodal readers under one pinned semantic contract.
 3. **Reasoning/perception ablations:** self-consistency, targeted visual perception, exhaustive screening, and explicit reasoning.
 4. **Heterogeneous validation:** complementary reader families evaluated with nested held-out-document selection.
+5. **Reliability / systems research:** checkpoint reuse, runtime qualification, bounded failure recovery, and publication integrity.
 
 Key current aggregate measurements:
 - strongest supplied-evidence reader: **87.02% local LAVA**
@@ -25,6 +26,8 @@ Key current aggregate measurements:
 - [frontier_results.csv](frontier_results.csv) — aggregate retrieval, reader, reasoning, and validation measurements
 - [../docs/frontier_research_update.md](../docs/frontier_research_update.md) — employer-facing interpretation and research decisions
 - [../docs/portfolio.md](../docs/portfolio.md) — concise portfolio review
+- [reliability_frontier.json](reliability_frontier.json) — public-safe reliability mechanisms and failure taxonomy
+- [../docs/reliability_recovery.md](../docs/reliability_recovery.md) — employer-facing recovery engineering case study
 
 ## Reproduction boundary
 

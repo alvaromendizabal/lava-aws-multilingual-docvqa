@@ -25,6 +25,7 @@ A reviewer should come away with four facts quickly:
 | Model evaluation | [Notebook 03](../notebooks/03_model_scaling_and_cost.ipynb), [Evaluation](evaluation.md) |
 | Group-aware validation | [Frontier update](frontier_research_update.md), nested held-out-document result |
 | AWS / GPU engineering | [Notebook 02](../notebooks/02_verified_gpu_execution.ipynb), [Architecture](architecture.md) |
+| Reliability / recovery | [Reliability and recovery engineering](reliability_recovery.md), checkpoint and failure contracts |
 | Reproducibility | [Reproducibility guide](reproducibility.md), notebook manifests, pinned configs |
 | Software quality | CI, unit/integration tests, Ruff, mypy, publication checks |
 
@@ -40,6 +41,7 @@ Follow one decision end to end:
 6. **Selection discipline:** reject branches that fail predeclared gates.
 7. **Held-out validation:** evaluate a frozen heterogeneous candidate family with document-disjoint selection.
 8. **Operationalization:** persist checkpoints, hashes, run metadata, resource telemetry, and failure bundles.
+9. **Recovery:** distinguish runtime failures from negative model results and resume only from compatibility-verified state.
 
 ## What the project demonstrates
 
@@ -84,3 +86,4 @@ The strongest technical discussions usually start with one of these:
 - How was heterogeneous routing validated without leaking the held-out document?
 - How does the checkpoint design prevent expensive GPU work from being lost?
 - Why are the executed notebooks frozen instead of retroactively rewritten after later experiments?
+- How does the system preserve valid GPU work when model loading, IPC, notebook, or packaging stages fail?

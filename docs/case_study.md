@@ -90,7 +90,7 @@ The execution architecture includes:
 - process cleanup;
 - failure bundles that preserve completed work.
 
-This prevents one late failure from turning an otherwise useful GPU run into total loss.
+This prevents one late failure from turning an otherwise useful GPU run into total loss. Confirmed avoidable failures are converted into regression tests, and runtime/packaging failures are kept separate from scientifically negative experiments. See [Reliability and recovery engineering](reliability_recovery.md) for the public-safe failure taxonomy and recovery design.
 
 ## Validation discipline
 
@@ -137,6 +137,7 @@ The most representative engineering questions are:
 - How do you validate a routing policy without leaking the held-out document?
 - What should be checkpointed in a multimodal GPU pipeline?
 - How do you make experiment results inspectable without publishing sensitive evaluation artifacts?
+- How do you distinguish a failed experiment from an experiment that failed to execute?
 
 ## Scope
 

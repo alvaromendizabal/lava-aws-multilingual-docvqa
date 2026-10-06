@@ -50,6 +50,8 @@ These are local research measurements on the released development material under
 - Bounded runtime and cost gates.
 - Heartbeats, resource telemetry, process cleanup, and failure packaging.
 - Versioned artifact storage and checksum verification.
+- Failure classification that separates infrastructure/runtime faults from valid negative experiments.
+- Resume-first recovery: completed inference survives downstream notebook, packaging, or runtime failures.
 
 ## Research decisions that matter
 
@@ -78,6 +80,7 @@ That progression demonstrates model selection discipline rather than model-shopp
 ### Deep technical review
 - [Architecture](architecture.md)
 - [Evaluation](evaluation.md)
+- [Reliability and recovery engineering](reliability_recovery.md)
 - [Reproducibility](reproducibility.md)
 - [Machine-readable research evidence](../research/README.md)
 
