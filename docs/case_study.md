@@ -26,6 +26,12 @@ I implemented a pipeline that extracts page text and images, retrieves relevant 
 
 **Interrupted inference should remain usable.** Per-question checkpoints and model/data/source hashes make reuse explicit. The latest AWS closeout verified 1,081 unchanged checkpoints, executed and reopened its notebook, and verified a versioned backup by reading its bytes back. This demonstrates recovery mechanisms; it is not a production reliability or uptime measurement.
 
+## Interactive evidence inspection
+
+I built [Document Desk](https://alvaro-document-evidence.tartmacaw2.chatgpt.site) to make page retrieval and answer support directly inspectable. It runs BM25 over authored Japanese and Vietnamese documents, selects an extractive answer, highlights the copied support and checks the physical-page citation. Queries, retrieval depth and support thresholds are editable; unsupported queries can abstain.
+
+The page runs entirely in the browser. It uses lexical retrieval and sentence extraction, with no LLM or OCR service. This public implementation complements the historical multimodal research rather than recalculating its scores. [Run and test the demo](reproducibility.md).
+
 ## Current completion boundary
 
 The system has records for all 624 questions. The recovered candidate has 622 structurally accepted predictions and two unresolved answers. Structural acceptance checks formats and citation bounds; it does not establish factual correctness. The historical best used two template-derived values without verified support, while the later diagnostic used two compatibility abstentions. Neither satisfies the project's strict supported-answer completion objective.

@@ -1,32 +1,32 @@
-# Project status — October 6, 2026
+# Project closeout · document intelligence and public evidence
 
-The implemented research pipeline and public evidence are available for review. The competition improvement and complete-answer objectives remain open.
+This release presents the document-intelligence system I built, its historical evaluation record, and a runnable browser demonstration of evidence retrieval and citation inspection. Public delivery and scientific answer completeness are reported separately.
 
-| Milestone | Verified state |
-| --- | --- |
-| Development research | Reader, retrieval, and end-to-end comparisons on a reused 16-question/five-PDF panel |
-| Original routed development candidate | 82.68% local LAVA; limited to its original evaluation scope |
-| Best recorded submission | 0.49 public / 0.53 private |
-| Later recovered diagnostic | 0.48 public / 0.49 private; no improvement |
-| Recovered prediction acceptance | 622/624 structurally accepted non-abstaining predictions; two unresolved |
-| Checkpoint preservation | 1,081 unchanged inference checkpoints verified in AWS |
-| Closeout execution | 14/14 audit tasks, 21.88 seconds, about $0.01 recorded compute estimate |
-| Notebook and backup | Real Jupyter execution, saved/reopened Plotly outputs, and versioned backup byte verification |
-| New inference or uploads during closeout | None |
+## Delivered scope
 
-[Sanitized closeout evidence and verification](submission_closeout.md) distinguish archive/format completion from factual answer support. The public verifier checks aggregate consistency; private receipts and predictions are not released.
+| Component | Recorded state |
+|---|---|
+| Research pipeline | Page retrieval, multimodal reading, structured responses and citation evaluation |
+| Original routed development candidate | **82.68% local LAVA** on the reused 16-question/five-PDF panel |
+| Best recorded submission | **0.49 public / 0.53 private** |
+| Later recovered diagnostic | **0.48 public / 0.49 private**; no improvement |
+| Recovered prediction acceptance | **622/624** structurally accepted non-abstaining predictions; two unresolved |
+| Recovery evidence | **1,081** unchanged inference checkpoints verified in the historical AWS closeout |
+| Public demo | [Document Desk](https://alvaro-document-evidence.tartmacaw2.chatgpt.site): actual lexical retrieval, extraction, cited support and abstention |
+| Review path | [Case study](case_study.md), [review guide](reviewer_guide.md), [reproduction guide](reproducibility.md) |
 
-## What remains
+The historical closeout completed 14 audit tasks, verified saved/reopened notebook outputs and a versioned backup, and made no new inference calls or submissions. This public demo release is separate from that recorded execution.
 
-1. Resolve the two unsupported answers using actual source evidence. Schema-valid placeholders are not recovered answers.
-2. Evaluate new model or selection changes on independent documents. Reusing the small development panel limits confidence in generalization.
-3. Produce a genuinely new, validated full-test candidate before another submission. Existing scores are retained; private scores were not used for tuning.
-4. Verify a score-to-code connection before claiming reproduction of a leading public solution.
+## Research limits preserved
 
-## Public release boundary
+The two unresolved answers still require actual source support. Schema-valid placeholders do not resolve them. The historical best contained two template-derived values without verified support; the later diagnostic contained two compatibility abstentions.
 
-Public review and the synthetic example require no account or GPU. The repository contains reusable code, tests, configuration, executed development notebooks, aggregate results, and a documented reproduction path. Exact routing, private predictions, raw generations, credentials, cloud paths, caches, and private return bundles are excluded.
+The original 82.68% local route result does not transfer automatically to the later recovered composite. Repeated use of five documents limits generalization confidence; additional independent document-level evidence would be needed for a stronger performance claim.
 
-Software tests and successful recovery checks support the engineering account. They do not establish production deployment, service availability, factual correctness of all answers, or winner-level performance.
+## Public demonstration boundary
 
-[Case study](case_study.md) · [Review guide](reviewer_guide.md) · [Reproducibility](reproducibility.md)
+Document Desk uses authored Japanese and Vietnamese text with BM25 and sentence extraction. It performs real local retrieval and validates copied support and physical-page citations. It does not run the research vision-language models, OCR pages or establish a new official score. The lexical support measure is not calibrated confidence.
+
+The repository publishes reusable code, tests, configuration, executed notebooks, aggregate results and synthetic examples. Private documents, predictions, raw generations, exact routing rules, model caches, credentials and cloud locations remain excluded. No production service-level guarantee is claimed.
+
+[Sanitized submission evidence](submission_closeout.md) · [Architecture](architecture.md)

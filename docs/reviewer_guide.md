@@ -1,6 +1,8 @@
 # Technical review guide
 
-## Five-minute review
+## Three-minute interactive review
+
+Open [Document Desk](https://alvaro-document-evidence.tartmacaw2.chatgpt.site) and edit a question or retrieval setting to inspect the live computation. [Launch and test instructions](reproducibility.md). Then follow the historical evidence path below.
 
 1. Read the [case study](case_study.md): problem, ownership, decisions, and measured outcomes.
 2. Run the [synthetic example](../examples/README.md): inspect a response and see an invalid citation rejected by the public implementation.
