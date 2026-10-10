@@ -1,8 +1,21 @@
 # Reproducibility guide
 
-This repository is deliberately **semi-reproducible**: the public research contract, source code, frozen configurations, executed notebooks, aggregate evidence, and quality gates are reproducible; private competition inputs, private predictions, exact routing rules, credentials, and cloud-return bundles are not published. Official score aggregates and the unresolved completion status are published separately in the [closeout report](submission_closeout.md).
+The public release supports the research contract, source code, frozen configurations, executed notebooks, aggregate evidence and quality gates; private competition inputs, private predictions, exact routing rules, credentials, and cloud-return bundles are not published. Official score aggregates and the unresolved completion status are published separately in the [closeout report](submission_closeout.md).
 
 The design goal is to let a reviewer verify the engineering and scientific process without releasing competition-sensitive artifacts.
+
+## Run Document Desk in the browser
+
+[Open the public demo](https://alvaro-document-evidence.tartmacaw2.chatgpt.site), open `public-demo/index.html` directly from a checkout, or serve the checkout with `python -m http.server 8000` and visit `http://localhost:8000/public-demo/`.
+
+Two authored five-page documents provide Japanese and Vietnamese examples. Edit a query, retrieval depth and support threshold. The browser computes BM25 word/character features, ranks pages, selects a sentence-level extractive answer, highlights copied support and validates the physical-page citation. Empty or unsupported queries can abstain; textless and extraction-error pages remain visible limitations.
+
+```bash
+node tools/test_public_demo.mjs
+```
+
+This is local lexical retrieval and extraction with no LLM, OCR, backend or model download. Support values are not calibrated confidence. Result export is a synthetic demonstration artifact, separate from historical competition outputs. The existing Python example below checks supplied responses rather than performing this retrieval workflow.
+
 
 ## Start with the smallest runnable proof
 

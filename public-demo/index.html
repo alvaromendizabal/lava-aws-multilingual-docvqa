@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="An interactive multilingual document evidence workspace: browser-local retrieval, physical-page citations and validated extracts from authored Japanese and Vietnamese documents."
+    />
+    <meta property="og:title" content="LAVA — Document evidence, in view" />
+    <meta
+      property="og:description"
+      content="Ask a question. Inspect the page. Test the citation. An authored synthetic, browser-local document intelligence demo."
+    />
+    <meta
+      property="og:url"
+      content="https://alvaro-document-evidence.tartmacaw2.chatgpt.site"
+    />
+    <link
+      rel="canonical"
+      href="https://alvaro-document-evidence.tartmacaw2.chatgpt.site"
+    />
+    <title>LAVA · Document evidence workspace</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="unicode-casefold.js"></script>
+    <script defer src="data.js"></script>
+    <script defer src="engine.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to document workspace</a>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="LAVA demo home"
+        ><span class="brand-icon" aria-hidden="true">L</span
+        ><span
+          >LAVA<span class="brand-caption">Document intelligence</span></span
+        ></a
+      >
+      <div class="header-right">
+        <span class="local-badge"
+          ><span aria-hidden="true">●</span> Runs in your browser</span
+        ><a
+          class="source-link"
+          href="https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa"
+          target="_blank"
+          rel="noopener noreferrer"
+          >View source <span aria-hidden="true">↗</span></a
+        >
+      </div>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">An inspectable evidence pipeline</p>
+          <h1>Read the answer.<br /><em>Inspect the evidence.</em></h1>
+          <p class="intro-copy">
+            A multilingual document workspace that keeps the source in view. Ask
+            a question, follow its physical-page citation, and test what the
+            response validator actually guarantees.
+          </p>
+        </div>
+        <div class="intro-note">
+          <span class="note-number">01—05</span>
+          <div>
+            <strong>Real retrieval. Visible boundaries.</strong>
+            <p>
+              Authored synthetic pages. BM25 lexical ranking and verbatim
+              extraction run locally—no model, account or upload.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section
+        class="workspace"
+        id="workspace"
+        aria-label="Interactive document evidence workspace"
+      >
+        <aside class="library">
+          <div class="section-label">
+            <span>01 / Collection</span><span>2 documents</span>
+          </div>
+          <div id="document-list"></div>
+          <div class="library-note">
+            <span class="small-kicker">What is indexed?</span>
+            <p>
+              Native text only. Physical page numbers include covers and
+              unavailable pages.
+            </p>
+            <button id="unavailable-button" class="text-button" type="button">
+              Inspect an unavailable page <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <details class="method-note">
+            <summary>How this works</summary>
+            <ol>
+              <li>
+                Normalize Unicode and tokenize words plus character
+                bigrams/trigrams.
+              </li>
+              <li>Rank every physical page with BM25.</li>
+              <li>
+                Rank passages inside the evidence window and copy one verbatim.
+              </li>
+              <li>
+                Validate schema, supplied citations and exact source text.
+              </li>
+            </ol>
+            <p>
+              Coverage is lexical overlap, not a calibrated probability. Copying
+              a sentence does not prove it answers the question.
+            </p>
+          </details>
+        </aside>
+        <section class="viewer" aria-label="Physical document page">
+          <div class="viewer-toolbar">
+            <div>
+              <span id="viewer-language" class="small-kicker"></span>
+              <h2 id="viewer-title"></h2>
+            </div>
+            <div class="page-controls">
+              <button
+                id="previous-page"
+                type="button"
+                aria-label="Previous physical page"
+              >
+                ←</button
+              ><span id="page-position" aria-live="polite"></span
+              ><button
+                id="next-page"
+                type="button"
+                aria-label="Next physical page"
+              >
+                →
+              </button>
+            </div>
+          </div>
+          <div class="paper-stage">
+            <article
+              id="paper"
+              class="paper"
+              tabindex="-1"
+              aria-label="Source document page"
+            ></article>
+          </div>
+          <div
+            id="page-tabs"
+            class="page-tabs"
+            aria-label="Select physical page"
+          ></div>
+          <div class="viewer-foot">
+            <span
+              ><span class="highlight-swatch" aria-hidden="true"></span> Exact
+              selected passage</span
+            ><span id="page-status"></span>
+          </div>
+        </section>
+        <aside class="evidence-panel">
+          <div class="section-label">
+            <span>02 / Ask &amp; verify</span
+            ><span class="synthetic-tag">Synthetic only</span>
+          </div>
+          <form id="query-form">
+            <label for="question">Your question</label
+            ><textarea
+              id="question"
+              rows="3"
+              maxlength="500"
+              spellcheck="false"
+              aria-describedby="query-help"
+            ></textarea>
+            <div class="query-meta">
+              <span id="query-help"
+                >Use the document’s language · Ctrl/⌘ + Enter</span
+              ><span id="query-count">0 / 500</span>
+            </div>
+            <button class="primary-button" id="search-button" type="submit">
+              Find supporting evidence <span aria-hidden="true">↗</span>
+            </button>
+          </form>
+          <div
+            id="examples"
+            class="example-list"
+            aria-label="Example questions"
+          ></div>
+          <details class="retrieval-options">
+            <summary>Retrieval controls</summary>
+            <div class="control-row">
+              <label for="top-k">Evidence window</label
+              ><select id="top-k">
+                <option value="1">1 page</option>
+                <option value="2" selected>2 pages</option>
+                <option value="3">3 pages</option>
+              </select>
+            </div>
+            <label class="slider-label" for="support-threshold"
+              >Minimum lexical coverage
+              <output id="threshold-value" for="support-threshold"
+                >20%</output
+              ></label
+            ><input
+              id="support-threshold"
+              type="range"
+              min="0.05"
+              max="0.70"
+              step="0.05"
+              value="0.20"
+            />
+            <p>
+              A stricter overlap requirement can trigger abstention. It is not a
+              confidence calibration.
+            </p>
+          </details>
+          <section class="answer-section" aria-labelledby="answer-heading">
+            <div class="answer-head">
+              <h2 id="answer-heading">Evidence extract</h2>
+              <span id="answer-state" class="state-tag"></span>
+            </div>
+            <div id="run-status" role="status" aria-live="polite"></div>
+            <blockquote id="answer-text"></blockquote>
+            <div id="citation-list"></div>
+            <div id="support-readout" class="support-readout"></div>
+            <p class="answer-limit">
+              Selected verbatim by lexical relevance. Review the cited page to
+              decide whether it answers your question.
+            </p>
+          </section>
+          <details class="rank-details" open>
+            <summary>Physical-page ranking</summary>
+            <div id="rankings"></div>
+            <p class="micro-copy">
+              BM25 scores are relevance weights, not probabilities. Unavailable
+              pages retain their positions.
+            </p>
+          </details>
+        </aside>
+      </section>
+      <section class="contract-section" aria-labelledby="contract-heading">
+        <div class="contract-intro">
+          <p class="eyebrow">03 / Test the boundary</p>
+          <h2 id="contract-heading">
+            A citation is a contract.<br />Not a correctness claim.
+          </h2>
+          <p>
+            Edit the extracted response and validate it. An out-of-window page
+            is rejected. A plausible answer can pass the schema yet fail the
+            exact-copy check.
+          </p>
+          <div class="contract-actions">
+            <button id="bad-citation" class="secondary-button" type="button">
+              Try a bad citation</button
+            ><button
+              id="unsupported-answer"
+              class="secondary-button"
+              type="button"
+            >
+              Try unsupported text</button
+            ><button id="reset-response" class="text-button" type="button">
+              Restore extract
+            </button>
+          </div>
+        </div>
+        <div class="contract-editor">
+          <label for="response-json">Response JSON</label
+          ><textarea
+            id="response-json"
+            rows="8"
+            spellcheck="false"
+            aria-describedby="contract-help"
+          ></textarea>
+          <p id="contract-help" class="micro-copy">
+            The public contract has exactly four fields. The confidence value
+            here represents uncalibrated lexical coverage.
+          </p>
+          <div class="editor-actions">
+            <button
+              id="validate-response"
+              class="secondary-button"
+              type="button"
+            >
+              Validate response</button
+            ><button id="export-result" class="text-button" type="button">
+              Export evidence JSON <span aria-hidden="true">↓</span>
+            </button>
+          </div>
+          <div id="validation-result" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <div>
+        <strong>Built by Alvaro Mendizabal</strong>
+        <p>
+          Public evidence engineering · Japanese &amp; Vietnamese ·
+          SYNTHETIC_ONLY
+        </p>
+      </div>
+      <p>
+        This browser demo demonstrates lexical retrieval and validation. It does
+        not run the project’s private vision-language models, reproduce their
+        results, or perform OCR.
+      </p>
+      <a
+        href="https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/blob/main/LICENSE"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Source &amp; license ↗</a
+      >
+    </footer>
+    <noscript
+      ><div class="noscript">
+        JavaScript is required for local retrieval. No data leaves your browser.
+        Enable JavaScript to explore the authored documents.
+      </div></noscript
+    >
+  </body>
+</html>
