@@ -13,4 +13,4 @@ LAVA demonstrates ownership of an applied document-AI project from problem frami
 
 The local 82.68% route result uses a reused 16-question/five-PDF panel. The best official result is 0.49 public / 0.53 private; the later diagnostic scored 0.48 / 0.49. The full-test supported-answer objective remains unresolved, with 622 structurally accepted predictions out of 624. These are different measurements, not interchangeable claims of accuracy.
 
-Start with the [case study](case_study.md), run the [synthetic public example](../examples/README.md), then follow the [technical review guide](reviewer_guide.md). The repository demonstrates implemented research and engineering, with no claim of production deployment or winner reproduction.
+Start with the [case study](case_study.md), run the [synthetic public example](../examples/README.md), then follow the [technical review guide](reviewer_guide.md). The repository presents implemented research, inspectable public tools, and measured engineering evidence.
