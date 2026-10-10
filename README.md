@@ -8,6 +8,8 @@
 
 I built an **Applied ML research system** that answers questions from Japanese and Vietnamese PDFs and returns the physical pages supporting each answer. My work covers page retrieval, vision-language reading, structured output validation, model comparison and recovery from interrupted GPU runs.
 
+**Engineering ownership:** I designed the research workflow, implemented the document-processing and answer-validation interfaces, evaluated reader configurations, and built checkpointed AWS execution. The public review connects those decisions to inspectable code, recorded measurements and an interactive evidence viewer.
+
 **Historical recorded best: 0.49 public / 0.53 private.** The later diagnostic scored 0.48 / 0.49 and was not an improvement. I kept retrieval quality, answer quality, citation validity and operational completeness separate throughout the evaluation.
 
 **Start here:** [Document Desk demo](https://alvaro-document-evidence.tartmacaw2.chatgpt.site) · [Case study](docs/case_study.md) · [Three-minute review](docs/reviewer_guide.md) · [Run locally](docs/reproducibility.md)
@@ -77,7 +79,7 @@ make quality
 make notebooks
 ```
 
-[Reproduction levels](docs/reproducibility.md) explain the additional requirements for model-backed evaluation.
+[Verification levels](docs/reproducibility.md) explain the additional requirements for model-backed evaluation. These instructions concern running this project's components and checking its evidence.
 
 ## Scope and limitations
 
