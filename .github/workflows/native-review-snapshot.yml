@@ -1,0 +1,47 @@
+name: Native correctness source snapshot
+on:
+  push:
+    branches: [audit/native-contracts-20261013]
+    paths: [.github/workflows/native-review-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Snapshot eight authorized public main branches only
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, tarfile
+          from concurrent.futures import ThreadPoolExecutor
+          from pathlib import Path
+          repos = ['lava-aws-multilingual-docvqa','jigsaw-rule-classifier','nfl-player-trajectory','biohub-cell-tracking-during-development','otto-recommender-system','kaggriculture','commodity-prediction','rsna-knee-abnormality-detection']
+          excluded = {'home-credit-model-stability','march-machine-learning-mania-2026'}
+          if excluded.intersection(repos):
+              raise RuntimeError('Excluded repository')
+          root = Path('snapshots').resolve()
+          root.mkdir()
+          def one(repo):
+              path = root / repo
+              subprocess.run(['git','clone','--depth','1','--branch','main','https://github.com/alvaromendizabal/'+repo+'.git',str(path)],check=True,timeout=120)
+              def git(*args):
+                  return subprocess.check_output(['git','-C',str(path),*args],text=True).strip()
+              record = {'repo':repo,'head':git('rev-parse','HEAD'),'tree':git('rev-parse','HEAD^{tree}')}
+              subprocess.run(['git','-C',str(path),'archive','--format=tar','--output='+str(root/(repo+'.tar')),'HEAD'],check=True)
+              return record
+          with ThreadPoolExecutor(max_workers=4) as pool:
+              records = list(pool.map(one,repos))
+          (root/'manifest.json').write_text(json.dumps(records,indent=2)+'\n')
+          with tarfile.open('native-public-sources.tar.gz','w:gz') as archive:
+              archive.add(root/'manifest.json',arcname='manifest.json')
+              for repo in repos:
+                  archive.add(root/(repo+'.tar'),arcname=repo+'.tar')
+          print(json.dumps(records,indent=2))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-public-sources
+          path: native-public-sources.tar.gz
+          retention-days: 3
+          if-no-files-found: error
