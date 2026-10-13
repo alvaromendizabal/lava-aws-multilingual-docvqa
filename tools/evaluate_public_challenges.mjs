@@ -7,8 +7,8 @@ import { sources, groupKey, loadEngine, inspectCase, runCase, summarize } from "
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const SUITE = "examples/public_challenges.json";
-export const REPORT = "reports/public_challenges.json";
-export const PAGE = "reports/public_challenges.html";
+export const REPORT = "review/public_challenges.json";
+export const PAGE = "review/public_challenges.html";
 export function require(condition, message) {
   if (!condition) throw new Error(message);
 }

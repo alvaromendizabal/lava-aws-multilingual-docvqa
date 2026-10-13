@@ -62,7 +62,7 @@
       "boundary": "These synthetic diagnostics do not estimate neural-model quality or production accuracy.",
       "implementation": "tools/evaluate_public_challenges.mjs",
       "tests": "tools/test_public_challenges.mjs",
-      "evidence": "reports/public_challenges.json"
+      "evidence": "review/public_challenges.json"
     }
   ],
   "commands": [
@@ -117,7 +117,7 @@
   "source_dependencies": [
     "examples/public_challenges.json",
     "tools/public_challenge_adapter.mjs",
-    "reports/public_challenges.html",
+    "review/public_challenges.html",
     "public-demo/app.js",
     "public-demo/data.js",
     "public-demo/engine.js",

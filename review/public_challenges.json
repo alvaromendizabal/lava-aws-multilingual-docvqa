@@ -9,7 +9,7 @@
     "public-demo/data.js": "8d1663963c411715cbcf203502f71564a91ee4685d75ee9993f6a1a5bb051bd8",
     "public-demo/engine.js": "408e94abb72cca83d23749b85a323b72158fb9c54c4562eaae78dcc1690d7c8f",
     "public-demo/unicode-casefold.js": "a575aa6807e0da79d795e42248ccd267b6bb5082b0528a9a3bbd2df352dcf73d",
-    "tools/evaluate_public_challenges.mjs": "bfe01c9ea923414e2486b7d58a7967bf10415bda636e93578f838ea7da028ebb",
+    "tools/evaluate_public_challenges.mjs": "e920438db06b8b936558a77645fdbe1e95bdf5d97d937c76c7825e89153d4c43",
     "tools/public_challenge_adapter.mjs": "fe2626192388db32fa7f254b27fb93bd9d5490617ac53050b67610927fc9dc06"
   },
   "summary": {

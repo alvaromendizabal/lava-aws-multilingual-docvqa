@@ -7,7 +7,7 @@ node tools/evaluate_public_challenges.mjs --check
 node tools/test_public_challenges.mjs
 ```
 
-Use Node.js 24.19.0, the CI runtime. No installation, credentials, model download, or cloud compute is required. Open [`reports/public_challenges.html`](../reports/public_challenges.html) locally for the responsive, printable review. The [JSON report](../reports/public_challenges.json) includes every passage/page decision, language and behavior slices, denominators, and source SHA-256 digests. The [authored questions and expected passages](../examples/public_challenges.json) are public.
+Use Node.js 24.19.0, the CI runtime. No installation, credentials, model download, or cloud compute is required. Open [`review/public_challenges.html`](../review/public_challenges.html) locally for the responsive, printable review. The [JSON report](../review/public_challenges.json) includes every passage/page decision, language and behavior slices, denominators, and source SHA-256 digests. The [authored questions and expected passages](../examples/public_challenges.json) are public.
 
 ## Results and failure analysis
 
@@ -20,7 +20,7 @@ Use Node.js 24.19.0, the CI runtime. No installation, credentials, model downloa
 | Expected complete outcome | 19 / 24 | Includes both correct passages and correct abstentions. |
 | Schema and extractive-grounding checks | 24 / 24 | Includes abstentions; these checks alone do not establish semantic correctness. |
 
-The four unsupported-overlap cases ask for Tokyo revenue (the document gives orders), Sapporo orders (only three other cities appear), Standard-plan headcount (the document gives fees), and an Enterprise-plan fee (that plan is absent). All four return a copied passage with a valid physical-page citation. Their failure is semantic relevance, not malformed output or invented text. The [per-case report](../reports/public_challenges.json) makes each mismatch visible.
+The four unsupported-overlap cases ask for Tokyo revenue (the document gives orders), Sapporo orders (only three other cities appear), Standard-plan headcount (the document gives fees), and an Enterprise-plan fee (that plan is absent). All four return a copied passage with a valid physical-page citation. Their failure is semantic relevance, not malformed output or invented text. The [per-case report](../review/public_challenges.json) makes each mismatch visible.
 
 The engine returns 21 non-abstaining answers; **17/21** match their authored passage. That denominator differs from the **17/18** answerable-case passage agreement. The per-language report separates Japanese **9/12** from Vietnamese **10/12** expected outcomes. No engine parameter was adjusted to improve these results.
 

@@ -115,7 +115,7 @@ try {
   await test("explicit report updates preserve deterministic bytes and do not leave staging files", async () => {
     await main(["--write"], temp);
     assert.equal(readSource(temp, REPORT).toString(), encode(original));
-    assert.deepEqual(fs.readdirSync(path.join(temp, "reports")).sort(), ["public_challenges.html", "public_challenges.json"]);
+    assert.deepEqual(fs.readdirSync(path.join(temp, "review")).sort(), ["public_challenges.html", "public_challenges.json"]);
   });
   await test("dangling report symlinks cannot redirect publication", async () => {
     fs.unlinkSync(path.join(temp, REPORT));

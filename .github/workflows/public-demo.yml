@@ -41,8 +41,8 @@ jobs:
         with:
           name: public-challenge-evidence
           path: |
-            reports/public_challenges.json
-            reports/public_challenges.html
+            review/public_challenges.json
+            review/public_challenges.html
           if-no-files-found: error
           retention-days: 14
       - name: Retain the runnable public demo
