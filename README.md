@@ -1,5 +1,7 @@
 # LAVA · Multilingual Document Intelligence
 
+> **Inspect the engineering:** [Source-linked review brief](review/README.md) · [Run the verified public checks](review/README.md#one-command-an-inspectable-result) · [Review-kit CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/employer-review.yml)
+
 **Alvaro Mendizabal · Retrieval · Document QA · Evaluation · AWS GPU engineering**
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
