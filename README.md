@@ -32,6 +32,8 @@ This is actual lexical retrieval and extractive answering over synthetic documen
 node tools/test_public_demo.mjs
 ```
 
+**Inspect the failure boundary:** the [executable challenge review](docs/PUBLIC_CHALLENGES.md) runs 24 visible authored questions through this exact engine. It shows why correct page retrieval and valid citations can still produce unsupported answers, with per-language results, all five diagnostic misses, a printable report, and source-bound CI verification.
+
 ## Research evidence
 
 | Measured result | Scope |

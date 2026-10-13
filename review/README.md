@@ -42,6 +42,8 @@ The default path does not execute Node checks and never labels them as passed. C
 | `closeout-arithmetic` | python | [`examples/verify_submission_closeout.py`](../examples/verify_submission_closeout.py) |
 | `browser-evidence` | node | [`tools/test_public_demo.mjs`](../tools/test_public_demo.mjs) |
 
+The optional Node path also recomputes the [public challenge evaluation](../docs/PUBLIC_CHALLENGES.md), including its known failures. A passed verification means the result and its source identities reproduce; it does not mean every authored case succeeds.
+
 ## What is actually reproduced
 
 The public checks execute authored response fixtures through the actual parsing and citation validators, and recompute aggregate closeout consistency. The optional browser checks exercise lexical retrieval on synthetic documents. These are different from model-backed question answering.
@@ -50,7 +52,7 @@ A repeat invocation verifies the saved bundle rather than rerunning completed ch
 
 Each command has a default 90-second deadline, configurable with `--timeout`. The runner records UTC time, interpreter version, elapsed command times, command identities, and SHA-256 hashes for its configuration, template, invoked entry points, linked implementations, tests, and evidence. Failed runs keep diagnostic logs in a separately named failed-run directory and never produce a success receipt.
 
-The fingerprint covers this curated review surface, **not every transitive dependency or every repository file**. Checksums establish consistency, not independent authentication of historical scores. HTML links follow the current default branch; the receipt is the record of the local bytes inspected. The static page is explicitly an inspection brief, not an execution receipt.
+The fingerprint also binds the explicit `source_dependencies` list, including browser assets, authored challenge inputs and result files. Changing one invalidates reuse. The fingerprint covers this curated review surface, **not every transitive dependency or every repository file**. Checksums establish consistency, not independent authentication of historical scores. HTML links follow the current default branch; the receipt is the record of the local bytes inspected. The static page is explicitly an inspection brief, not an execution receipt.
 
 ## Public/private boundary
 

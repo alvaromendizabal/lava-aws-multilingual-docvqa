@@ -32,6 +32,19 @@ jobs:
           python tools/check_public_demo.py > "$RUNNER_TEMP/public-demo-boundary.json"
       - name: Test the actual browser demo engine and controls
         run: node tools/test_public_demo.mjs
+      - name: Verify public challenge metrics and evaluator failure paths
+        run: |
+          node tools/test_public_challenges.mjs
+          node tools/evaluate_public_challenges.mjs --check
+      - name: Retain public challenge evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: public-challenge-evidence
+          path: |
+            reports/public_challenges.json
+            reports/public_challenges.html
+          if-no-files-found: error
+          retention-days: 14
       - name: Retain the runnable public demo
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:

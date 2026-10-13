@@ -99,6 +99,29 @@ class ReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source changed"):
             self.run_review()
 
+    def test_changed_explicit_dependency_rejects_reuse(self) -> None:
+        (self.root / "dependency.json").write_text('{"parameter":1}')
+        self.project["source_dependencies"] = ["dependency.json"]
+        self.save()
+        self.run_review()
+        (self.root / "dependency.json").write_text('{"parameter":2}')
+        with self.assertRaisesRegex(ValueError, "source changed"):
+            self.run_review()
+
+    def test_missing_dependency_is_rejected_before_execution(self) -> None:
+        self.project["source_dependencies"] = ["missing.json"]
+        self.save()
+        with self.assertRaisesRegex(ValueError, "Missing reviewed file"):
+            self.run_review()
+        self.assertFalse(self.output.exists())
+
+    def test_invalid_dependency_lists_are_rejected(self) -> None:
+        for value in ("README.md", [42], ["README.md", "README.md"], ["../README.md"]):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.project["source_dependencies"] = value
+                self.save()
+                RUN.load_project(self.root)
+
     def test_artifact_tampering_rejected(self) -> None:
         self.run_review()
         (self.output / "index.html").write_text("modified")
