@@ -54,6 +54,15 @@
       "implementation": "examples/verify_submission_closeout.py",
       "tests": "tests/unit/test_submission_closeout_public.py",
       "evidence": "reports/portfolio/closeout.json"
+    },
+    {
+      "audience": "Data science",
+      "title": "Test the failure boundary, not only the happy path.",
+      "decision": "Execute visible authored challenges against the shipped engine; separate retrieval or decision coverage from successful outcomes and retain every failure.",
+      "boundary": "These synthetic diagnostics do not estimate neural-model quality or production accuracy.",
+      "implementation": "tools/evaluate_public_challenges.mjs",
+      "tests": "tools/test_public_challenges.mjs",
+      "evidence": "review/public_challenges.json"
     }
   ],
   "commands": [
@@ -74,6 +83,14 @@
       "runtime": "node",
       "entry": "tools/test_public_demo.mjs",
       "args": []
+    },
+    {
+      "id": "public-challenge-evaluation",
+      "runtime": "node",
+      "entry": "tools/evaluate_public_challenges.mjs",
+      "args": [
+        "--check"
+      ]
     }
   ],
   "read_more": [
@@ -88,9 +105,26 @@
     {
       "path": "docs/reviewer_guide.md",
       "label": "Technical review"
+    },
+    {
+      "path": "docs/PUBLIC_CHALLENGES.md",
+      "label": "Challenge results and failure analysis"
     }
   ],
   "schema_version": 1,
   "repository": "alvaromendizabal/lava-aws-multilingual-docvqa",
-  "reviewed_base_commit": "094df176eaf1163ae3aba370416f3ef85bff79e2"
+  "reviewed_base_commit": "90bffb5c4eb988f435a3a0ddf5c09a3cc322e73d",
+  "source_dependencies": [
+    "examples/public_challenges.json",
+    "tools/public_challenge_adapter.mjs",
+    "review/public_challenges.html",
+    "public-demo/app.js",
+    "public-demo/data.js",
+    "public-demo/engine.js",
+    "public-demo/index.html",
+    "public-demo/styles.css",
+    "public-demo/unicode-casefold.js",
+    "src/lava/retrieval/lexical.py",
+    "src/lava/readers/structured_output.py"
+  ]
 }

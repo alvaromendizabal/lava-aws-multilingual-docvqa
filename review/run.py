@@ -86,6 +86,12 @@ def load_project(root: Path) -> dict:
             local_file(root, card[kind])
     for value in project["read_more"]:
         local_file(root, value["path"])
+    dependencies = project.get("source_dependencies", [])
+    require(isinstance(dependencies, list), "Invalid source dependencies")
+    require(all(isinstance(name, str) for name in dependencies), "Invalid dependency path")
+    require(len(dependencies) == len(set(dependencies)), "Duplicate source dependencies")
+    for name in dependencies:
+        local_file(root, name)
     return project
 
 
@@ -96,6 +102,7 @@ def source_hashes(root: Path, project: dict) -> dict[str, str]:
     for card in project["cards"]:
         paths.update(card[kind] for kind in ("implementation", "tests", "evidence"))
     paths.update(item["path"] for item in project["read_more"])
+    paths.update(project.get("source_dependencies", []))
     return {name: digest(local_file(root, name)) for name in sorted(paths)}
 
 

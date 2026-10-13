@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "scope": "AUTHORED_SYNTHETIC_CHALLENGES",
+  "purpose": "Visible diagnostic questions authored from two fictional documents. Not a held-out benchmark, model evaluation, or deployment estimate.",
+  "cases": [
+    {"id":"ja-tokyo","document":"aoba-operations","slice":"direct","query":"東京拠点の出荷注文数は？","expected_line":"ja-2-a"},
+    {"id":"ja-osaka","document":"aoba-operations","slice":"direct","query":"大阪拠点の出荷注文数は？","expected_line":"ja-2-b"},
+    {"id":"ja-fukuoka","document":"aoba-operations","slice":"direct","query":"福岡拠点の出荷注文数は？","expected_line":"ja-2-c"},
+    {"id":"ja-returns","document":"aoba-operations","slice":"direct","query":"返品の受付期限は？","expected_line":"ja-3-a"},
+    {"id":"ja-contact","document":"aoba-operations","slice":"direct","query":"お問い合わせの受付時間は？","expected_line":"ja-3-c"},
+    {"id":"ja-temperature","document":"aoba-operations","slice":"direct","query":"標準商品の保管温度は？","expected_line":"ja-4-a"},
+    {"id":"ja-humidity","document":"aoba-operations","slice":"direct","query":"保管場所の相対湿度は？","expected_line":"ja-4-b"},
+    {"id":"ja-issued","document":"aoba-operations","slice":"direct","query":"発行日は？","expected_line":"ja-1-d"},
+    {"id":"vi-priority","document":"an-phuc-support","slice":"direct","query":"Yêu cầu ưu tiên được phản hồi trong bao lâu?","expected_line":"vi-2-a"},
+    {"id":"vi-ordinary","document":"an-phuc-support","slice":"direct","query":"Yêu cầu thông thường được phản hồi trong bao lâu?","expected_line":"vi-2-b"},
+    {"id":"vi-standard","document":"an-phuc-support","slice":"direct","query":"Gói Tiêu chuẩn có phí bao nhiêu mỗi tháng?","expected_line":"vi-3-a"},
+    {"id":"vi-team","document":"an-phuc-support","slice":"direct","query":"Gói Nhóm có phí bao nhiêu mỗi tháng?","expected_line":"vi-3-b"},
+    {"id":"vi-backups","document":"an-phuc-support","slice":"direct","query":"Bản sao lưu được giữ trong bao nhiêu ngày?","expected_line":"vi-4-a"},
+    {"id":"vi-logs","document":"an-phuc-support","slice":"direct","query":"Nhật ký truy cập được giữ trong bao nhiêu ngày?","expected_line":"vi-4-b"},
+    {"id":"ja-paraphrase","document":"aoba-operations","slice":"paraphrase","query":"東京から何件発送されましたか？","expected_line":"ja-2-a"},
+    {"id":"vi-paraphrase","document":"an-phuc-support","slice":"paraphrase","query":"Mất mấy tiếng để trả lời yêu cầu khẩn cấp?","expected_line":"vi-2-a"},
+    {"id":"vi-unicode-case","document":"an-phuc-support","slice":"normalization","query":"GÓI NHÓM CÓ PHÍ BAO NHIÊU MỖI THÁNG?","expected_line":"vi-3-b"},
+    {"id":"vi-decomposed","document":"an-phuc-support","slice":"normalization","query":"Bản sao lưu được giữ trong bao nhiêu ngày?","normalization":"NFD","expected_line":"vi-4-a"},
+    {"id":"ja-out-of-domain","document":"aoba-operations","slice":"unsupported","query":"火星基地の建設費用は？","expected_line":null},
+    {"id":"vi-out-of-domain","document":"an-phuc-support","slice":"unsupported","query":"quantum zeppelin orbit","expected_line":null},
+    {"id":"ja-wrong-attribute","document":"aoba-operations","slice":"unsupported-overlap","query":"東京拠点の売上金額は？","expected_line":null},
+    {"id":"ja-missing-location","document":"aoba-operations","slice":"unsupported-overlap","query":"札幌拠点の出荷注文数は？","expected_line":null},
+    {"id":"vi-wrong-attribute","document":"an-phuc-support","slice":"unsupported-overlap","query":"Gói Tiêu chuẩn có bao nhiêu nhân viên?","expected_line":null},
+    {"id":"vi-missing-plan","document":"an-phuc-support","slice":"unsupported-overlap","query":"Gói Doanh nghiệp có phí bao nhiêu mỗi tháng?","expected_line":null}
+  ]
+}
