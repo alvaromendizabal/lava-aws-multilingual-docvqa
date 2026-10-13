@@ -1,0 +1,47 @@
+name: Employer review kit
+on:
+  pull_request:
+  push:
+    branches: [main, "portfolio/**"]
+permissions:
+  contents: read
+concurrency:
+  group: employer-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24.19.0"
+          package-manager-cache: false
+      - name: Test failure paths with and without Python assertions
+        run: |
+          python -B -S -m unittest discover -s review -p test_run.py -v
+          python -B -S -O -m unittest discover -s review -p test_run.py
+      - name: Verify the deterministic inspection brief
+        run: python -B -S review/run.py --check-page
+      - name: Execute, reuse, and verify the actual public review
+        run: |
+          python -B -S review/run.py --output "$RUNNER_TEMP/employer-review" --with-node
+          python -B -S review/run.py --output "$RUNNER_TEMP/employer-review" --with-node
+          python -B -S review/run.py --output "$RUNNER_TEMP/employer-review" --with-node --check
+      - name: Retain source-linked public review evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: employer-review-python-${{ matrix.python }}
+          path: ${{ runner.temp }}/employer-review/
+          if-no-files-found: error
+          retention-days: 14

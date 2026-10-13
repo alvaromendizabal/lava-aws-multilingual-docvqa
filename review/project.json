@@ -1,0 +1,96 @@
+{
+  "title": "Answers that can point to their evidence.",
+  "discipline": "Document intelligence / retrieval / reliable ML",
+  "summary": "A multilingual document-QA research system that separates finding evidence, reading it, and validating the answer. The engineering story is inspectable: explicit contracts, controlled comparisons, and recoverable execution.",
+  "signals": [
+    {
+      "value": "2 languages",
+      "label": "Japanese and Vietnamese documents"
+    },
+    {
+      "value": "16 questions",
+      "label": "Published reused development panel"
+    },
+    {
+      "value": "1,081",
+      "label": "Preserved checkpoints in recorded closeout"
+    }
+  ],
+  "scope": "The public checks execute authored response fixtures through the actual parsing and citation validators, and recompute aggregate closeout consistency. The optional browser checks exercise lexical retrieval on synthetic documents. These are different from model-backed question answering.",
+  "private_boundary": "Full-test documents, generated answers, exact routing rules, private checkpoints, model caches, and operational cloud locations remain excluded. The two unresolved historical answers remain unresolved.",
+  "cards": [
+    {
+      "audience": "Applied AI",
+      "title": "Separate format validity from factual correctness.",
+      "decision": "Parse structured answers, constrain cited physical pages, and demonstrate that a schema-valid answer can still be wrong.",
+      "boundary": "The fixture checks an interface; it is not a new semantic-accuracy benchmark.",
+      "implementation": "src/lava/readers/structured_output.py",
+      "tests": "tests/unit/test_structured_output.py",
+      "evidence": "examples/fixture.json"
+    },
+    {
+      "audience": "Data science",
+      "title": "Diagnose retrieval before blaming the reader.",
+      "decision": "Evaluate page retrieval separately from supplied-evidence reading and end-to-end answer quality.",
+      "boundary": "The small, repeatedly used development panel limits generalization claims.",
+      "implementation": "src/lava/retrieval/pipeline.py",
+      "tests": "tests/unit/test_retrieval_pipeline.py",
+      "evidence": "reports/retrieval/summary.json"
+    },
+    {
+      "audience": "ML engineering",
+      "title": "Make interrupted work recoverable.",
+      "decision": "Use durable reader checkpoints and artifact identities so completed questions need not be repeated after a failure.",
+      "boundary": "The public code illustrates recovery contracts; private GPU state is not distributed.",
+      "implementation": "src/lava/readers/checkpoints.py",
+      "tests": "tests/unit/test_private_artifacts.py",
+      "evidence": "docs/reliability_recovery.md"
+    },
+    {
+      "audience": "Data science",
+      "title": "Preserve negative and incomplete results.",
+      "decision": "Keep official, development, structural-coverage, and factual-correctness claims separate in a machine-checkable closeout.",
+      "boundary": "Aggregate consistency does not independently authenticate private receipts.",
+      "implementation": "examples/verify_submission_closeout.py",
+      "tests": "tests/unit/test_submission_closeout_public.py",
+      "evidence": "reports/portfolio/closeout.json"
+    }
+  ],
+  "commands": [
+    {
+      "id": "citation-contract",
+      "runtime": "python",
+      "entry": "examples/run_demo.py",
+      "args": []
+    },
+    {
+      "id": "closeout-arithmetic",
+      "runtime": "python",
+      "entry": "examples/verify_submission_closeout.py",
+      "args": []
+    },
+    {
+      "id": "browser-evidence",
+      "runtime": "node",
+      "entry": "tools/test_public_demo.mjs",
+      "args": []
+    }
+  ],
+  "read_more": [
+    {
+      "path": "docs/case_study.md",
+      "label": "Case study"
+    },
+    {
+      "path": "docs/reproducibility.md",
+      "label": "Reproducibility levels"
+    },
+    {
+      "path": "docs/reviewer_guide.md",
+      "label": "Technical review"
+    }
+  ],
+  "schema_version": 1,
+  "repository": "alvaromendizabal/lava-aws-multilingual-docvqa",
+  "reviewed_base_commit": "094df176eaf1163ae3aba370416f3ef85bff79e2"
+}
