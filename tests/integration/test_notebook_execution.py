@@ -79,8 +79,20 @@ def test_walkthrough_executes_all_steps_without_changing_source(tmp_path, stem):
             for line in output.text.splitlines():
                 if line.startswith("{"):
                     events.append(json.loads(line))
-    assert events[-1]["event"].endswith("walkthrough.completed")
-    assert events[-1]["elapsed_seconds"] >= 0
+    stages = (
+        "01_verify_evidence",
+        "02_inspect_input_tradeoff",
+        "03_inspect_frozen_execution",
+        "04_compare_quality",
+        "05_examine_failures",
+        "06_inspect_runtime_and_recovery",
+        "07_record_conclusion",
+    )
+    for suffix in ("started", "completed"):
+        actual = [event["event"] for event in events if event["event"].endswith(suffix)]
+        assert actual == [f"{stage}.{suffix}" for stage in stages]
+    assert events[-1]["event"] == "07_record_conclusion.completed"
+    assert all(event["elapsed_seconds"] >= 0 for event in events)
     assert all("timestamp_utc" in event for event in events)
     assert not any(event["level"] != "INFO" for event in events)
     html_outputs = [
