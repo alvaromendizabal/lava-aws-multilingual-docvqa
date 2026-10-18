@@ -1,0 +1,30 @@
+name: Temporary isolated curation tools
+on:
+  push:
+    branches:
+      - cleanup/public-surface-20261018
+    paths:
+      - .github/workflows/zz-session-tools-20261018.yml
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Retrieve formatter and retain exact public preparation input
+        run: |
+          mkdir -p "$RUNNER_TEMP/curation-tools"
+          python3 -m pip download --no-deps --only-binary=:all: --dest "$RUNNER_TEMP/curation-tools" ruff==0.16.6
+          cp .cleanup-20261018/part0 "$RUNNER_TEMP/curation-tools/input.b64"
+          cd "$RUNNER_TEMP/curation-tools"
+          sha256sum * > SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: curation-input-and-formatter
+          path: ${{ runner.temp }}/curation-tools/
+          retention-days: 1
+          if-no-files-found: error
