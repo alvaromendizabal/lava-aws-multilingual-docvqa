@@ -1,0 +1,27 @@
+name: Temporary cleanup source snapshot
+on:
+  push:
+    branches: [cleanup/public-surface-20261018]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Export existing tracked public source only
+        run: |
+          git archive --format=zip --output="$RUNNER_TEMP/public-source.zip" HEAD^
+          git rev-parse HEAD^ > "$RUNNER_TEMP/public-source-commit.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: cleanup-source-snapshot
+          path: |
+            ${{ runner.temp }}/public-source.zip
+            ${{ runner.temp }}/public-source-commit.txt
+          retention-days: 1
+          if-no-files-found: error
