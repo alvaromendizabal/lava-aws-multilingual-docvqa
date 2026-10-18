@@ -63,6 +63,15 @@
       "implementation": "tools/evaluate_public_challenges.mjs",
       "tests": "tools/test_public_challenges.mjs",
       "evidence": "review/public_challenges.json"
+    },
+    {
+      "audience": "ML engineering",
+      "title": "Make an exported answer independently replayable.",
+      "decision": "Rerun retrieval and validate separate human edits, source passages and receipts against the actual browser implementation.",
+      "boundary": "Replay verifies computation, not semantic correctness or authorship.",
+      "implementation": "tools/replay_public_demo.mjs",
+      "tests": "tools/test_replay_public_demo.mjs",
+      "evidence": "docs/DEMO_REPLAY.md"
     }
   ],
   "commands": [
@@ -91,6 +100,12 @@
       "args": [
         "--check"
       ]
+    },
+    {
+      "id": "document-export-replay",
+      "runtime": "node",
+      "entry": "tools/test_replay_public_demo.mjs",
+      "args": []
     }
   ],
   "read_more": [
@@ -109,11 +124,19 @@
     {
       "path": "docs/PUBLIC_CHALLENGES.md",
       "label": "Challenge results and failure analysis"
+    },
+    {
+      "path": "docs/DEMO_REPLAY.md",
+      "label": "Export replay"
+    },
+    {
+      "path": "docs/repository_guide.md",
+      "label": "Repository map"
     }
   ],
   "schema_version": 1,
   "repository": "alvaromendizabal/lava-aws-multilingual-docvqa",
-  "reviewed_base_commit": "90bffb5c4eb988f435a3a0ddf5c09a3cc322e73d",
+  "reviewed_base_commit": "52d7affea2368554761084fdac90919a267a2b41",
   "source_dependencies": [
     "examples/public_challenges.json",
     "tools/public_challenge_adapter.mjs",
@@ -125,6 +148,8 @@
     "public-demo/styles.css",
     "public-demo/unicode-casefold.js",
     "src/lava/retrieval/lexical.py",
-    "src/lava/readers/structured_output.py"
+    "src/lava/readers/structured_output.py",
+    "tools/replay_public_demo.mjs",
+    "tools/test_replay_public_demo.mjs"
   ]
 }

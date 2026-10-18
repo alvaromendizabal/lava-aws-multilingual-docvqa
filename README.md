@@ -1,7 +1,5 @@
 # LAVA · Multilingual Document Intelligence
 
-> **Inspect the engineering:** [Source-linked review brief](review/README.md) · [Run the verified public checks](review/README.md#one-command-an-inspectable-result) · [Review-kit CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/employer-review.yml)
-
 **Alvaro Mendizabal · Retrieval · Document QA · Evaluation · AWS GPU engineering**
 
 [![CI](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml/badge.svg)](https://github.com/alvaromendizabal/lava-aws-multilingual-docvqa/actions/workflows/ci.yml)
@@ -14,7 +12,31 @@ I built an **Applied ML research system** that answers questions from Japanese a
 
 **Historical recorded best: 0.49 public / 0.53 private.** The later diagnostic scored 0.48 / 0.49 and was not an improvement. I kept retrieval quality, answer quality, citation validity and operational completeness separate throughout the evaluation.
 
-**Start here:** [Document Desk demo](https://alvaro-document-evidence.tartmacaw2.chatgpt.site) · [Case study](docs/case_study.md) · [Three-minute review](docs/reviewer_guide.md) · [Run locally](docs/reproducibility.md)
+**[Open Document Desk](https://alvaro-document-evidence.tartmacaw2.chatgpt.site)** · [Read the case study](docs/case_study.md) · [Run the public review](review/README.md#one-command-an-inspectable-result) · [Find the code](docs/repository_guide.md)
+
+## Review the system
+
+| Inspect | Working implementation | Evidence |
+|---|---|---|
+| Finding the right physical page | [Retrieval pipeline](src/lava/retrieval/pipeline.py) | [Retrieval tests](tests/unit/test_retrieval_pipeline.py) and [aggregate report](reports/retrieval/summary.json) |
+| Structured answers and citations | [Parser and validator](src/lava/readers/structured_output.py) | [Malformed-response tests](tests/unit/test_structured_output.py) |
+| Reproduction after export or human review | [Browser export replay](tools/replay_public_demo.mjs) | [Changed-answer, source and receipt rejection](tools/test_replay_public_demo.mjs) |
+| Recovery after interrupted work | [Per-question checkpoints](src/lava/readers/checkpoints.py) | [Recovery case study](docs/reliability_recovery.md) |
+| Failure analysis | [Visible challenge evaluator](tools/evaluate_public_challenges.mjs) | [All 24 authored cases, including five misses](docs/PUBLIC_CHALLENGES.md) |
+
+```mermaid
+flowchart TD
+  A["Question and document pages"] --> B["Rank evidence pages"]
+  B --> C["Read or extract an answer"]
+  C --> D["Validate structure and citations"]
+  D --> E["Answer or abstention"]
+  E --> F["Separate reviewed response"]
+  B --> G["Source-bound export"]
+  F --> G
+  G --> H["Independent computational replay"]
+```
+
+The public browser path uses lexical retrieval and extraction. The historical research path adds the separately evaluated vision-language readers documented below.
 
 ## Try Document Desk
 
@@ -33,6 +55,17 @@ node tools/test_public_demo.mjs
 ```
 
 **Inspect the failure boundary:** the [executable challenge review](docs/PUBLIC_CHALLENGES.md) runs 24 visible authored questions through this exact engine. It shows why correct page retrieval and valid citations can still produce unsupported answers, with per-language results, all five diagnostic misses, a printable report, and source-bound CI verification.
+
+## Replay an exported answer
+
+The browser and CLI use one export implementation. Replay verifies retrieval, source passages, physical-page citations and separate human edits against the actual shipped engine:
+
+```bash
+node tools/replay_public_demo.mjs --output /tmp/document-replay
+node tools/replay_public_demo.mjs --output /tmp/document-replay --check
+```
+
+Add `--input your-export.json` with a new output directory to check a browser download. The bundle contains the export, source/runtime receipt and SHA-256 manifest. [Replay methods and failure tests](docs/DEMO_REPLAY.md) explain the computational guarantee and its semantic limits.
 
 ## Research evidence
 
@@ -64,7 +97,7 @@ These measurements use the reused 16-question/five-PDF panel and are **not prese
 - **Reliable execution:** per-question checkpoints, source/model/input identities, failure diagnostics and verified saved notebooks.
 - **Inspectable interfaces:** typed outputs, citation bounds, public parsing utilities, tests and an interactive evidence viewer.
 
-[Architecture](docs/architecture.md) · [Case study](docs/case_study.md) · [Recovery design](docs/reliability_recovery.md)
+[Architecture](docs/architecture.md) · [Case study](docs/case_study.md) · [Reviewer walkthrough](docs/reviewer_guide.md) · [Recovery design](docs/reliability_recovery.md)
 
 ## Run public Python checks
 
