@@ -14,14 +14,7 @@ import nbformat
 
 from lava.evaluation.submission_store import atomic_write
 
-NOTEBOOK_STEMS = (
-    "00_reproducibility_and_protocol",
-    "01_oracle_reader_benchmark_design",
-    "02_verified_gpu_execution",
-    "03_model_scaling_and_cost",
-    "04_evidence_retrieval",
-    "05_end_to_end_system_evaluation",
-)
+NOTEBOOK_STEMS = ("05_end_to_end_system_evaluation",)
 
 
 def notebook_source_digest(path: Path) -> str:

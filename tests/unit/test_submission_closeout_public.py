@@ -51,7 +51,7 @@ class SubmissionCloseoutTests(unittest.TestCase):
                     MODULE.verify(tampered)
 
     def test_development_context_matches_existing_aggregate_source(self) -> None:
-        frontier = json.loads((ROOT / "research" / "frontier_status.json").read_text())
+        frontier = json.loads((ROOT / "research" / "final_development.json").read_text())
         context = EVIDENCE["development_context"]
         self.assertEqual(context["questions"], frontier["evaluation"]["panel_questions"])
         self.assertEqual(context["documents"], frontier["evaluation"]["panel_documents"])

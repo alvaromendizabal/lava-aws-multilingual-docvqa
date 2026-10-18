@@ -1,172 +1,38 @@
-# Reproducibility guide
+# Reproduce the public reference
 
-The public release supports the research contract, source code, frozen configurations, executed notebooks, aggregate evidence and quality gates; private competition inputs, private predictions, exact routing rules, credentials, and cloud-return bundles are not published. Official score aggregates and the unresolved completion status are published separately in the [closeout report](submission_closeout.md).
+## No account or model download
 
-The design goal is to let a reviewer verify the engineering and scientific process without releasing competition-sensitive artifacts.
-
-## Run Document Desk in the browser
-
-[Open the public demo](https://alvaro-document-evidence.tartmacaw2.chatgpt.site), open `public-demo/index.html` directly from a checkout, or serve the checkout with `python -m http.server 8000` and visit `http://localhost:8000/public-demo/`.
-
-Two authored five-page documents provide Japanese and Vietnamese examples. Edit a query, retrieval depth and support threshold. The browser computes BM25 word/character features, ranks pages, selects a sentence-level extractive answer, highlights copied support and validates the physical-page citation. Empty or unsupported queries can abstain; textless and extraction-error pages remain visible limitations.
+Python 3.11+ runs the supplied-response parser and closeout arithmetic. Add Node.js 22 or 24 for the browser engine and export replay.
 
 ```bash
-node tools/test_public_demo.mjs
+python3 -S review/run.py --output /tmp/lava-review --with-node
+python3 -S review/run.py --output /tmp/lava-review --with-node --check
 ```
 
-This is local lexical retrieval and extraction with no LLM, OCR, backend or model download. Support values are not calibrated confidence. Result export is a synthetic demonstration artifact, separate from historical competition outputs. The existing Python example below checks supplied responses rather than performing this retrieval workflow.
-
-
-## Start with the smallest runnable proof
-
-From the repository root, with Python 3.12:
+Open the generated `index.html`. The second command verifies the saved bundle without rewriting it. On Windows, use a writable directory outside the checkout.
 
 ```bash
 python3 examples/run_demo.py
 python3 examples/verify_submission_closeout.py
+node tools/replay_public_demo.mjs --output /tmp/lava-export
+node tools/replay_public_demo.mjs --output /tmp/lava-export --check
 ```
 
-Both commands use the standard library and need no credentials, GPU, or model download. The [synthetic example](../examples/README.md) exercises the existing parser and submission validator on authored documents and fixed responses. The [closeout verifier](submission_closeout.md) recomputes comparisons from sanitized aggregate evidence. These checks do not reproduce model inference or authenticate private Kaggle receipts.
+These execute the actual retained public components. They do not train a neural reader or reproduce private full-test predictions.
 
-## Reproduction levels
+## Locked source and notebook checks
 
-### Level 1 — inspect the executed evidence
-
-No account, GPU, or model download is required.
-
-Review:
-- the six executed notebooks in `notebooks/`;
-- frozen configuration files in `configs/`;
-- aggregate reports in `reports/`;
-- public-safe frontier artifacts in `research/`.
-
-Each canonical notebook has a publication manifest that binds source content, analysis inputs, output bytes, and execution state.
-
-### Level 2 — run public CPU checks
-
-Use Python 3.12 and the frozen uv environment:
+Use the committed Python 3.12 environment and lock. The notebook replays historical aggregate results in a fresh kernel; no cloud or model call is made.
 
 ```bash
 uv sync --frozen --group judge
-make quality
+uv run --frozen python -m ipykernel install --user --name lava
 make notebooks
+make quality
 ```
 
-These commands exercise the public software-quality and notebook-publication contracts. Existing verified notebook outputs are reused when their source/input identity still matches.
+The gate runs lint, formatting, type checks, tests, compilation and checksum-bound notebook validation. [The integrated notebook](../notebooks/05_end_to_end_system_evaluation.ipynb) keeps all 16 reported development questions visible.
 
-Useful targeted checks:
+## Boundary
 
-```bash
-uv run --frozen pytest -q
-uv run --frozen ruff check .
-uv run --frozen mypy src
-```
-
-### Level 3 — reproduce public model evaluation
-
-Model-backed evaluation requires access to the pinned open-model checkpoints documented in `configs/`.
-
-Start with:
-
-```bash
-make evaluation-check
-make evaluation-preview
-```
-
-The check identifies missing model access or runtime prerequisites before expensive work begins. The evaluation stack uses frozen model revisions, deterministic scoring settings where supported, and contract-specific caches.
-
-### Level 4 — private full-test workflow
-
-The private competition workflow is intentionally **not** reproduced from public Git alone.
-
-Excluded inputs include:
-- private test predictions and raw generations;
-- exact competition routing logic;
-- private source documents where redistribution is inappropriate;
-- private cloud paths, credentials, and return bundles;
-- durable model/runtime caches.
-
-The public repository still exposes the reusable architecture: typed prediction schemas, retrieval, evaluation, checkpointing, observability, and submission validation.
-
-## Reproducibility contract
-
-A result is treated as reproducible only when its identity includes the relevant combination of:
-
-- source revision or source hash;
-- model ID and pinned model revision;
-- input/data identity;
-- prompt or inference-policy identity;
-- evaluation/judge contract;
-- dependency/runtime contract where material;
-- output checksum or immutable artifact identity.
-
-This prevents a filename such as `results.json` from being treated as sufficient provenance.
-
-## Notebook policy
-
-The notebooks are both source and publication artifacts.
-
-The workflow:
-1. computes the notebook source identity;
-2. computes identities for declared analysis inputs;
-3. reuses a verified publication when those identities match;
-4. otherwise executes in a content-addressed staging directory;
-5. requires successful completion and unchanged source content;
-6. publishes atomically;
-7. records a completion manifest.
-
-A failed refresh does not destroy a previously verified notebook.
-
-## Resumable GPU work
-
-Private GPU execution uses the same public engineering principles:
-
-- deterministic run identities;
-- per-question checkpoints;
-- immutable model and input contracts;
-- heartbeat and progress reporting;
-- bounded retries and hard-stop windows;
-- failure bundles that preserve completed work;
-- process cleanup and resource telemetry;
-- checkpoint compatibility checks before reuse.
-
-The public source shows the abstractions and validation logic; private competition outputs stay outside Git.
-
-## Failure-recovery reproducibility
-
-Reproduction also includes the ability to recover from failure without silently changing the science.
-
-For expensive stages, the public engineering contract requires:
-
-1. a compatibility-bound checkpoint identity;
-2. explicit stage and failure classification;
-3. bounded subprocess ownership and cleanup;
-4. durable preservation of completed work;
-5. a return bundle containing the last valid state and first failed state;
-6. independent notebook/report validation;
-7. regression coverage for confirmed avoidable failures.
-
-The [reliability and recovery engineering case study](reliability_recovery.md) documents the operational design and the public-safe failure taxonomy. Its machine-readable companion is [research/reliability_frontier.json](../research/reliability_frontier.json).
-
-The private competition layer may contain additional runtime and source evidence, but those artifacts are not required to understand or verify the recovery architecture exposed here.
-
-## Expected public verification
-
-A successful public review should establish that:
-
-- notebooks are readable and executed;
-- reported aggregate metrics match published reports;
-- evaluation boundaries are explicit;
-- source code is linted, typed, and tested;
-- private artifacts are excluded from Git;
-- results are not silently promoted across incompatible evaluation scopes.
-
-## What is intentionally not guaranteed
-
-The repository does not claim:
-- bit-for-bit reproduction of organizer infrastructure;
-- organizer-server-identical semantic judging;
-- free access to all third-party model weights;
-- reproduction of private competition outputs from public data alone.
-
-Those limitations are documented rather than hidden.
+Full model-backed reruns require authorized source documents, pinned model artifacts and an independently provisioned environment. Private full-test inputs, generations and routing rules are excluded. Project AWS spaces and buckets are retired; no public command depends on those deleted resources. Published local and external metrics have different populations and cannot be interchanged. [Closeout](submission_closeout.md).
