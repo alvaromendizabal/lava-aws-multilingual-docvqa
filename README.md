@@ -97,7 +97,7 @@ These measurements use the reused 16-question/five-PDF panel and are **not prese
 - **Reliable execution:** per-question checkpoints, source/model/input identities, failure diagnostics and verified saved notebooks.
 - **Inspectable interfaces:** typed outputs, citation bounds, public parsing utilities, tests and an interactive evidence viewer.
 
-[Architecture](docs/architecture.md) · [Case study](docs/case_study.md) · [Recovery design](docs/reliability_recovery.md)
+[Architecture](docs/architecture.md) · [Case study](docs/case_study.md) · [Reviewer walkthrough](docs/reviewer_guide.md) · [Recovery design](docs/reliability_recovery.md)
 
 ## Run public Python checks
 
