@@ -44,6 +44,28 @@ export function referenceExport(context = load()) {
   return plain(context.app.buildExport(result, document, context.fixture.provenance, result.response, context.engine));
 }
 
+function matchExport(payload, expected) {
+  const actual = plain(payload);
+  // BM25 uses Math.log. Allow last-bit library differences only in the two
+  // BM25 score fields; decisions, confidence, settings and all other data stay exact.
+  const sameScore = (value, score) => {
+    require(typeof value === "number" && Number.isFinite(value) &&
+      Math.abs(value - score) <= (score === 0 ? 0 : 1e-12 * (1 + Math.abs(score))),
+    "Export differs from recomputed BM25 score");
+    return score;
+  };
+  require(Array.isArray(actual.retrieval?.ranking), "Missing retrieval ranking");
+  for (const [index, row] of expected.retrieval.ranking.entries()) {
+    require(actual.retrieval.ranking[index], "Missing ranked page");
+    actual.retrieval.ranking[index].score = sameScore(actual.retrieval.ranking[index].score, row.score);
+  }
+  if (expected.evidence) {
+    require(actual.evidence, "Missing extracted evidence");
+    actual.evidence.passage_score = sameScore(actual.evidence.passage_score, expected.evidence.passage_score);
+  }
+  assert.deepStrictEqual(actual, expected, "Export differs from recomputed retrieval, source text, or review validation");
+}
+
 export function replay(payload, context = load()) {
   require(payload && payload.evidence_type === "SYNTHETIC_ONLY", "Expected a synthetic Document Desk export");
   const document = context.fixture.documents.find(item => item.id === payload.document_id);
@@ -58,12 +80,13 @@ export function replay(payload, context = load()) {
   const expected = plain(context.app.buildExport(
     regenerated, document, context.fixture.provenance, payload.reviewed_response, context.engine,
   ));
-  assert.deepStrictEqual(payload, expected, "Export differs from recomputed retrieval, source text, or review validation");
+  matchExport(payload, expected);
   return {
     status: "verified", document_id: document.id, language: document.language,
     generated_status: regenerated.status,
     reviewed_response_modified: expected.reviewed_response_modified,
     semantic_correctness_verified: false,
+    numeric_tolerance: "BM25 page and passage scores only: 1e-12 * (1 + abs(expected)), with exact zero; all other fields exact.",
     scope: "Computational replay and source-supported review; no semantic-accuracy or authenticity claim.",
   };
 }

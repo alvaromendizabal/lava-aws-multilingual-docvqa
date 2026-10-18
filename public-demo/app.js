@@ -1,4 +1,5 @@
 (function (root) {
+  "use strict";
   function buildExport(result, document, provenance, reviewedResponse, engine = root.LavaEngine) {
     if (!result || result.evidence_type !== "SYNTHETIC_ONLY" || result.document_id !== document.id)
       throw new Error("Export requires a result for this authored document.");
@@ -23,7 +24,6 @@
       },
     };
   }
-  "use strict";
   const escape = (value) =>
     String(value).replace(
       /[&<>"']/g,

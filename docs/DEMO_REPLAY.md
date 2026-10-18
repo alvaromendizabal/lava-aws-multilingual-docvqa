@@ -29,6 +29,8 @@ On Windows, replace `/tmp/...` with an output directory whose parent exists. An 
 
 The query and retrieval settings are rerun against the repository's authored document. Every original answer, citation, page score, support measure, source passage and provenance field must match. A reviewed response is treated as a separate human input. Its citation bounds, exact passage support, abstention consistency and modification flag are recomputed.
 
+Only BM25 page and passage scores allow a numeric tolerance of `1e-12 × (1 + abs(expected))` to accommodate last-bit math-library differences between browser and Node runtimes; zero remains exact. Answers, page order, citations, confidence, settings, edit flags and all other fields must match exactly. Material score changes fail verification.
+
 Changing an export and recalculating its manifest does not conceal a changed generated answer: the computation is run again. Changed source or Node versions require creating a new bundle under the selected runtime. The tests also cover both languages, non-default settings, unsupported questions, confidence edits, abstentions, source drift, oversized inputs, symlinks and preservation of unrelated output directories.
 
 ```bash

@@ -45,6 +45,17 @@ test("unsupported overlapping queries remain reproducible failures, not asserted
   assert.equal(generated.status, "EXTRACTED");
   assert.equal(replay(payload, context).semantic_correctness_verified, false);
 });
+test("last-bit BM25 variation is allowed while settings, edit flags and material score changes remain exact", () => {
+  const changed = plain(sample);
+  changed.retrieval.ranking[0].score += Number.EPSILON * 8 * Math.max(1, changed.retrieval.ranking[0].score);
+  changed.evidence.passage_score += Number.EPSILON * 8 * Math.max(1, changed.evidence.passage_score);
+  assert.equal(replay(changed, context).reviewed_response_modified, false);
+  changed.parameters.bm25_k1 += 1e-14;
+  assert.throws(() => replay(changed, context));
+  changed.parameters.bm25_k1 = sample.parameters.bm25_k1;
+  changed.retrieval.ranking[0].score += 1e-6;
+  assert.throws(() => replay(changed, context));
+});
 for (const [label, mutate] of [
   ["generated answer", x => x.response.answer = "invented"],
   ["citation", x => x.response.evidence_pages = [99]],
