@@ -1,4 +1,28 @@
 (function (root) {
+  function buildExport(result, document, provenance, reviewedResponse, engine = root.LavaEngine) {
+    if (!result || result.evidence_type !== "SYNTHETIC_ONLY" || result.document_id !== document.id)
+      throw new Error("Export requires a result for this authored document.");
+    const validation = engine.validateEvidence(reviewedResponse, document, result.retrieval.supplied_pages);
+    if (!validation.schema_valid || !validation.extractive_grounding)
+      throw new Error("Export requires a valid extract or consistent abstention.");
+    return {
+      ...result,
+      reviewed_response: validation.parsed,
+      reviewed_validation: validation,
+      reviewed_response_modified: JSON.stringify(validation.parsed) !== JSON.stringify(result.response),
+      export_scope: "Original retrieval result plus a separate reviewed response. Edited responses are not relabeled as generated extracts.",
+      provenance,
+      source_document: {
+        id: document.id,
+        title: document.title,
+        physical_page_count: document.pages.length,
+        evidence_pages: result.retrieval.supplied_pages.map((number) => ({
+          number,
+          text: engine.pageText(document.pages[number - 1]),
+        })),
+      },
+    };
+  }
   "use strict";
   const escape = (value) =>
     String(value).replace(
@@ -237,28 +261,7 @@
         });
         return null;
       }
-      const payload = {
-        ...state.result,
-        reviewed_response: validation.parsed,
-        reviewed_validation: validation,
-        reviewed_response_modified:
-          JSON.stringify(validation.parsed) !==
-          JSON.stringify(state.result.response),
-        export_scope:
-          "Original retrieval result plus a separate reviewed response. Edited responses are not relabeled as generated extracts.",
-        provenance: fixture.provenance,
-        source_document: {
-          id: currentDocument().id,
-          title: currentDocument().title,
-          physical_page_count: currentDocument().pages.length,
-          evidence_pages: state.result.retrieval.supplied_pages.map(
-            (number) => ({
-              number,
-              text: engine.pageText(currentDocument().pages[number - 1]),
-            }),
-          ),
-        },
-      };
+      const payload = buildExport(state.result, currentDocument(), fixture.provenance, validation.parsed, engine);
       const raw = JSON.stringify(payload, null, 2);
       if (!root.Blob || !root.URL?.createObjectURL) {
         showValidation({
@@ -374,9 +377,9 @@
       exportResult,
     };
   }
-  root.LavaApp = { mount };
+  root.LavaApp = { mount, buildExport };
   if (typeof module !== "undefined" && module.exports)
-    module.exports = { mount };
+    module.exports = { mount, buildExport };
   if (root.document) {
     try {
       root.lavaDemo = mount(root.document);
