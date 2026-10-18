@@ -12,7 +12,7 @@ I built an **Applied ML research system** that answers questions from Japanese a
 
 **Historical recorded best: 0.49 public / 0.53 private.** The later diagnostic scored 0.48 / 0.49 and was not an improvement. I kept retrieval quality, answer quality, citation validity and operational completeness separate throughout the evaluation.
 
-**[Open Document Desk](https://alvaro-document-evidence.tartmacaw2.chatgpt.site)** · [Read the case study](docs/case_study.md) · [Run the public review](review/README.md#one-command-an-inspectable-result) · [Find the code](docs/repository_guide.md)
+**[Open Document Desk](https://alvaro-document-evidence.tartmacaw2.chatgpt.site)** · [Read the case study](docs/case_study.md) · [Run the public review](review/README.md#one-command-an-inspectable-result) · [Architecture](docs/architecture.md)
 
 ## Review the system
 
@@ -78,26 +78,14 @@ Add `--input your-export.json` with a new output directory to check a browser do
 
 Local and organizer scores use different populations and runtimes. The recovered candidate has **622 structurally accepted predictions out of 624**, with two unresolved answers. Structural acceptance is not factual correctness. The historical best used two template-derived values without verified support; the diagnostic used two compatibility abstentions. [Complete evidence and limits](docs/submission_closeout.md)
 
-## Development benchmarks
-
-These measurements use the reused 16-question/five-PDF panel and are **not presented as organizer-server-identical competition scores**. The citation-guided reread is a **post-hoc development finding**. Fixed BM25 recall@5 was **95.31%**.
-
-| Reader / system | Answer | Evidence F1 | Local LAVA |
-|---|---:|---:|---:|
-| Supplied evidence · Qwen3.5-4B BF16 | 50.62% | 97.02% | 73.82% |
-| Supplied evidence · Qwen3.5-9B BF16 | 80.15% | 93.90% | 87.02% |
-| Supplied evidence · Qwen3.8-27B NF4 | 70.98% | 89.73% | 80.36% |
-| BM25 → Qwen3.5-9B | 48.90% | 86.25% | 67.57% |
-| Citation-guided reread | 67.65% | 88.33% | 77.99% |
-
 ## What I built
 
 - **Separated evaluation stages:** evidence retrieval, supplied-evidence reading and complete answer/citation behavior.
-- **Controlled reader comparisons:** model scaling, citation-guided rereading and document-level routing with explicit promotion gates.
+- **A focused reader pipeline:** citation-guided rereading and document-level routing with explicit evaluation boundaries.
 - **Reliable execution:** per-question checkpoints, source/model/input identities, failure diagnostics and verified saved notebooks.
 - **Inspectable interfaces:** typed outputs, citation bounds, public parsing utilities, tests and an interactive evidence viewer.
 
-[Architecture](docs/architecture.md) · [Case study](docs/case_study.md) · [Reviewer walkthrough](docs/reviewer_guide.md) · [Recovery design](docs/reliability_recovery.md)
+[Architecture](docs/architecture.md) · [Case study](docs/case_study.md) · [Recovery design](docs/reliability_recovery.md)
 
 ## Run public Python checks
 
@@ -122,15 +110,12 @@ make notebooks
 
 This release contains implemented research, executable public demos and dated evidence. The small reused development panel limits generalization claims; the two unresolved answers remain unresolved. Production service quality is not claimed.
 
-The private full-test and competition layer is intentionally excluded: source documents, predictions, generations, exact routing rules, model caches, credentials and cloud object locations remain private. Historical notebook outputs are preserved. [Project closeout](docs/closeout.md) · [Executed research guide](notebooks/README.md)
+The private full-test and competition layer is intentionally excluded: source documents, predictions, generations, exact routing rules, model caches, credentials and cloud object locations remain private. Historical notebook outputs are preserved. [Project closeout](docs/submission_closeout.md) · [Executed research guide](notebooks/README.md)
 
-## Executed research notebooks
+## Integrated project review
 
 | Notebook | Review focus |
 |---|---|
-| [00 · Overview](notebooks/00_reproducibility_and_protocol.ipynb) | Contracts and measured findings |
-| [01 · Reader comparison](notebooks/01_oracle_reader_benchmark_design.ipynb) | Comparable supplied evidence |
-| [02 · GPU execution](notebooks/02_verified_gpu_execution.ipynb) | Checkpoints and recovery |
-| [03 · Quality and cost](notebooks/03_model_scaling_and_cost.ipynb) | Model trade-offs |
-| [04 · Retrieval](notebooks/04_evidence_retrieval.ipynb) | Page selection |
-| [05 · End-to-end](notebooks/05_end_to_end_system_evaluation.ipynb) | Answer and citation evaluation |
+| [From PDF to evidence-grounded answer](notebooks/05_end_to_end_system_evaluation.ipynb) | Selected 9B reader, first-pass/reread metrics, every error category and recovery contracts |
+
+The public checkout contains the selected approach, its measured control comparison and runnable component checks. The public review requires no account or cloud data; full-test inputs and model artifacts are not distributed.

@@ -70,35 +70,11 @@
       "complete_evidence_questions": 16
     }
   },
-  "experiments": {
-    "larger_one_shot_reader": {
-      "status": "not_promoted",
-      "best_local_lava": 0.725
-    },
-    "self_consistency_active_perception": {
-      "status": "not_promoted",
-      "single_control_local_lava": 0.8233630952,
-      "best_local_lava": 0.8348214286
-    },
-    "exhaustive_screening_reasoning": {
-      "status": "not_promoted",
-      "best_overall_local_lava": 0.6920634921,
-      "numeric_slice_local_lava": 1,
-      "numeric_questions": 4
-    },
-    "gemma4_12b": {
-      "status": "standalone_not_promoted_complementary",
-      "model_id": "google/gemma-4-12B-it-qat-w4a16-ct",
-      "oracle_local_lava": 0.8125,
-      "retrieved_direct_local_lava": 0.65625,
-      "selfcite_local_lava": 0.78125,
-      "selfcite_schema_valid_rate": 0.9375
-    }
+  "projection_provenance": {
+    "source_commit": "75aa778632a800b0227a40b511ac3efcdbee2de4",
+    "source_path": "research/frontier_status.json",
+    "source_sha256": "462dc5a94a4f7c63513a9873f7b5f8e32d80ea58ddf87f8c5fca9ed41a1b3313",
+    "meaning": "Selected previously published aggregate fields only; no new inference or validation."
   },
-  "private_full_test_stage": {
-    "questions": 624,
-    "status": "active_resumable_aws_inference",
-    "public_predictions": false,
-    "exact_routing_rule_public": false
-  }
+  "operational_status": "Project-specific AWS spaces and buckets retired after closeout; public review is offline."
 }

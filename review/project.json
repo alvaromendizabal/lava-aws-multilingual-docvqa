@@ -114,24 +114,24 @@
       "label": "Case study"
     },
     {
-      "path": "docs/reproducibility.md",
-      "label": "Reproducibility levels"
+      "path": "docs/architecture.md",
+      "label": "Implementation"
     },
     {
-      "path": "docs/reviewer_guide.md",
-      "label": "Technical review"
+      "path": "docs/reproducibility.md",
+      "label": "Run and verify"
+    },
+    {
+      "path": "docs/submission_closeout.md",
+      "label": "Historical result and limits"
     },
     {
       "path": "docs/PUBLIC_CHALLENGES.md",
-      "label": "Challenge results and failure analysis"
+      "label": "Public failure analysis"
     },
     {
       "path": "docs/DEMO_REPLAY.md",
       "label": "Export replay"
-    },
-    {
-      "path": "docs/repository_guide.md",
-      "label": "Repository map"
     }
   ],
   "schema_version": 1,

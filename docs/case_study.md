@@ -22,9 +22,7 @@ I implemented a pipeline that extracts page text and images, retrieves relevant 
 
 **A missing page and a misread page need different fixes.** Retrieval is scored directly, then readers are compared on known evidence, and finally the combined pipeline is evaluated. That separation makes ablations interpretable.
 
-**A larger model needs to justify its cost.** The larger one-shot reader, self-consistency, active-perception, and exhaustive-screening branches did not consistently satisfy promotion gates. Their negative results remain in the record. Model-family diversity helped on the small development panel, but that does not establish an improvement across the full test set.
-
-**Interrupted inference should remain usable.** Per-question checkpoints and model/data/source hashes make reuse explicit. The latest AWS closeout verified 1,081 unchanged checkpoints, executed and reopened its notebook, and verified a versioned backup by reading its bytes back. This demonstrates recovery mechanisms; it is not a production reliability or uptime measurement.
+**Interrupted inference should remain usable.** Per-question checkpoints and model/data/source hashes make reuse explicit. The historical AWS closeout recorded 1,081 unchanged checkpoints, executed and reopened its notebook, and verified a versioned backup by reading its bytes back at that time. Those project resources are now retired. This demonstrates recovery mechanisms; it is not a production reliability or uptime measurement.
 
 ## Interactive evidence inspection
 
