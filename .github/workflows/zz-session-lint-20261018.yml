@@ -1,0 +1,20 @@
+name: Temporary cleanup formatter export
+on:
+  push:
+    branches: [cleanup/public-surface-20261018]
+    paths: [.github/workflows/zz-session-lint-20261018.yml]
+permissions:
+  contents: read
+jobs:
+  formatter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Download the repository-pinned formatter for isolated local checks
+        run: python -m pip download --no-deps --only-binary=:all: --dest "$RUNNER_TEMP/formatter" ruff==0.16.6
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: cleanup-formatter
+          path: ${{ runner.temp }}/formatter/
+          retention-days: 1
+          if-no-files-found: error
