@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
         with:
-          python-version: '3.13.15'
+          python-version: '3.12.13'
           enable-cache: false
       - name: Verify and apply exact reviewed source changes
         shell: python
@@ -41,8 +41,7 @@ jobs:
               if not p.resolve().is_relative_to(root) or p.is_symlink() or '.git' in p.parts: raise ValueError('Unsafe path')
               return p
           for row in plan['changes']:
-              p=path(row['path'])
-              actual=hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+              p=path(row['path']); actual=hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
               if actual!=row['before']: raise ValueError('Source changed: '+row['path'])
           for name in plan['delete']:
               p=path(name)
@@ -61,15 +60,15 @@ jobs:
           print('Applied',len(plan['changes']),'verified changes;',len(plan['delete']),'retirement entries')
       - name: Install and format the retained locked project
         run: |
-          uv sync --frozen --group dev --group mlops --group cloud --group notebooks
-          uv run --frozen ruff format src tests scripts
-          uv run --frozen ruff check --fix src tests scripts
-          uv run --frozen ruff format src tests scripts
-          uv run --frozen ruff check src tests scripts
+          uv sync --frozen --group judge
+          uv run --frozen ruff format src tests scripts pipelines notebooks
+          uv run --frozen ruff check --fix src tests scripts pipelines notebooks
+          uv run --frozen ruff format src tests scripts pipelines notebooks
+          uv run --frozen ruff check src tests scripts pipelines notebooks
       - name: Publish actual results from a clean notebook kernel
         run: |
-          uv run --frozen --group notebooks python -m ipykernel install --user --name lava
-          uv run --frozen --group notebooks python scripts/execute_notebooks.py --publish
+          uv run --frozen python -m ipykernel install --user --name lava
+          uv run --frozen python scripts/execute_notebooks.py --publish
           python3 -B -S review/run.py --render
           python3 -B -S review/run.py --output "$RUNNER_TEMP/public-review"
           python3 -B -S review/run.py --output "$RUNNER_TEMP/public-review" --check
