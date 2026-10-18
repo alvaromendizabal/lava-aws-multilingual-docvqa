@@ -1,0 +1,45 @@
+name: Final notebook contract repair
+on:
+  push:
+    branches: [cleanup/public-surface-20261018]
+    paths: [.github/workflows/zz-final-contract-repair.yml]
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Preserve required evidence and test the integrated seven-stage notebook
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if text.count(old) != 1:
+                  raise ValueError('Unexpected test contract: ' + path)
+              p.write_text(text.replace(old, new))
+          replace('tests/integration/test_notebook_execution.py',
+              '    assert events[-1]["event"].endswith("walkthrough.completed")\n    assert events[-1]["elapsed_seconds"] >= 0',
+              '    stages = (\n        "01_verify_evidence",\n        "02_inspect_input_tradeoff",\n        "03_inspect_frozen_execution",\n        "04_compare_quality",\n        "05_examine_failures",\n        "06_inspect_runtime_and_recovery",\n        "07_record_conclusion",\n    )\n    for suffix in ("started", "completed"):\n        actual = [event["event"] for event in events if event["event"].endswith(suffix)]\n        assert actual == [f"{stage}.{suffix}" for stage in stages]\n    assert events[-1]["event"] == "07_record_conclusion.completed"\n    assert all(event["elapsed_seconds"] >= 0 for event in events)')
+          replace('tests/unit/test_semantic_evaluation.py',
+              '    notebook = nbformat.read(ROOT / "notebooks/02_verified_gpu_execution.ipynb", 4)',
+              '    notebook = nbformat.read(ROOT / "notebooks/05_end_to_end_system_evaluation.ipynb", 4)')
+          replace('tests/unit/test_semantic_evaluation.py',
+              '    html = tables[0].data\n    assert "Qwen3.5 · 4B" in html and "Qwen3.5 · 9B" in html\n    assert html.count("16 / 16") >= 2\n    assert html.count("Full pilot scored") >= 2\n    assert \'<th scope="col">Stage</th>\' in html',
+              '    html = "\\n".join(table.data for table in tables if hasattr(table, "data"))\n    assert "Current end-to-end status" in html\n    assert "16 previously examined questions" in html\n    assert "Qwen3.5-9B" in html\n    assert "Completed integrated evaluation" in html\n    assert "Self-cited reread" in html\n    assert "Both completed passes" in html')
+          evidence = subprocess.check_output(['git', 'show', '75aa778632a800b0227a40b511ac3efcdbee2de4:reports/retrieval/validation.json'])
+          Path('reports/retrieval/validation.json').write_bytes(evidence)
+      - name: Publish only the required receipt and updated tests
+        run: |
+          git add tests/integration/test_notebook_execution.py tests/unit/test_semantic_evaluation.py reports/retrieval/validation.json
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Test the retained integrated notebook and preserve its retrieval recovery evidence'
+          git push origin HEAD:cleanup/public-surface-20261018
