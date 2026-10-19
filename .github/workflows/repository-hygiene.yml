@@ -1,0 +1,54 @@
+name: Repository hygiene
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  navigation-and-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Reject stale navigation and temporary run artifacts
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          import re
+          import subprocess
+          from urllib.parse import unquote, urlsplit
+
+          root = Path.cwd().resolve()
+          paths = subprocess.check_output(["git", "ls-files", "-z"], text=True).split("\0")
+          paths = [p for p in paths if p]
+          errors = []
+          links = 0
+          for name in paths:
+              path = Path(name)
+              if any(p in {"__pycache__", ".ipynb_checkpoints", "node_modules", ".venv"} for p in path.parts):
+                  errors.append(f"Generated environment/cache tracked: {name}")
+              if path.name == ".DS_Store" or any(p.startswith(".cleanup") for p in path.parts):
+                  errors.append(f"Temporary preparation file tracked: {name}")
+              if name.startswith(".github/workflows/zz-") or name.endswith(".pyz") or "_return_" in path.name:
+                  errors.append(f"Temporary workflow or run handoff tracked: {name}")
+              if path.suffix.lower() != ".md":
+                  continue
+              text = (root / name).read_text(encoding="utf-8")
+              # Ignore fenced examples; validate actual document links and image references.
+              text = re.sub(r"(?ms)^```[^\n]*\n.*?^```[^\n]*$", "", text)
+              for target in re.findall(r"\]\(([^\s)]+)", text):
+                  parsed = urlsplit(target.strip("<>"))
+                  if parsed.scheme or parsed.netloc or not parsed.path:
+                      continue
+                  links += 1
+                  dest = (root / path.parent / unquote(parsed.path)).resolve()
+                  if not dest.is_relative_to(root) or not dest.exists():
+                      errors.append(f"Broken or out-of-repository link: {name} -> {target}")
+          print(json.dumps({"tracked_files": len(paths), "local_markdown_file_links": links,
+                            "errors": errors}, indent=2))
+          if errors:
+              raise SystemExit(1)

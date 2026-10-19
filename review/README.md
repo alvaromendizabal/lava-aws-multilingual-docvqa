@@ -1,39 +1,48 @@
-# Answers that can point to their evidence.
+# Document intelligence: verified public review
 
-**Alvaro Mendizabal · Document intelligence / retrieval / reliable ML**
-
-A multilingual document-QA research system that separates finding evidence, reading it, and validating the answer. The engineering story is inspectable: explicit contracts, controlled comparisons, and recoverable execution.
-
-[Project overview](../README.md) · [Printable technical brief](index.html) · [Review configuration](project.json)
-
-## Follow an engineering decision to its evidence
-
-| Focus | Engineering decision | Inspect |
-|---|---|---|
-| Applied AI | **Separate format validity from factual correctness.** Parse structured answers, constrain cited physical pages, and demonstrate that a schema-valid answer can still be wrong. | [Implementation](../src/lava/readers/structured_output.py) · [Tests](../tests/unit/test_structured_output.py) · [Evidence](../examples/fixture.json) |
-| Data science | **Diagnose retrieval before blaming the reader.** Evaluate page retrieval separately from supplied-evidence reading and end-to-end answer quality. | [Implementation](../src/lava/retrieval/pipeline.py) · [Tests](../tests/unit/test_retrieval_pipeline.py) · [Evidence](../reports/retrieval/summary.json) |
-| ML engineering | **Make interrupted work recoverable.** Use durable reader checkpoints and artifact identities so completed questions need not be repeated after a failure. | [Implementation](../src/lava/readers/checkpoints.py) · [Tests](../tests/unit/test_private_artifacts.py) · [Evidence](../docs/reliability_recovery.md) |
-| Data science | **Preserve negative and incomplete results.** Keep official, development, structural-coverage, and factual-correctness claims separate in a machine-checkable closeout. | [Implementation](../examples/verify_submission_closeout.py) · [Tests](../tests/unit/test_submission_closeout_public.py) · [Evidence](../reports/portfolio/closeout.json) |
-| Data science | **Test the failure boundary, not only the happy path.** Execute visible authored challenges against the shipped engine; separate retrieval or decision coverage from successful outcomes and retain every failure. | [Implementation](../tools/evaluate_public_challenges.mjs) · [Tests](../tools/test_public_challenges.mjs) · [Evidence](../review/public_challenges.json) |
-| ML engineering | **Make an exported answer independently replayable.** Rerun retrieval and validate separate human edits, source passages and receipts against the actual browser implementation. | [Implementation](../tools/replay_public_demo.mjs) · [Tests](../tools/test_replay_public_demo.mjs) · [Evidence](../docs/DEMO_REPLAY.md) |
+This review checks lexical retrieval, structured citations, answer-export replay and the recorded evaluation boundaries.
+[Project and results](../README.md) · [Inspection brief](index.html) · [Exact check configuration](project.json)
 
 ## One command, an inspectable result
 
-From a checkout with Python 3.11 or newer and Node.js 24.19.0:
+From the repository root, with Python 3.11+ and Node.js:
 
 ```bash
-python3 -S review/run.py --output /tmp/ml-review --with-node
-python3 -S review/run.py --output /tmp/ml-review --with-node --check
+python3 -B -S review/run.py --output /tmp/project-review --with-node
+python3 -B -S review/run.py --output /tmp/project-review --with-node --check
 ```
 
-Open `/tmp/ml-review/index.html` for the rendered brief. Logs, `receipt.json` and `manifest.json` record the actual checks, source identities and output hashes. On Windows, choose a writable directory outside the checkout. Repeating the command reuses a verified result; changed sources or damaged evidence fail explicitly.
+Use a writable directory outside the checkout; on Windows replace `/tmp/project-review`
+with an appropriate local path. Open the generated `index.html`. The bundle includes
+actual command logs, `receipt.json`, `manifest.json`, and the configured diagnostic
+outputs. No AWS account, private dataset or private weights are required.
 
-Omit `--with-node` to run only the Python checks; omitted browser checks are never reported as passed. CI runs both runtimes on Python 3.11 and 3.13.
+Omit `--with-node` for Python-only checks. Omitted browser tests are never reported
+as passed. The [configuration](project.json) lists the exact commands, source files,
+evidence and browser assets covered; it is not a claim of whole-system private replay.
 
-## Verification scope
+## Verify rather than silently overwrite
 
-The public checks execute authored response fixtures through the actual parsing and citation validators, and recompute aggregate closeout consistency. The optional browser checks exercise lexical retrieval on synthetic documents. These are different from model-backed question answering.
+An unchanged rerun checks the saved bundle before reuse. `--check` only verifies.
+Changed source, damaged artifacts, mismatched modes and failed commands cause a
+nonzero exit. After an intentional source change, use a **new output directory**.
+The default per-command deadline is 90 seconds; `--timeout` changes it explicitly.
 
-Full-test documents, generated answers, exact routing rules, private checkpoints, model caches, and operational cloud locations remain excluded. The two unresolved historical answers remain unresolved.
+The receipt records runtime versions, UTC times, elapsed checks and inspected hashes.
+Checksums establish consistency, not independent authentication of historical model
+scores. The committed inspection page is a guide, **not an execution receipt**.
+Public examples and aggregate replay are distinct from training or running the
+withheld competitive model; see the project README for that boundary.
 
-[Case study](../docs/case_study.md) · [Reproducibility levels](../docs/reproducibility.md) · [Technical review](../docs/reviewer_guide.md) · [Challenge results and failure analysis](../docs/PUBLIC_CHALLENGES.md) · [Export replay](../docs/DEMO_REPLAY.md) · [Repository map](../docs/repository_guide.md)
+[Evidence-page retrieval and its measured scope](../docs/retrieval.md)
+
+## Maintain this review
+
+```bash
+python3 -B -S -m unittest discover -s review -p test_run.py -q
+python3 -B -S review/run.py --check-page
+```
+
+After changing the configuration or template, regenerate the inspection page with
+`python3 -B -S review/run.py --render`, inspect it, and rerun both checks. Full package
+training and notebook requirements remain in the project's main reproduction guide.
