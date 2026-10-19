@@ -1,4 +1,4 @@
-name: Public source verification snapshot
+name: Final eight-repository verification
 on:
   push:
     branches: [cleanup/review-closeout-20261019]
@@ -6,50 +6,74 @@ on:
 permissions:
   contents: read
 jobs:
-  snapshot:
+  final-audit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Export only the eight authorized public repositories
+      - name: Verify all eight merged main branches and archive only public tracked source
         shell: python
         run: |
-          import concurrent.futures, hashlib, json, os, pathlib, urllib.request
-          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'sources'; out.mkdir()
+          import concurrent.futures, datetime, hashlib, io, json, os, pathlib, re, time, urllib.request, zipfile
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'final-sources'; out.mkdir()
           expected={
-            'home-credit-model-stability':'ecd8bdecd17f5a4c2394dc5170fdf9717dd8a6c4',
+            'home-credit-model-stability':'1b1237cd5a94b2cafc02ba475322237540c1a048',
             'nfl-player-trajectory':'54e7b90e16f629e53c96014e873fd442f0c7002e',
             'jigsaw-rule-classifier':'1a0f72620d0035ef99b37c2c36a73332e3f310da',
             'commodity-prediction':'e745c0b57e23ad30ad17165e3e78af62a920f74c',
-            'kaggriculture':'1b95ed3239b1f7ae2f326c0f240f0265c3b9ef2d',
-            'lava-aws-multilingual-docvqa':'b9b5cc853bb1b32c3876c6fe3829fa92eedb2148',
-            'biohub-cell-tracking-during-development':'5ea508a4325439caa45963d10e33ec4f6bf5e2b4',
+            'kaggriculture':'11983c216462761a02029cc5fdafff2b64c79e14',
+            'lava-aws-multilingual-docvqa':'a1cf59ec04c92db4ab831c9bdd0421815dde8d05',
+            'biohub-cell-tracking-during-development':'4775f710ab9385605d28cca4e8f137ebf7763995',
             'rsna-knee-abnormality-detection':'996cccf1addc0d297985e8570a13332ceb7e3928'}
           def get(url):
-              req=urllib.request.Request(url,headers={'User-Agent':'public-source-review','Accept':'application/vnd.github+json'})
+              req=urllib.request.Request(url,headers={'User-Agent':'public-closeout-verification','Accept':'application/vnd.github+json'})
               with urllib.request.urlopen(req,timeout=90) as r:return r.read()
           def collect(item):
-              name,sha=item;api=f'https://api.github.com/repos/alvaromendizabal/{name}'
+              name,sha=item; api=f'https://api.github.com/repos/alvaromendizabal/{name}'
               head=json.loads(get(api+'/git/ref/heads/main'))['object']['sha']
-              if head!=sha:raise RuntimeError(name+': main changed')
-              info=json.loads(get(api));commit=json.loads(get(api+'/git/commits/'+sha))
-              runs=json.loads(get(api+f'/actions/runs?head_sha={sha}&event=push&per_page=100'))
+              if head!=sha:raise RuntimeError(name+': main changed; reconcile')
+              commit=json.loads(get(api+'/git/commits/'+sha))
+              for attempt in range(12):
+                  runs=json.loads(get(api+f'/actions/runs?head_sha={sha}&event=push&per_page=100'))
+                  if runs['total_count']>len(runs['workflow_runs']):raise RuntimeError('Incomplete workflow listing')
+                  values=runs['workflow_runs']
+                  if values and all(x['status']=='completed' for x in values):break
+                  time.sleep(15)
+              if not values or any(x['conclusion']!='success' for x in values):
+                  raise RuntimeError(name+': not all final-main workflows succeeded')
               prs=json.loads(get(api+'/pulls?state=all&per_page=100'))
-              branches=json.loads(get(api+'/branches?per_page=100'))
+              matches=[p for p in prs if p.get('merge_commit_sha')==sha and p.get('merged_at')]
+              if len(matches)!=1:raise RuntimeError(name+': missing unique merged PR identity')
+              pr=matches[0]; opens=[p['number'] for p in prs if p['state']=='open']
+              if opens:raise RuntimeError(name+': open pull requests remain: '+str(opens))
+              tested=json.loads(get(api+'/git/commits/'+pr['head']['sha']))
+              if commit['tree']['sha']!=tested['tree']['sha']:
+                  raise RuntimeError(name+': merged tree differs from reviewed PR tree')
               raw=get(f'https://codeload.github.com/alvaromendizabal/{name}/zip/{sha}')
               (out/(name+'.zip')).write_bytes(raw)
-              meta={'name':name,'sha':sha,'tree':commit['tree']['sha'],'commit_message':commit['message'],
-                    'description':info['description'],'homepage':info.get('homepage'),'topics':info.get('topics'),
-                    'archive_sha256':hashlib.sha256(raw).hexdigest(),'archive_bytes':len(raw),
-                    'runs':[{'id':x['id'],'name':x['name'],'status':x['status'],'conclusion':x['conclusion'],'url':x['html_url']} for x in runs['workflow_runs']],
-                    'prs':[{'number':x['number'],'title':x['title'],'state':x['state'],'merged_at':x.get('merged_at'),'merge_sha':x.get('merge_commit_sha'),'head':x['head']['ref'],'head_sha':x['head']['sha'],'url':x['html_url']} for x in prs],
-                    'branches':[{'name':x['name'],'sha':x['commit']['sha']} for x in branches]}
-              (out/(name+'.json')).write_text(json.dumps(meta,indent=2));return meta
+              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                  files=[i for i in archive.infolist() if not i.is_dir()]
+                  paths=['/'.join(pathlib.PurePosixPath(i.filename).parts[1:]) for i in files]
+                  forbidden=[p for p in paths if p.startswith('.github/workflows/zz-') or any(x.startswith('.cleanup') for x in pathlib.PurePosixPath(p).parts) or p.endswith('.pyz') or '_return_' in pathlib.PurePosixPath(p).name]
+                  if forbidden:raise RuntimeError(name+': preparation artifacts remain: '+str(forbidden))
+                  count=len(files);size=sum(i.file_size for i in files)
+              record={'repository':name,'main_sha':sha,'tree_sha':commit['tree']['sha'],
+                  'verified_pr_tree':True,'file_count':count,'tracked_bytes':size,
+                  'archive_sha256':hashlib.sha256(raw).hexdigest(),'archive_bytes':len(raw),
+                  'pr':{'number':pr['number'],'title':pr['title'],'url':pr['html_url'],
+                        'head_sha':pr['head']['sha'],'merge_sha':pr['merge_commit_sha'],'merged_at':pr['merged_at']},
+                  'open_pull_requests':opens,'temporary_artifacts':forbidden,
+                  'main_workflows':[{'id':x['id'],'name':x['name'],'status':x['status'],
+                                    'conclusion':x['conclusion'],'head_sha':x['head_sha'],'url':x['html_url']} for x in values]}
+              (out/(name+'.json')).write_text(json.dumps(record,indent=2));return record
           with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:records=list(pool.map(collect,expected.items()))
-          (out/'manifest.json').write_text(json.dumps(records,indent=2))
-          print(json.dumps([{'name':r['name'],'sha':r['sha'],'files_archive_bytes':r['archive_bytes']} for r in records]))
+          manifest={'verified_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    'successful_final_main_workflows':sum(len(x['main_workflows']) for x in records),
+                    'repositories':records}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          print(json.dumps(manifest,indent=2))
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: current-eight-public-sources
-          path: ${{ runner.temp }}/sources/
+          name: verified-final-eight-public-repositories
+          path: ${{ runner.temp }}/final-sources/
           retention-days: 3
           if-no-files-found: error
